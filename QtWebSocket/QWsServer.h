@@ -2,6 +2,7 @@
 #define QWSSERVER_H
 
 #include <QTcpServer>
+#include <QTcpSocket>
 #include <QString>
 #include <QQueue>
 
@@ -22,6 +23,8 @@ public:
 	QString errorString();
 	bool hasPendingConnections();
 	virtual QTcpSocket * nextPendingConnection();
+	QString decodeFrame( QTcpSocket * socket );
+	QByteArray composeFrame( QString message, int maxFrameBytes = 1024 );
 
 protected:
 	// Protected methods
