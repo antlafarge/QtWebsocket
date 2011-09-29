@@ -6,6 +6,8 @@
 #include <QString>
 #include <QQueue>
 
+#include "QWsSocket.h"
+
 class QWsServer : public QTcpServer
 {
 	Q_OBJECT
@@ -23,8 +25,6 @@ public:
 	QString errorString();
 	bool hasPendingConnections();
 	virtual QTcpSocket * nextPendingConnection();
-	QString decodeFrame( QTcpSocket * socket );
-	QByteArray composeFrame( QString message, int maxFrameBytes = 1024 );
 
 protected:
 	// Protected methods
@@ -49,7 +49,6 @@ private slots:
 private:
 	// private attributes
     QTcpServer * tcpServer;
-    QString resourceName;
 	QAbstractSocket::SocketError serverSocketError;
 	QString serverSocketErrorString;
 	QQueue<QTcpSocket*> pendingConnections;
