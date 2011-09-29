@@ -44,7 +44,6 @@ private slots:
 	// private slots
 	void newTcpConnection();
 	void dataReceived();
-	void clientDisconnected();
 
 private:
 	// private attributes

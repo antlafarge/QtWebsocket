@@ -16,7 +16,7 @@ const QString QWsServer::regExpExtensionsStr( "Sec-WebSocket-Extensions:\\s(.+)\
 QWsServer::QWsServer(QObject * parent)
 	: QTcpServer(parent)
 {
-    tcpServer = new QTcpServer(this);
+	tcpServer = new QTcpServer(this);
 	connect(tcpServer, SIGNAL(newConnection()), this, SLOT(newTcpConnection()));
 }
 
@@ -58,26 +58,18 @@ QString QWsServer::errorString()
 
 void QWsServer::newTcpConnection()
 {
-    QTcpSocket * clientSocket = tcpServer->nextPendingConnection();
+	QTcpSocket * clientSocket = tcpServer->nextPendingConnection();
 
 	QObject * clientObject = qobject_cast<QObject*>(clientSocket);
 
-    connect(clientObject, SIGNAL(readyRead()), this, SLOT(dataReceived()));
-    connect(clientObject, SIGNAL(disconnected()), this, SLOT(clientDisconnected()));
-}
-
-void QWsServer::clientDisconnected()
-{
-    QTcpSocket * clientSocket = qobject_cast<QTcpSocket*>(sender());
-    if (clientSocket == 0)
-        return;
+	connect(clientObject, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 }
 
 void QWsServer::dataReceived()
 {
-    QTcpSocket * clientSocket = qobject_cast<QTcpSocket*>(sender());
-    if (clientSocket == 0)
-        return;
+	QTcpSocket * clientSocket = qobject_cast<QTcpSocket*>(sender());
+	if (clientSocket == 0)
+		return;
 
 	QString request( clientSocket->readAll() );
 
@@ -115,10 +107,12 @@ void QWsServer::dataReceived()
 	regExp.indexIn(request);
 	QString origin = regExp.cap(1);
 
+	// Protocol
 	regExp.setPattern( QWsServer::regExpProtocolStr );
 	regExp.indexIn(request);
 	QString protocol = regExp.cap(1);
 
+	// Extensions
 	regExp.setPattern( QWsServer::regExpExtensionsStr );
 	regExp.indexIn(request);
 	QString extensions = regExp.cap(1);
@@ -131,9 +125,7 @@ void QWsServer::dataReceived()
 		|| version != "8" )
 		return;
 
-	incomingConnection( clientSocket->socketDescriptor() );
-
-	// Compose answer
+	// Compose handshake answer
 	QString accept = computeAcceptV8( key );
 	
 	QString answer("HTTP/1.1 101 Switching Protocols\r\n");
@@ -142,7 +134,12 @@ void QWsServer::dataReceived()
 	answer.append("Sec-WebSocket-Accept: " + accept + "\r\n");
 	answer.append("\r\n");
 
+	// Send handshake answer
 	clientSocket->write( answer.toUtf8() );
+
+	// Handshake OK, new connection
+	int socketDescriptor = clientSocket->socketDescriptor();
+	incomingConnection( socketDescriptor );
 }
 
 QString QWsServer::computeAcceptV8(QString key)
@@ -154,14 +151,15 @@ QString QWsServer::computeAcceptV8(QString key)
 
 void QWsServer::addPendingConnection( QTcpSocket * socket )
 {
-	if ( pendingConnections.size() < QTcpServer::maxPendingConnections() )
+	if ( pendingConnections.size() < maxPendingConnections() )
 		pendingConnections.enqueue(socket);
 }
 
 void QWsServer::incomingConnection( int socketDescriptor )
 {
+	//QWsSocket * socket = new QWsSocket(this); // FOR NEXT STEP
 	QTcpSocket * socket = new QTcpSocket(tcpServer);
-	socket->setSocketDescriptor( socketDescriptor );
+	socket->setSocketDescriptor( socketDescriptor/*, QAbstractSocket::ConnectedState*/ );
 	
 	addPendingConnection( socket );
 

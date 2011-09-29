@@ -1,9 +1,11 @@
 #ifndef QWSSOCKET_H
 #define QWSSOCKET_H
 
-#include <QAbstractSocket>
+#include <QTcpSocket>
 
-class QWsSocket : public QAbstractSocket
+class QWsServer;
+
+class QWsSocket : public QTcpSocket
 {
 	Q_OBJECT
 
@@ -12,10 +14,14 @@ public:
 	QWsSocket(QObject * parent);
 	// dtor
 	virtual ~QWsSocket();
+
+	// Public methods
+	virtual void close( QString reason = QString() );
+	qint64	write ( const QByteArray & byteArray );
 	
 	// Static functions
-	static QString decodeFrame( QAbstractSocket * socket );
-	static QByteArray composeFrame( QString message, int maxFrameBytes = 1024 );
+	static QString decodeFrame( QTcpSocket * socket );
+	static QByteArray composeFrame( QByteArray byteArray, int maxFrameBytes = 125 );
 };
 
 #endif // QWSSOCKET_H

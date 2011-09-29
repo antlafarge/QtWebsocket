@@ -1,17 +1,54 @@
 #include "QWsSocket.h"
 
 QWsSocket::QWsSocket(QObject * parent)
-	: QAbstractSocket(QAbstractSocket::UnknownSocketType, parent)
+	: QTcpSocket(parent)
 {
-
+	setSocketState( QAbstractSocket::UnconnectedState );
 }
 
 QWsSocket::~QWsSocket()
 {
-
 }
 
-QString QWsSocket::decodeFrame( QAbstractSocket * socket )
+void QWsSocket::close( QString reason )
+{
+	// Compose and send close frame
+	quint64 messageSize = reason.size();
+	QByteArray BA;
+	quint8 byte;
+
+	// FIN, RSV1-3, Opcode
+	byte = 0x00;
+	// FIN
+	byte = (byte | 0x80);
+	// Opcode
+	byte = (byte | 0x08);
+	// RSV1-3 // UNSUPPORTED FOR NOW
+	BA.append( byte );
+
+	// Mask, PayloadLength
+	byte = 0x00;
+	// Mask // UNSUPPORTED FOR NOW
+	// PayloadLength // UNSUPPORTED FOR NOW
+	BA.append( byte );
+	// Extended payloadLength // UNSUPPORTED FOR NOW
+
+	// Masking // UNSUPPORTED FOR NOW
+
+	// Reason // UNSUPPORTED FOR NOW
+	
+	QAbstractSocket::write( BA );
+
+	QAbstractSocket::close();
+}
+
+qint64	QWsSocket::write ( const QByteArray & byteArray )
+{
+	QAbstractSocket::write( QWsSocket::composeFrame( byteArray ) );
+	return byteArray.size(); // TEMPORARY (improve later)
+}
+
+QString QWsSocket::decodeFrame( QTcpSocket * socket )
 {
 	QByteArray BA; // ReadBuffer
 	quint8 byte; // currentByteBuffer
@@ -53,7 +90,7 @@ QString QWsSocket::decodeFrame( QAbstractSocket * socket )
 
 	// ExtensionData
 	QByteArray ExtensionData;
-	// Extension data is ignored for now
+	// Extension // UNSUPPORTED FOR NOW
 
 	// ApplicationData
 	QByteArray ApplicationData = socket->read( PayloadLength );
@@ -68,15 +105,15 @@ QString QWsSocket::decodeFrame( QAbstractSocket * socket )
 	return QString( ApplicationData );
 }
 
-QByteArray QWsSocket::composeFrame( QString message, int maxFrameBytes )
+QByteArray QWsSocket::composeFrame( QByteArray byteArray, int maxFrameBytes )
 {
-	quint64 messageSize = message.size();
+	quint64 size = byteArray.size();
 	QByteArray BA;
 	quint8 byte;
 
 	// FIN, RSV1-3, Opcode
 	byte = 0x00;
-	if ( message.size() < 126 )
+	if ( size < 126 )
 	{
 		// FIN
 		byte = (byte | 0x80);
@@ -85,20 +122,18 @@ QByteArray QWsSocket::composeFrame( QString message, int maxFrameBytes )
 	}
 	else
 	{
-		// FIN (depending of the FrameNum)
-		// Opcode = 0
+		 // UNSUPPORTED FOR NOW
 	}
-	// RSV1-3
-	// for now, do nothing
+	// RSV1-3 // UNSUPPORTED FOR NOW
 	BA.append( byte );
 
 	// Mask, PayloadLength
 	byte = 0x00;
 	// Mask = 0
 	// PayloadLength
-	if ( messageSize < 126 )
+	if ( size < 126 )
 	{
-		quint8 sz = (quint8)messageSize;
+		quint8 sz = (quint8)size;
 		byte = (byte | sz);
 		BA.append( byte );
 	}
@@ -107,28 +142,27 @@ QByteArray QWsSocket::composeFrame( QString message, int maxFrameBytes )
 	{
 		QByteArray BAtmp;
 		// 2 bytes
-		if ( messageSize <= 0xFFFF )
+		if ( size <= 0xFFFF )
 		{
-			BAtmp = QByteArray::number( (quint16)messageSize );
+			BAtmp = QByteArray::number( (quint16)size );
 		}
 		// 8 bytes
-		else if ( messageSize < 0xFFFF )
+		else if ( size < 0xFFFF )
 		{
-			BAtmp = QByteArray::number( (quint64)messageSize );
+			BAtmp = QByteArray::number( (quint64)size );
 		}
 		// bug on most significant bit
 		else
 		{
-			// BUG, STOP
-			return QByteArray();
+			// Frame cant be send in 1 frame // UNSUPPORTED FOR NOW
 		}
 		BA.append( BAtmp );
 	}
 
-	// Masking (ignored for now)
+	// Masking // UNSUPPORTED FOR NOW
 
 	// Application Data
-	BA.append( message.toAscii() );
+	BA.append( byteArray );
 
 	return BA;
 }
