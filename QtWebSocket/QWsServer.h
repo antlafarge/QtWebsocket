@@ -24,11 +24,11 @@ public:
 	QAbstractSocket::SocketError serverError();
 	QString errorString();
 	bool hasPendingConnections();
-	virtual QTcpSocket * nextPendingConnection();
+	virtual QWsSocket * nextPendingConnection();
 
 protected:
 	// Protected methods
-	void addPendingConnection( QTcpSocket * socket );
+	void addPendingConnection( QWsSocket * socket );
 	void incomingConnection( int socketDescriptor );
 
 signals:
@@ -50,7 +50,7 @@ private:
     QTcpServer * tcpServer;
 	QAbstractSocket::SocketError serverSocketError;
 	QString serverSocketErrorString;
-	QQueue<QTcpSocket*> pendingConnections;
+	QQueue<QWsSocket*> pendingConnections;
 
 public:
 	// public static vars

@@ -125,6 +125,10 @@ void QWsServer::dataReceived()
 		|| version != "8" )
 		return;
 
+	// Handshake OK, new connection
+	int socketDescriptor = clientSocket->socketDescriptor();
+	incomingConnection( socketDescriptor );
+
 	// Compose handshake answer
 	QString accept = computeAcceptV8( key );
 	
@@ -136,10 +140,6 @@ void QWsServer::dataReceived()
 
 	// Send handshake answer
 	clientSocket->write( answer.toUtf8() );
-
-	// Handshake OK, new connection
-	int socketDescriptor = clientSocket->socketDescriptor();
-	incomingConnection( socketDescriptor );
 }
 
 QString QWsServer::computeAcceptV8(QString key)
@@ -149,7 +149,7 @@ QString QWsServer::computeAcceptV8(QString key)
 	return hash.toBase64();
 }
 
-void QWsServer::addPendingConnection( QTcpSocket * socket )
+void QWsServer::addPendingConnection( QWsSocket * socket )
 {
 	if ( pendingConnections.size() < maxPendingConnections() )
 		pendingConnections.enqueue(socket);
@@ -157,11 +157,10 @@ void QWsServer::addPendingConnection( QTcpSocket * socket )
 
 void QWsServer::incomingConnection( int socketDescriptor )
 {
-	//QWsSocket * socket = new QWsSocket(this); // FOR NEXT STEP
-	QTcpSocket * socket = new QTcpSocket(tcpServer);
-	socket->setSocketDescriptor( socketDescriptor/*, QAbstractSocket::ConnectedState*/ );
+	QWsSocket * socket = new QWsSocket(tcpSocket);
+	socket->setSocketDescriptor( socketDescriptor, QAbstractSocket::ConnectedState ); // BUG, QTcpServer close the QTcoSocket
 	
-	addPendingConnection( socket );
+	addPendingConnection( socket ); // MAYBE USE QTcpSocket here
 
 	emit QWsServer::newConnection();
 }
@@ -173,7 +172,7 @@ bool QWsServer::hasPendingConnections()
 	return false;
 }
 
-QTcpSocket * QWsServer::nextPendingConnection()
+QWsSocket * QWsServer::nextPendingConnection()
 {
 	return pendingConnections.dequeue();
 }
