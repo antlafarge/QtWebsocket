@@ -45,7 +45,7 @@ void QWsSocket::close( QString reason )
 qint64	QWsSocket::write ( const QByteArray & byteArray )
 {
 	QAbstractSocket::write( QWsSocket::composeFrame( byteArray ) );
-	return byteArray.size(); // TEMPORARY (improve later)
+	return byteArray.size(); // IMPROVE LATER
 }
 
 QString QWsSocket::decodeFrame( QTcpSocket * socket )

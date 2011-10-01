@@ -18,7 +18,12 @@ public:
 	// Public methods
 	virtual void close( QString reason = QString() );
 	qint64	write ( const QByteArray & byteArray );
+
+//signals:
+	// signals
+	//void readyRead();
 	
+public:
 	// Static functions
 	static QString decodeFrame( QTcpSocket * socket );
 	static QByteArray composeFrame( QByteArray byteArray, int maxFrameBytes = 125 );

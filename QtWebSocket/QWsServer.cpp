@@ -157,10 +157,16 @@ void QWsServer::addPendingConnection( QWsSocket * socket )
 
 void QWsServer::incomingConnection( int socketDescriptor )
 {
-	QWsSocket * socket = new QWsSocket(tcpSocket);
-	socket->setSocketDescriptor( socketDescriptor, QAbstractSocket::ConnectedState ); // BUG, QTcpServer close the QTcoSocket
-	
-	addPendingConnection( socket ); // MAYBE USE QTcpSocket here
+	/*
+	QTcpSocket * tcpSocket = new QWsSocket(tcpSocket);
+	tcpSocket->setSocketDescriptor( socketDescriptor, QAbstractSocket::ConnectedState ); // BUG, QTcpServer close the QTcoSocket
+	*/
+
+	QWsSocket * socket = new QWsSocket(this);
+	QTcpSocket * tcpSocket = (QTcpSocket*)socket;
+	tcpSocket->setSocketDescriptor( socketDescriptor/*, QAbstractSocket::ConnectedState*/ );
+
+	addPendingConnection( socket );
 
 	emit QWsServer::newConnection();
 }
