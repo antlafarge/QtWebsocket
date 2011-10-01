@@ -16,14 +16,24 @@ public:
 	virtual ~QWsSocket();
 
 	// Public methods
-	QString readFrame();
+	QByteArray readFrame();
 	qint64	write ( const QByteArray & byteArray );
 	virtual void close( QString reason = QString() );
+
+public slots:
+	void dataReceived();
+	void aboutToClose();
+
+signals:
+	void frameReceived();
 	
 public:
 	// Static functions
-	static QString decodeFrame( QTcpSocket * socket );
+	static QByteArray decodeFrame( QWsSocket * socket );
 	static QByteArray composeFrame( QByteArray byteArray, int maxFrameBytes = 125 );
+
+private:
+	QByteArray currentFrame;
 };
 
 #endif // QWSSOCKET_H

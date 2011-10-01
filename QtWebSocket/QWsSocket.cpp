@@ -4,15 +4,26 @@ QWsSocket::QWsSocket(QObject * parent)
 	: QTcpSocket(parent)
 {
 	setSocketState( QAbstractSocket::UnconnectedState );
+
+	connect( this, SIGNAL(readyRead()), this, SLOT(dataReceived()) );
+	connect( this, SIGNAL(aboutToClose()), this, SLOT(aboutToClose()) );
 }
 
 QWsSocket::~QWsSocket()
 {
 }
 
-QString QWsSocket::readFrame()
+void QWsSocket::dataReceived()
 {
-	return QWsSocket::decodeFrame( this );
+	currentFrame = QWsSocket::decodeFrame( this );
+	emit frameReceived();
+}
+
+QByteArray QWsSocket::readFrame()
+{
+	QByteArray frameToReturn = currentFrame;
+	currentFrame.clear();
+	return frameToReturn;
 }
 
 qint64	QWsSocket::write ( const QByteArray & byteArray )
@@ -53,7 +64,12 @@ void QWsSocket::close( QString reason )
 	QAbstractSocket::close();
 }
 
-QString QWsSocket::decodeFrame( QTcpSocket * socket )
+void QWsSocket::aboutToClose()
+{
+	close( "connection closed 1337" );
+}
+
+QByteArray QWsSocket::decodeFrame( QWsSocket * socket )
 {
 	QByteArray BA; // ReadBuffer
 	quint8 byte; // currentByteBuffer
@@ -107,7 +123,7 @@ QString QWsSocket::decodeFrame( QTcpSocket * socket )
 		}
 	}
 
-	return QString( ApplicationData );
+	return ApplicationData;
 }
 
 QByteArray QWsSocket::composeFrame( QByteArray byteArray, int maxFrameBytes )

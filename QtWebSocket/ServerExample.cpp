@@ -23,7 +23,7 @@ void ServerExample::onClientConnection()
 
 	QObject * clientObject = qobject_cast<QObject*>(clientSocket);
 
-    connect(clientObject, SIGNAL(readyRead()), this, SLOT(onDataReceived()));
+    connect(clientObject, SIGNAL(frameReceived()), this, SLOT(onDataReceived()));
     connect(clientObject, SIGNAL(disconnected()), this, SLOT(onClientDisconnection()));
 	
 	clients << clientSocket;
