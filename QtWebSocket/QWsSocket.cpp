@@ -69,6 +69,17 @@ void QWsSocket::aboutToClose()
 	close( "connection closed 1337" );
 }
 
+QByteArray QWsSocket::generateRandomMask()
+{
+	QByteArray key;
+	for ( int i=0 ; i<4 ; i++ )
+	{
+		key.append( qrand() % 0x100 );
+	}
+
+	return key;
+}
+
 QByteArray QWsSocket::decodeFrame( QWsSocket * socket )
 {
 	QByteArray BA; // ReadBuffer
@@ -150,7 +161,8 @@ QByteArray QWsSocket::composeFrame( QByteArray byteArray, int maxFrameBytes )
 
 	// Mask, PayloadLength
 	byte = 0x00;
-	// Mask = 0
+	// Mask
+	byte = (byte | 0x80);
 	// PayloadLength
 	if ( size < 126 )
 	{
@@ -180,9 +192,15 @@ QByteArray QWsSocket::composeFrame( QByteArray byteArray, int maxFrameBytes )
 		BA.append( BAtmp );
 	}
 
-	// Masking // UNSUPPORTED FOR NOW
+	// Masking
+	QByteArray maskingKey = generateRandomMask();
+	BA.append( maskingKey );
 
-	// Application Data
+	// ApplicationData
+	for ( int i=0 ; i<size ; i++ )
+	{
+		byteArray[i] = ( byteArray[i] ^ maskingKey[ i % 4 ] );
+	}
 	BA.append( byteArray );
 
 	return BA;

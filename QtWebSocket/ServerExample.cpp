@@ -6,9 +6,13 @@ ServerExample::ServerExample()
 {
     server = new QWsServer(this);
 	if ( ! server->listen(QHostAddress::Any, 50885) )
+	{
 		Log::display( "Error at server launch" );
+	}
 	else
+	{
 		Log::display( "server launched" );
+	}
 	connect(server, SIGNAL(newConnection()), this, SLOT(onClientConnection()));
 }
 
@@ -37,8 +41,6 @@ void ServerExample::onDataReceived()
     if (socket == 0)
         return;
 
-	Log::display("NbBytesReceived = " + QString::number(socket->bytesAvailable()) );
-
 	QString msg = socket->readFrame();
 	Log::display( "Message = " + msg );
 
@@ -53,8 +55,6 @@ void ServerExample::onClientDisconnection()
     QWsSocket * socket = qobject_cast<QWsSocket*>(sender());
     if (socket == 0)
         return;
-
-	Log::display( "Error #" + QString::number( (int)socket->error() ) + ": " + socket->errorString() );
 
     clients.removeOne(socket);
 

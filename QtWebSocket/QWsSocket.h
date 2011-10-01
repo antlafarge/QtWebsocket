@@ -29,6 +29,7 @@ signals:
 	
 public:
 	// Static functions
+	static QByteArray generateRandomMask();
 	static QByteArray decodeFrame( QWsSocket * socket );
 	static QByteArray composeFrame( QByteArray byteArray, int maxFrameBytes = 125 );
 

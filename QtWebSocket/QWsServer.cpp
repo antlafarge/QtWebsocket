@@ -4,6 +4,7 @@
 #include <QStringList>
 #include <QByteArray>
 #include <QCryptographicHash>
+#include <QDateTime>
 
 const QString QWsServer::regExpResourceNameStr( "GET\\s(.*)\\sHTTP/1.1\r\n" );
 const QString QWsServer::regExpHostStr( "Host:\\s(.+:\\d+)\r\n" );
@@ -18,6 +19,8 @@ QWsServer::QWsServer(QObject * parent)
 {
 	tcpServer = new QTcpServer(this);
 	connect(tcpServer, SIGNAL(newConnection()), this, SLOT(newTcpConnection()));
+
+	qsrand( QDateTime::currentMSecsSinceEpoch() );
 }
 
 QWsServer::~QWsServer()
