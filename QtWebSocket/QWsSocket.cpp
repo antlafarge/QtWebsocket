@@ -1,5 +1,7 @@
 #include "QWsSocket.h"
 
+int QWsSocket::maxBytesPerFrame = 125;
+
 QWsSocket::QWsSocket(QObject * parent)
 	: QTcpSocket(parent)
 {
@@ -26,36 +28,35 @@ QByteArray QWsSocket::readFrame()
 	return frameToReturn;
 }
 
-qint64	QWsSocket::write ( const QByteArray & byteArray )
+qint64 QWsSocket::write ( const QByteArray & byteArray, int maxFrameBytes )
 {
-	QAbstractSocket::write( QWsSocket::composeFrame( byteArray ) );
-	return byteArray.size(); // IMPROVE LATER
+	if ( maxFrameBytes == 0 )
+		maxFrameBytes = maxBytesPerFrame;
+
+	QList<QByteArray> framesList = QWsSocket::composeFrames( byteArray, maxFrameBytes );
+	return writeFrames( framesList );
+}
+
+qint64 QWsSocket::writeFrames ( QList<QByteArray> framesList )
+{
+	qint64 nbBytesWritten = 0;
+	for ( int i=0 ; i<framesList.size() ; i++ )
+	{
+		nbBytesWritten += QIODevice::write( framesList[i] );
+	}
+	return nbBytesWritten;
 }
 
 void QWsSocket::close( QString reason )
 {
 	// Compose and send close frame
 	quint64 messageSize = reason.size();
+	QByteArray maskingKey = generateMaskingKey();
 	QByteArray BA;
 	quint8 byte;
 
-	// FIN, RSV1-3, Opcode
-	byte = 0x00;
-	// FIN
-	byte = (byte | 0x80);
-	// Opcode
-	byte = (byte | 0x08);
-	// RSV1-3 // UNSUPPORTED FOR NOW
-	BA.append( byte );
-
-	// Mask, PayloadLength
-	byte = 0x00;
-	// Mask // UNSUPPORTED FOR NOW
-	// PayloadLength // UNSUPPORTED FOR NOW
-	BA.append( byte );
-	// Extended payloadLength // UNSUPPORTED FOR NOW
-
-	// Masking // UNSUPPORTED FOR NOW
+	QByteArray header = QWsSocket::composeHeader( true, OpClose, 0 );
+	BA.append( header );
 
 	// Reason // UNSUPPORTED FOR NOW
 	
@@ -66,10 +67,10 @@ void QWsSocket::close( QString reason )
 
 void QWsSocket::aboutToClose()
 {
-	close( "connection closed 1337" );
+	close( "Connection closed by QWsSocket" );
 }
 
-QByteArray QWsSocket::generateRandomMask()
+QByteArray QWsSocket::generateMaskingKey()
 {
 	QByteArray key;
 	for ( int i=0 ; i<4 ; i++ )
@@ -78,6 +79,16 @@ QByteArray QWsSocket::generateRandomMask()
 	}
 
 	return key;
+}
+
+QByteArray QWsSocket::mask( QByteArray data, QByteArray maskingKey )
+{
+	for ( int i=0 ; i<data.size() ; i++ )
+	{
+		data[i] = ( data[i] ^ maskingKey[ i % 4 ] );
+	}
+
+	return data;
 }
 
 QByteArray QWsSocket::decodeFrame( QWsSocket * socket )
@@ -127,30 +138,63 @@ QByteArray QWsSocket::decodeFrame( QWsSocket * socket )
 	// ApplicationData
 	QByteArray ApplicationData = socket->read( PayloadLength );
 	if ( Mask )
-	{
-		for ( int i=0 ; i<PayloadLength ; i++ )
-		{
-			ApplicationData[i] = ( ApplicationData[i] ^ MaskingKey[ i % 4 ] );
-		}
-	}
+		ApplicationData = QWsSocket::mask( ApplicationData, MaskingKey );
 
 	return ApplicationData;
 }
 
-QByteArray QWsSocket::composeFrame( QByteArray byteArray, int maxFrameBytes )
+QList<QByteArray> QWsSocket::composeFrames( QByteArray byteArray, int maxFrameBytes )
 {
-	quint64 size = byteArray.size();
+	if ( maxFrameBytes == 0 )
+		maxFrameBytes = maxBytesPerFrame;
+
+	QList<QByteArray> framesList;
+
+	QByteArray maskingKey = generateMaskingKey();
+
+	int nbFrames = byteArray.size() / maxFrameBytes + 1;
+
+	for ( int i=0 ; i<nbFrames ; i++ )
+	{
+		QByteArray BA;
+
+		// fin, size
+		bool fin = true;
+		quint64 size = byteArray.size();
+		if ( i < nbFrames-1 ) // for multi-frames
+		{
+			fin = false;
+			size = maxFrameBytes;
+		}
+		
+		// Header
+		QByteArray header = QWsSocket::composeHeader( fin, OpText, size, maskingKey );
+		BA.append( header );
+		
+		// Application Data
+		byteArray = QWsSocket::mask( byteArray, maskingKey );
+		BA.append( byteArray );
+		
+		framesList << BA;
+	}
+
+	return framesList;
+}
+
+QByteArray QWsSocket::composeHeader( bool fin, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey )
+{
 	QByteArray BA;
 	quint8 byte;
 
 	// FIN, RSV1-3, Opcode
 	byte = 0x00;
-	if ( size < 126 )
+	if ( payloadLength < 126 )
 	{
 		// FIN
-		byte = (byte | 0x80);
+		if ( fin )
+			byte = (byte | 0x80);
 		// Opcode
-		byte = (byte | 0x01);
+		byte = (byte | opcode);
 	}
 	else
 	{
@@ -162,12 +206,12 @@ QByteArray QWsSocket::composeFrame( QByteArray byteArray, int maxFrameBytes )
 	// Mask, PayloadLength
 	byte = 0x00;
 	// Mask
-	byte = (byte | 0x80);
+	if ( maskingKey.size() == 4 )
+		byte = (byte | 0x80);
 	// PayloadLength
-	if ( size < 126 )
+	if ( payloadLength < 126 )
 	{
-		quint8 sz = (quint8)size;
-		byte = (byte | sz);
+		byte = (byte | (quint8)payloadLength);
 		BA.append( byte );
 	}
 	// Extended payloadLength
@@ -175,14 +219,20 @@ QByteArray QWsSocket::composeFrame( QByteArray byteArray, int maxFrameBytes )
 	{
 		QByteArray BAtmp;
 		// 2 bytes
-		if ( size <= 0xFFFF )
+		if ( payloadLength <= 0xFFFF )
 		{
-			BAtmp = QByteArray::number( (quint16)size );
+			BAtmp.append( ( payloadLength >> 0*8 ) & 0xFF );
+			BAtmp.append( ( payloadLength >> 1*8 ) & 0xFF );
 		}
 		// 8 bytes
-		else if ( size < 0xFFFF )
+		else if ( payloadLength <= 0x7FFFFFFF )
 		{
-			BAtmp = QByteArray::number( (quint64)size );
+			BAtmp.append( ( payloadLength >> 0*8 ) & 0xFF );
+			BAtmp.append( ( payloadLength >> 1*8 ) & 0xFF );
+			BAtmp.append( ( payloadLength >> 2*8 ) & 0xFF );
+			BAtmp.append( ( payloadLength >> 3*8 ) & 0xFF );
+			BAtmp.append( ( payloadLength >> 4*8 ) & 0xFF );
+			BAtmp.append( ( payloadLength >> 5*8 ) & 0xFF );
 		}
 		// bug on most significant bit
 		else
@@ -193,15 +243,8 @@ QByteArray QWsSocket::composeFrame( QByteArray byteArray, int maxFrameBytes )
 	}
 
 	// Masking
-	QByteArray maskingKey = generateRandomMask();
-	BA.append( maskingKey );
-
-	// ApplicationData
-	for ( int i=0 ; i<size ; i++ )
-	{
-		byteArray[i] = ( byteArray[i] ^ maskingKey[ i % 4 ] );
-	}
-	BA.append( byteArray );
+	if ( maskingKey.size() == 4 )
+		BA.append( maskingKey );
 
 	return BA;
 }

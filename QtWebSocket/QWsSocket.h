@@ -3,11 +3,20 @@
 
 #include <QTcpSocket>
 
-class QWsServer;
-
 class QWsSocket : public QTcpSocket
 {
 	Q_OBJECT
+
+public:
+	enum EOpcode
+	{
+		OpContinue = 0x0,
+		OpText = 0x1,
+		OpBinary = 0x2,
+		OpClose = 0x8,
+		OpPing = 0x9,
+		OpPong = 0xA
+	};
 
 public:
 	// ctor
@@ -17,7 +26,8 @@ public:
 
 	// Public methods
 	QByteArray readFrame();
-	qint64	write ( const QByteArray & byteArray );
+	qint64	write ( const QByteArray & byteArray, int maxFrameBytes = 0 );
+	qint64	writeFrames ( QList<QByteArray> framesList );
 	virtual void close( QString reason = QString() );
 
 public slots:
@@ -29,12 +39,15 @@ signals:
 	
 public:
 	// Static functions
-	static QByteArray generateRandomMask();
+	static QByteArray generateMaskingKey();
+	static QByteArray mask( QByteArray data, QByteArray maskingKey );
 	static QByteArray decodeFrame( QWsSocket * socket );
-	static QByteArray composeFrame( QByteArray byteArray, int maxFrameBytes = 125 );
+	static QList<QByteArray> composeFrames( QByteArray byteArray, int maxFrameBytes = 0 );
+	static QByteArray composeHeader( bool fin, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray() );
 
 private:
 	QByteArray currentFrame;
+	static int maxBytesPerFrame;
 };
 
 #endif // QWSSOCKET_H
