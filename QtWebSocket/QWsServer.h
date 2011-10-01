@@ -31,14 +31,10 @@ protected:
 	void addPendingConnection( QWsSocket * socket );
 	void incomingConnection( int socketDescriptor );
 
-signals:
-	// signals
-	void newConnection();
-
 private:
 	// private methods
 	void treatSocketError();
-	QString computeAcceptV8(QString key);
+	QString computeAcceptV8( QString key );
 
 private slots:
 	// private slots

@@ -10,6 +10,17 @@ QWsSocket::~QWsSocket()
 {
 }
 
+QString QWsSocket::readFrame()
+{
+	return QWsSocket::decodeFrame( this );
+}
+
+qint64	QWsSocket::write ( const QByteArray & byteArray )
+{
+	QAbstractSocket::write( QWsSocket::composeFrame( byteArray ) );
+	return byteArray.size(); // IMPROVE LATER
+}
+
 void QWsSocket::close( QString reason )
 {
 	// Compose and send close frame
@@ -40,12 +51,6 @@ void QWsSocket::close( QString reason )
 	QAbstractSocket::write( BA );
 
 	QAbstractSocket::close();
-}
-
-qint64	QWsSocket::write ( const QByteArray & byteArray )
-{
-	QAbstractSocket::write( QWsSocket::composeFrame( byteArray ) );
-	return byteArray.size(); // IMPROVE LATER
 }
 
 QString QWsSocket::decodeFrame( QTcpSocket * socket )

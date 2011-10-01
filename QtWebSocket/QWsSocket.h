@@ -16,12 +16,9 @@ public:
 	virtual ~QWsSocket();
 
 	// Public methods
-	virtual void close( QString reason = QString() );
+	QString readFrame();
 	qint64	write ( const QByteArray & byteArray );
-
-//signals:
-	// signals
-	//void readyRead();
+	virtual void close( QString reason = QString() );
 	
 public:
 	// Static functions

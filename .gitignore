@@ -22,7 +22,6 @@ ressources_raw
 [Gg]enerated[Ff]iles/
 [Rr]esources/
 main.cpp
-WebSocketServer.*
 Log.*
 # ui_*.h
 *.exe
