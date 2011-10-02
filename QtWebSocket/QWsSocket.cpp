@@ -1,6 +1,6 @@
 #include "QWsSocket.h"
 
-int QWsSocket::maxBytesPerFrame = 10;
+int QWsSocket::maxBytesPerFrame = 1400;
 
 QWsSocket::QWsSocket(QObject * parent)
 	: QTcpSocket(parent)
@@ -33,19 +33,17 @@ void QWsSocket::dataReceived()
 	BA = QIODevice::read(1);
 	byte = BA[0];
 	quint8 Mask = (byte >> 7);
-	quint8 PayloadLength = (byte & 0x7F);
+	quint64 PayloadLength = (byte & 0x7F);
 	// Extended PayloadLength
 	if ( PayloadLength == 126 )
 	{
 		BA = QIODevice::read(2);
-		//PayloadLength = (BA[0] + (BA[1] << 8));
-		PayloadLength = BA.toUShort();
+		PayloadLength = (BA[0] << 1*8) + (BA[1] << 0*8);
 	}
 	else if ( PayloadLength == 127 )
 	{
 		BA = QIODevice::read(8);
-		//PayloadLength = ((B[0] << 0*8) + (B[1] << 1*8) + (BA[2] << 2*8) + (BA[3] << 3*8) + (BA[4] << 4*8) + (BA[5] << 5*8) + (BA[6] << 6*8) + (BA[7] << 7*8));
-		PayloadLength = BA.toULongLong();
+		PayloadLength = ((quint64)BA[0] << 7*8) + ((quint64)BA[1] << 6*8) + ((quint64)BA[2] << 5*8) + ((quint64)BA[3] << 4*8) + ((quint64)BA[4] << 3*8) + ((quint64)BA[5] << 2*8) + ((quint64)BA[6] << 1*8) + ((quint64)BA[7] << 0*8);
 	}
 
 	// MaskingKey
@@ -97,6 +95,7 @@ qint64 QWsSocket::writeFrames ( QList<QByteArray> framesList )
 	qint64 nbBytesWritten = 0;
 	for ( int i=0 ; i<framesList.size() ; i++ )
 	{
+		QString ttt;
 		nbBytesWritten += QIODevice::write( framesList[i] );
 	}
 	return nbBytesWritten;
@@ -146,11 +145,6 @@ QByteArray QWsSocket::mask( QByteArray data, QByteArray maskingKey )
 	return data;
 }
 
-QByteArray QWsSocket::decodeFrame( QWsSocket * socket )
-{
-	return QByteArray();
-}
-
 QList<QByteArray> QWsSocket::composeFrames( QByteArray byteArray, int maxFrameBytes )
 {
 	if ( maxFrameBytes == 0 )
@@ -187,7 +181,7 @@ QList<QByteArray> QWsSocket::composeFrames( QByteArray byteArray, int maxFrameBy
 		// Application Data
 		QByteArray dataForThisFrame = byteArray.left( size );
 		byteArray.remove( 0, size );
-
+		
 		dataForThisFrame = QWsSocket::mask( dataForThisFrame, maskingKey );
 		BA.append( dataForThisFrame );
 		
@@ -204,59 +198,50 @@ QByteArray QWsSocket::composeHeader( bool fin, EOpcode opcode, quint64 payloadLe
 
 	// FIN, RSV1-3, Opcode
 	byte = 0x00;
-	if ( payloadLength < 126 )
-	{
-		// FIN
-		if ( fin )
-			byte = (byte | 0x80);
-		// Opcode
-		byte = (byte | opcode);
-	}
-	else
-	{
-		 // UNSUPPORTED FOR NOW
-	}
-	// RSV1-3 // UNSUPPORTED FOR NOW
+	// FIN
+	if ( fin )
+		byte = (byte | 0x80);
+	// Opcode
+	byte = (byte | opcode);
 	BA.append( byte );
 
 	// Mask, PayloadLength
 	byte = 0x00;
+	QByteArray BAsize;
 	// Mask
 	if ( maskingKey.size() == 4 )
 		byte = (byte | 0x80);
 	// PayloadLength
-	if ( payloadLength < 126 )
+	if ( payloadLength <= 125 )
 	{
-		byte = (byte | (quint8)payloadLength);
-		BA.append( byte );
+		byte = (byte | payloadLength);
 	}
 	// Extended payloadLength
 	else
 	{
-		QByteArray BAtmp;
 		// 2 bytes
 		if ( payloadLength <= 0xFFFF )
 		{
-			BAtmp.append( ( payloadLength >> 0*8 ) & 0xFF );
-			BAtmp.append( ( payloadLength >> 1*8 ) & 0xFF );
+			byte = ( byte | 126 );
+			BAsize.append( ( payloadLength >> 1*8 ) & 0xFF );
+			BAsize.append( ( payloadLength >> 0*8 ) & 0xFF );
 		}
 		// 8 bytes
 		else if ( payloadLength <= 0x7FFFFFFF )
 		{
-			BAtmp.append( ( payloadLength >> 0*8 ) & 0xFF );
-			BAtmp.append( ( payloadLength >> 1*8 ) & 0xFF );
-			BAtmp.append( ( payloadLength >> 2*8 ) & 0xFF );
-			BAtmp.append( ( payloadLength >> 3*8 ) & 0xFF );
-			BAtmp.append( ( payloadLength >> 4*8 ) & 0xFF );
-			BAtmp.append( ( payloadLength >> 5*8 ) & 0xFF );
+			byte = ( byte | 127 );
+			BAsize.append( ( payloadLength >> 7*8 ) & 0xFF );
+			BAsize.append( ( payloadLength >> 6*8 ) & 0xFF );
+			BAsize.append( ( payloadLength >> 5*8 ) & 0xFF );
+			BAsize.append( ( payloadLength >> 4*8 ) & 0xFF );
+			BAsize.append( ( payloadLength >> 3*8 ) & 0xFF );
+			BAsize.append( ( payloadLength >> 2*8 ) & 0xFF );
+			BAsize.append( ( payloadLength >> 1*8 ) & 0xFF );
+			BAsize.append( ( payloadLength >> 0*8 ) & 0xFF );
 		}
-		// bug on most significant bit
-		else
-		{
-			// Frame cant be send in 1 frame // UNSUPPORTED FOR NOW
-		}
-		BA.append( BAtmp );
 	}
+	BA.append( byte );
+	BA.append( BAsize );
 
 	// Masking
 	if ( maskingKey.size() == 4 )

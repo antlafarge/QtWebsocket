@@ -41,7 +41,6 @@ public:
 	// Static functions
 	static QByteArray generateMaskingKey();
 	static QByteArray mask( QByteArray data, QByteArray maskingKey );
-	static QByteArray decodeFrame( QWsSocket * socket );
 	static QList<QByteArray> composeFrames( QByteArray byteArray, int maxFrameBytes = 0 );
 	static QByteArray composeHeader( bool fin, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray() );
 

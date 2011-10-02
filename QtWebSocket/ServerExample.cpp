@@ -18,7 +18,6 @@ ServerExample::ServerExample()
 
 ServerExample::~ServerExample()
 {
-
 }
 
 void ServerExample::onClientConnection()
