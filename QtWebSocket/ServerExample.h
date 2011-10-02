@@ -17,7 +17,7 @@ class ServerExample : public QObject
 
     private slots:
         void onClientConnection();
-        void onDataReceived();
+        void onDataReceived(QString data);
         void onClientDisconnection();
 
     private:

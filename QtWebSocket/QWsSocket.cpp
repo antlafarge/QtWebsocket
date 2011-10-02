@@ -1,6 +1,6 @@
 #include "QWsSocket.h"
 
-int QWsSocket::maxBytesPerFrame = 125;
+int QWsSocket::maxBytesPerFrame = 10;
 
 QWsSocket::QWsSocket(QObject * parent)
 	: QTcpSocket(parent)
@@ -17,8 +17,63 @@ QWsSocket::~QWsSocket()
 
 void QWsSocket::dataReceived()
 {
-	currentFrame = QWsSocket::decodeFrame( this );
-	emit frameReceived();
+	QByteArray BA; // ReadBuffer
+	quint8 byte; // currentByteBuffer
+
+	// FIN, RSV1-3, Opcode
+	BA = QIODevice::read(1);
+	byte = BA[0];
+	quint8 FIN = (byte >> 7);
+	quint8 RSV1 = ((byte & 0x7F) >> 6);
+	quint8 RSV2 = ((byte & 0x3F) >> 5);
+	quint8 RSV3 = ((byte & 0x1F) >> 4);
+	quint8 Opcode = (byte & 0x0F);
+
+	// Mask, PayloadLength
+	BA = QIODevice::read(1);
+	byte = BA[0];
+	quint8 Mask = (byte >> 7);
+	quint8 PayloadLength = (byte & 0x7F);
+	// Extended PayloadLength
+	if ( PayloadLength == 126 )
+	{
+		BA = QIODevice::read(2);
+		//PayloadLength = (BA[0] + (BA[1] << 8));
+		PayloadLength = BA.toUShort();
+	}
+	else if ( PayloadLength == 127 )
+	{
+		BA = QIODevice::read(8);
+		//PayloadLength = ((B[0] << 0*8) + (B[1] << 1*8) + (BA[2] << 2*8) + (BA[3] << 3*8) + (BA[4] << 4*8) + (BA[5] << 5*8) + (BA[6] << 6*8) + (BA[7] << 7*8));
+		PayloadLength = BA.toULongLong();
+	}
+
+	// MaskingKey
+	QByteArray MaskingKey;
+	if ( Mask )
+	{
+		MaskingKey = QIODevice::read(4);
+	}
+
+	// ExtensionData
+	QByteArray ExtensionData;
+	// Extension // UNSUPPORTED FOR NOW
+
+	// ApplicationData
+	QByteArray ApplicationData = QIODevice::read( PayloadLength );
+	if ( Mask )
+		ApplicationData = QWsSocket::mask( ApplicationData, MaskingKey );
+
+	currentFrame.append( ApplicationData );
+
+	if ( FIN )
+	{
+		emit frameReceived(currentFrame);
+		currentFrame.clear();
+	}
+
+	if ( bytesAvailable() )
+		dataReceived();
 }
 
 QByteArray QWsSocket::readFrame()
@@ -93,54 +148,7 @@ QByteArray QWsSocket::mask( QByteArray data, QByteArray maskingKey )
 
 QByteArray QWsSocket::decodeFrame( QWsSocket * socket )
 {
-	QByteArray BA; // ReadBuffer
-	quint8 byte; // currentByteBuffer
-
-	// FIN, RSV1-3, Opcode
-	BA = socket->read(1);
-	byte = BA[0];
-	quint8 FIN = (byte >> 7);
-	quint8 RSV1 = ((byte & 0x7F) >> 6);
-	quint8 RSV2 = ((byte & 0x3F) >> 5);
-	quint8 RSV3 = ((byte & 0x1F) >> 4);
-	quint8 Opcode = (byte & 0x0F);
-
-	// Mask, PayloadLength
-	BA = socket->read(1);
-	byte = BA[0];
-	quint8 Mask = (byte >> 7);
-	quint8 PayloadLength = (byte & 0x7F);
-	// Extended PayloadLength
-	if ( PayloadLength == 126 )
-	{
-		BA = socket->read(2);
-		//PayloadLength = (BA[0] + (BA[1] << 8));
-		PayloadLength = BA.toUShort();
-	}
-	else if ( PayloadLength == 127 )
-	{
-		BA = socket->read(8);
-		//PayloadLength = ((B[0] << 0*8) + (B[1] << 1*8) + (BA[2] << 2*8) + (BA[3] << 3*8) + (BA[4] << 4*8) + (BA[5] << 5*8) + (BA[6] << 6*8) + (BA[7] << 7*8));
-		PayloadLength = BA.toULongLong();
-	}
-
-	// MaskingKey
-	QByteArray MaskingKey;
-	if ( Mask )
-	{
-		MaskingKey = socket->read(4);
-	}
-
-	// ExtensionData
-	QByteArray ExtensionData;
-	// Extension // UNSUPPORTED FOR NOW
-
-	// ApplicationData
-	QByteArray ApplicationData = socket->read( PayloadLength );
-	if ( Mask )
-		ApplicationData = QWsSocket::mask( ApplicationData, MaskingKey );
-
-	return ApplicationData;
+	return QByteArray();
 }
 
 QList<QByteArray> QWsSocket::composeFrames( QByteArray byteArray, int maxFrameBytes )
@@ -159,21 +167,29 @@ QList<QByteArray> QWsSocket::composeFrames( QByteArray byteArray, int maxFrameBy
 		QByteArray BA;
 
 		// fin, size
-		bool fin = true;
-		quint64 size = byteArray.size();
-		if ( i < nbFrames-1 ) // for multi-frames
+		bool fin = false;
+		quint64 size = maxFrameBytes;
+		EOpcode opcode = OpContinue;
+		if ( i == nbFrames-1 ) // for multi-frames
 		{
-			fin = false;
-			size = maxFrameBytes;
+			fin = true;
+			size = byteArray.size();
+		}
+		if ( i == 0 )
+		{
+			opcode = OpText;
 		}
 		
 		// Header
-		QByteArray header = QWsSocket::composeHeader( fin, OpText, size, maskingKey );
+		QByteArray header = QWsSocket::composeHeader( fin, opcode, size, maskingKey );
 		BA.append( header );
 		
 		// Application Data
-		byteArray = QWsSocket::mask( byteArray, maskingKey );
-		BA.append( byteArray );
+		QByteArray dataForThisFrame = byteArray.left( size );
+		byteArray.remove( 0, size );
+
+		dataForThisFrame = QWsSocket::mask( dataForThisFrame, maskingKey );
+		BA.append( dataForThisFrame );
 		
 		framesList << BA;
 	}

@@ -35,7 +35,7 @@ public slots:
 	void aboutToClose();
 
 signals:
-	void frameReceived();
+	void frameReceived(QString content);
 	
 public:
 	// Static functions
