@@ -28,6 +28,7 @@ void ServerExample::onClientConnection()
 
     connect(clientObject, SIGNAL(frameReceived(QString)), this, SLOT(onDataReceived(QString)));
     connect(clientObject, SIGNAL(disconnected()), this, SLOT(onClientDisconnection()));
+    connect(clientObject, SIGNAL(pong(quint64)), this, SLOT(onPong(quint64)));
 	
 	clients << clientSocket;
 
@@ -43,6 +44,13 @@ void ServerExample::onDataReceived(QString data)
 	Log::display( "Message = " + data );
 
 	socket->write( data.toUtf8() );
+
+	socket->ping();
+}
+
+void ServerExample::onPong(quint64 elapsedTime)
+{
+	Log::display( "ping: " + QString::number(elapsedTime) + " ms" );
 }
 
 void ServerExample::onClientDisconnection()

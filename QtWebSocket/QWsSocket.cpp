@@ -27,7 +27,7 @@ void QWsSocket::dataReceived()
 	quint8 RSV1 = ((byte & 0x7F) >> 6);
 	quint8 RSV2 = ((byte & 0x3F) >> 5);
 	quint8 RSV3 = ((byte & 0x1F) >> 4);
-	quint8 Opcode = (byte & 0x0F);
+	EOpcode Opcode = (EOpcode)(byte & 0x0F);
 
 	// Mask, PayloadLength
 	BA = QIODevice::read(1);
@@ -58,13 +58,25 @@ void QWsSocket::dataReceived()
 	// Extension // UNSUPPORTED FOR NOW
 
 	// ApplicationData
-	QByteArray ApplicationData = QIODevice::read( PayloadLength );
-	if ( Mask )
-		ApplicationData = QWsSocket::mask( ApplicationData, MaskingKey );
+	if ( PayloadLength )
+	{
+		QByteArray ApplicationData = QIODevice::read( PayloadLength );
+		if ( Mask )
+			ApplicationData = QWsSocket::mask( ApplicationData, MaskingKey );
+		currentFrame.append( ApplicationData );
+	}
 
-	currentFrame.append( ApplicationData );
-
-	if ( FIN )
+	if ( Opcode == OpPong )
+	{
+		quint64 ms = pingTimer.elapsed();
+		emit pong(ms);
+	}
+	else if ( Opcode == OpPing )
+	{
+		QByteArray pongRequest = QWsSocket::composeHeader( true, OpPong, 0 );
+		write( pongRequest );
+	}
+	else if ( FIN )
 	{
 		emit frameReceived(currentFrame);
 		currentFrame.clear();
@@ -90,13 +102,17 @@ qint64 QWsSocket::write ( const QByteArray & byteArray, int maxFrameBytes )
 	return writeFrames( framesList );
 }
 
+qint64 QWsSocket::writeFrame ( const QByteArray & byteArray )
+{
+	return QIODevice::write( byteArray );
+}
+
 qint64 QWsSocket::writeFrames ( QList<QByteArray> framesList )
 {
 	qint64 nbBytesWritten = 0;
 	for ( int i=0 ; i<framesList.size() ; i++ )
 	{
-		QString ttt;
-		nbBytesWritten += QIODevice::write( framesList[i] );
+		nbBytesWritten += writeFrame( framesList[i] );
 	}
 	return nbBytesWritten;
 }
@@ -248,4 +264,11 @@ QByteArray QWsSocket::composeHeader( bool fin, EOpcode opcode, quint64 payloadLe
 		BA.append( maskingKey );
 
 	return BA;
+}
+
+void QWsSocket::ping()
+{
+	pingTimer.restart();
+	QByteArray pingFrame = QWsSocket::composeHeader( true, OpPing, 0 );
+	writeFrame( pingFrame );
 }

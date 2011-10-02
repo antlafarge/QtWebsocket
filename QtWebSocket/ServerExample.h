@@ -15,9 +15,10 @@ class ServerExample : public QObject
         ServerExample();
         ~ServerExample();
 
-    private slots:
+    public slots:
         void onClientConnection();
         void onDataReceived(QString data);
+		void onPong(quint64 elapsedTime);
         void onClientDisconnection();
 
     private:
