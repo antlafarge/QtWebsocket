@@ -78,7 +78,10 @@ void QWsSocket::dataReceived()
 	}
 	else if ( FIN )
 	{
-		emit frameReceived(currentFrame);
+		if ( Opcode == OpBinary )
+			emit frameReceived( currentFrame );
+		else if ( Opcode == OpText )
+			emit frameReceived( QString(currentFrame) );
 		currentFrame.clear();
 	}
 
@@ -93,12 +96,21 @@ QByteArray QWsSocket::readFrame()
 	return frameToReturn;
 }
 
+qint64 QWsSocket::write ( const QString & string, int maxFrameBytes )
+{
+	if ( maxFrameBytes == 0 )
+		maxFrameBytes = maxBytesPerFrame;
+
+	QList<QByteArray> framesList = QWsSocket::composeFrames( string.toUtf8(), false, maxFrameBytes );
+	return writeFrames( framesList );
+}
+
 qint64 QWsSocket::write ( const QByteArray & byteArray, int maxFrameBytes )
 {
 	if ( maxFrameBytes == 0 )
 		maxFrameBytes = maxBytesPerFrame;
 
-	QList<QByteArray> framesList = QWsSocket::composeFrames( byteArray, maxFrameBytes );
+	QList<QByteArray> framesList = QWsSocket::composeFrames( byteArray, true, maxFrameBytes );
 	return writeFrames( framesList );
 }
 
@@ -161,7 +173,7 @@ QByteArray QWsSocket::mask( QByteArray data, QByteArray maskingKey )
 	return data;
 }
 
-QList<QByteArray> QWsSocket::composeFrames( QByteArray byteArray, int maxFrameBytes )
+QList<QByteArray> QWsSocket::composeFrames( QByteArray byteArray, bool asBinary, int maxFrameBytes )
 {
 	if ( maxFrameBytes == 0 )
 		maxFrameBytes = maxBytesPerFrame;
@@ -187,7 +199,10 @@ QList<QByteArray> QWsSocket::composeFrames( QByteArray byteArray, int maxFrameBy
 		}
 		if ( i == 0 )
 		{
-			opcode = OpText;
+			if ( asBinary )
+				opcode = OpBinary;
+			else
+				opcode = OpText;
 		}
 		
 		// Header

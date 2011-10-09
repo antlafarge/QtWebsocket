@@ -37,12 +37,13 @@ public:
 
 	// Public methods
 	QByteArray readFrame();
-	qint64 write ( const QByteArray & byteArray, int maxFrameBytes = 0 );
-	qint64 writeFrames ( QList<QByteArray> framesList );
+	qint64 write ( const QString & string, int maxFrameBytes = 0 ); // write data as text
+	qint64 write ( const QByteArray & byteArray, int maxFrameBytes = 0 ); // write data as binary
 	virtual void close( QString reason = QString() );
 	void ping();
 
 protected:
+	qint64 writeFrames ( QList<QByteArray> framesList );
 	qint64 writeFrame ( const QByteArray & byteArray );
 
 public slots:
@@ -51,13 +52,14 @@ public slots:
 
 signals:
 	void frameReceived(QString content);
+	void frameReceived(QByteArray content);
 	void pong(quint64 elapsedTime);
 	
 public:
 	// Static functions
 	static QByteArray generateMaskingKey();
 	static QByteArray mask( QByteArray data, QByteArray maskingKey );
-	static QList<QByteArray> composeFrames( QByteArray byteArray, int maxFrameBytes = 0 );
+	static QList<QByteArray> composeFrames( QByteArray byteArray, bool asBinary, int maxFrameBytes = 0 );
 	static QByteArray composeHeader( bool fin, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray() );
 
 private:
