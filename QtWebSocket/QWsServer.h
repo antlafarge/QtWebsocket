@@ -43,7 +43,7 @@ private slots:
 
 private:
 	// private attributes
-    QTcpServer * tcpServer;
+	QTcpServer * tcpServer;
 	QAbstractSocket::SocketError serverSocketError;
 	QString serverSocketErrorString;
 	QQueue<QWsSocket*> pendingConnections;

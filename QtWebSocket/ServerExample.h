@@ -9,21 +9,21 @@
 
 class ServerExample : public QObject
 {
-    Q_OBJECT
+	Q_OBJECT
 
-    public:
-        ServerExample();
-        ~ServerExample();
+public:
+	ServerExample();
+	~ServerExample();
 
-    public slots:
-        void onClientConnection();
-        void onDataReceived(QString data);
-		void onPong(quint64 elapsedTime);
-        void onClientDisconnection();
+public slots:
+	void onClientConnection();
+	void onDataReceived(QString data);
+	void onPong(quint64 elapsedTime);
+	void onClientDisconnection();
 
-    private:
-        QWsServer * server;
-        QList<QWsSocket*> clients;
+private:
+	QWsServer * server;
+	QList<QWsSocket*> clients;
 };
 
 #endif

@@ -59,7 +59,7 @@ public:
 	// Static functions
 	static QByteArray generateMaskingKey();
 	static QByteArray mask( QByteArray data, QByteArray maskingKey );
-	static QList<QByteArray> composeFrames( QByteArray byteArray, bool asBinary, int maxFrameBytes = 0 );
+	static QList<QByteArray> composeFrames( QByteArray byteArray, bool asBinary = false, int maxFrameBytes = 0 );
 	static QByteArray composeHeader( bool fin, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray() );
 
 private:
