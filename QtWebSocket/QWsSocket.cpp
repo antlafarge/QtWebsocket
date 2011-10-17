@@ -53,8 +53,6 @@ void QWsSocket::dataReceived()
 		MaskingKey = QIODevice::read(4);
 	}
 
-	// ExtensionData
-	QByteArray ExtensionData;
 	// Extension // UNSUPPORTED FOR NOW
 
 	// ApplicationData
