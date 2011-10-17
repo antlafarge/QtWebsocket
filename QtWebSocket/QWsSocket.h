@@ -36,25 +36,28 @@ public:
 	virtual ~QWsSocket();
 
 	// Public methods
-	QByteArray readFrame();
 	qint64 write ( const QString & string, int maxFrameBytes = 0 ); // write data as text
 	qint64 write ( const QByteArray & byteArray, int maxFrameBytes = 0 ); // write data as binary
 	virtual void close( QString reason = QString() );
 	void ping();
 
+signals:
+	void frameReceived(QString frame);
+	void frameReceived(QByteArray frame);
+	void pong(quint64 elapsedTime);
+
 protected:
 	qint64 writeFrames ( QList<QByteArray> framesList );
 	qint64 writeFrame ( const QByteArray & byteArray );
 
-public slots:
+protected slots:
 	void dataReceived();
 	void aboutToClose();
 
-signals:
-	void frameReceived(QString content);
-	void frameReceived(QByteArray content);
-	void pong(quint64 elapsedTime);
-	
+private:
+	QByteArray currentFrame;
+	QTime pingTimer;
+
 public:
 	// Static functions
 	static QByteArray generateMaskingKey();
@@ -62,10 +65,8 @@ public:
 	static QList<QByteArray> composeFrames( QByteArray byteArray, bool asBinary = false, int maxFrameBytes = 0 );
 	static QByteArray composeHeader( bool fin, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray() );
 
-private:
-	QByteArray currentFrame;
+	// static vars
 	static int maxBytesPerFrame;
-	QTime pingTimer;
 };
 
 #endif // QWSSOCKET_H

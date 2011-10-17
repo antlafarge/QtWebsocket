@@ -66,34 +66,35 @@ void QWsSocket::dataReceived()
 		currentFrame.append( ApplicationData );
 	}
 
-	if ( Opcode == OpPong )
-	{
-		quint64 ms = pingTimer.elapsed();
-		emit pong(ms);
-	}
-	else if ( Opcode == OpPing )
-	{
-		QByteArray pongRequest = QWsSocket::composeHeader( true, OpPong, 0 );
-		write( pongRequest );
-	}
-	else if ( FIN )
+	if ( FIN )
 	{
 		if ( Opcode == OpBinary )
+		{
 			emit frameReceived( currentFrame );
+		}
 		else if ( Opcode == OpText )
-			emit frameReceived( QString(currentFrame) );
+		{
+			QString byteString;
+			byteString.reserve(currentFrame.size());
+			for (int i=0 ; i<currentFrame.size() ; i++)
+				byteString[i] = currentFrame[i];
+			emit frameReceived( byteString );
+		}
+		else if ( Opcode == OpPing )
+		{
+			QByteArray pongRequest = QWsSocket::composeHeader( true, OpPong, 0 );
+			write( pongRequest );
+		}
+		else if ( Opcode == OpPong )
+		{
+			quint64 ms = pingTimer.elapsed();
+			emit pong(ms);
+		}
 		currentFrame.clear();
 	}
 
 	if ( bytesAvailable() )
 		dataReceived();
-}
-
-QByteArray QWsSocket::readFrame()
-{
-	QByteArray frameToReturn = currentFrame;
-	currentFrame.clear();
-	return frameToReturn;
 }
 
 qint64 QWsSocket::write ( const QString & string, int maxFrameBytes )
