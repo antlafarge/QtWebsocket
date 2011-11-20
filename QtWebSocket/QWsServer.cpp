@@ -129,6 +129,7 @@ void QWsServer::dataReceived()
 		return;
 
 	// Handshake OK, new connection
+	disconnect(clientSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 	int socketDescriptor = clientSocket->socketDescriptor();
 	incomingConnection( socketDescriptor );
 
