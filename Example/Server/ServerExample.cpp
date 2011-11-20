@@ -4,14 +4,15 @@
 
 ServerExample::ServerExample()
 {
+	int port = 1337;
     server = new QWsServer(this);
-	if ( ! server->listen(QHostAddress::Any, 50885) )
+	if ( ! server->listen(QHostAddress::Any, port) )
 	{
-		Log::display( "Error at server launch" );
+		Log::display( "Error: Can't launch server" );
 	}
 	else
 	{
-		Log::display( "server launched" );
+		Log::display( "Server is listening port " + QString::number(port) );
 	}
 	connect(server, SIGNAL(newConnection()), this, SLOT(onClientConnection()));
 }
@@ -41,9 +42,9 @@ void ServerExample::onDataReceived(QString data)
 	if (socket == 0)
 		return;
 
-	Log::display( "Message = " + data );
+	Log::display( "Message recu = " + data );
 
-	socket->write( data.toUtf8() );
+	socket->write( data );
 
 	socket->ping();
 }

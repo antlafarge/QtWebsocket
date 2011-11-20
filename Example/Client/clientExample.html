@@ -1,0 +1,81 @@
+<html>
+	<head>
+		<title>Websocket client test</title>
+	</head>
+	<body>
+		<p>
+			<button onClick="initWebsocket();">Connect</button>
+			<button onClick="stopWebsocket();">Disconnect</button>
+			<button onClick="checkSocket();">State</button>
+		</p>
+		<p>
+			<textarea id="debugTextArea" style="width:400px;height:200px;"></textarea>
+		</p>
+		
+		<script type="text/javascript">
+			var debugTextArea = document.getElementById("debugTextArea");
+			function debug(message)
+			{
+				debugTextArea.value += message + "\n";
+				debugTextArea.scrollTop = debugTextArea.scrollHeight;
+			}
+			
+			var wsUri = "ws://localhost:1337";
+			var websocket = null;
+
+			function initWebsocket() { 
+				try { 
+					websocket = new WebSocket(wsUri);
+					websocket.onopen = function (evt) {
+						debug("CONNECTED");
+						websocket.send("Hello guy !");
+					};
+					websocket.onclose = function (evt) {
+						debug("DISCONNECTED (by server)");
+					};
+					websocket.onmessage = function (evt) {
+						debug( "message recu: " + evt.data );
+					};
+					websocket.onerror = function (evt) {
+						debug('ERROR: ' + evt.data);
+					};
+				} catch (exception) {
+					debug('ERROR: ' + evt.data);
+					alert('<span style="color: red;">ERROR:</span> ' + evt.data);
+				}
+			}
+			
+			function stopWebsocket() {
+				if (websocket)
+				{
+					websocket.close();
+					debug("DISCONNECTED (by user)");
+				}
+			}
+			
+			function checkSocket() {
+				var stateStr;
+				switch (websocket.readyState) {
+					case 0:
+					stateStr = "CONNECTING";
+					break;
+					case 1:
+					stateStr = "OPEN";
+					break;
+					case 2:
+					stateStr = "CLOSING";
+					break;
+					case 3:
+					stateStr = "CLOSED";
+					break;
+					default:
+					stateStr = "UNKNOW";
+					break;
+				}
+				debug("Websocket state = " + websocket.readyState + " ( " + stateStr + " )");
+			}
+			
+			//initWebsocket();
+		</script>
+	</body>
+</html>

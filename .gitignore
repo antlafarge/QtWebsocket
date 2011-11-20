@@ -21,8 +21,6 @@ ressources_raw
 [Oo]bj/
 [Gg]enerated[Ff]iles/
 [Rr]esources/
-main.cpp
-Log.*
 # ui_*.h
 *.exe
 *.dll
@@ -88,3 +86,7 @@ Icon?
 
 # Office Temp Files
 ~$*
+
+# Some specific files
+QtWebSocket\main.cpp
+Log.txt
