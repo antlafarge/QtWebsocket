@@ -88,6 +88,10 @@ void QWsSocket::dataReceived()
 			quint64 ms = pingTimer.elapsed();
 			emit pong(ms);
 		}
+		else if ( Opcode == OpClose )
+		{
+			QAbstractSocket::close();
+		}
 		currentFrame.clear();
 	}
 
@@ -148,7 +152,7 @@ void QWsSocket::close( QString reason )
 
 void QWsSocket::aboutToClose()
 {
-	close( "Connection closed by QWsSocket" );
+	//close( "Connection closed by QWsSocket" );
 }
 
 QByteArray QWsSocket::generateMaskingKey()

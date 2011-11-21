@@ -31,10 +31,10 @@
 						websocket.send("Hello guy !");
 					};
 					websocket.onclose = function (evt) {
-						debug("DISCONNECTED (by server)");
+						debug("DISCONNECTED");
 					};
 					websocket.onmessage = function (evt) {
-						debug( "message recu: " + evt.data );
+						debug( "Message received: " + evt.data );
 					};
 					websocket.onerror = function (evt) {
 						debug('ERROR: ' + evt.data);
@@ -47,10 +47,7 @@
 			
 			function stopWebsocket() {
 				if (websocket)
-				{
 					websocket.close();
-					debug("DISCONNECTED (by user)");
-				}
 			}
 			
 			function checkSocket() {
