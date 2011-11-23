@@ -11,6 +11,9 @@
 		<p>
 			<textarea id="debugTextArea" style="width:400px;height:200px;"></textarea>
 		</p>
+		<p>
+			<input type="text" id="inputText"/> <button onClick="sendMessage();">Envoyer</button>
+		</p>
 		
 		<script type="text/javascript">
 			var debugTextArea = document.getElementById("debugTextArea");
@@ -18,6 +21,16 @@
 			{
 				debugTextArea.value += message + "\n";
 				debugTextArea.scrollTop = debugTextArea.scrollHeight;
+			}
+			
+			function sendMessage()
+			{
+				var msg = document.getElementById("inputText").value;
+				if ( websocket != null )
+				{
+					document.getElementById("inputText").value = "";
+					websocket.send( msg );
+				}
 			}
 			
 			var wsUri = "ws://localhost:1337";

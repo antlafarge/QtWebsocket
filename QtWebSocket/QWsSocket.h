@@ -31,13 +31,15 @@ public:
 
 public:
 	// ctor
-	QWsSocket(QObject * parent);
+	QWsSocket(QTcpSocket * socket);
 	// dtor
 	virtual ~QWsSocket();
 
 	// Public methods
 	qint64 write ( const QString & string, int maxFrameBytes = 0 ); // write data as text
 	qint64 write ( const QByteArray & byteArray, int maxFrameBytes = 0 ); // write data as binary
+
+public slots:
 	virtual void close( QString reason = QString() );
 	void ping();
 
@@ -52,9 +54,15 @@ protected:
 
 protected slots:
 	void dataReceived();
-	void aboutToClose();
+
+private slots:
+	// private func
+	void tcpSocketAboutToClose();
+	void tcpSocketDisconnected();
 
 private:
+	// private vars
+	QTcpSocket * tcpSocket;
 	QByteArray currentFrame;
 	QTime pingTimer;
 
