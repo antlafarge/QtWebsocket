@@ -2,13 +2,15 @@
 
 int QWsSocket::maxBytesPerFrame = 1400;
 
-QWsSocket::QWsSocket(QObject * parent)
-	: QTcpSocket(parent)
+QWsSocket::QWsSocket(QTcpSocket * socket)
 {
+	tcpSocket = socket;
+
 	setSocketState( QAbstractSocket::UnconnectedState );
 
-	connect( this, SIGNAL(readyRead()), this, SLOT(dataReceived()) );
-	connect( this, SIGNAL(aboutToClose()), this, SLOT(aboutToClose()) );
+	connect( tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()) );
+	connect( tcpSocket, SIGNAL(disconnected()), this, SLOT(tcpSocketDisconnected()) );
+	connect( tcpSocket, SIGNAL(aboutToClose()), this, SLOT(tcpSocketAboutToClose()) );
 }
 
 QWsSocket::~QWsSocket()
@@ -21,7 +23,7 @@ void QWsSocket::dataReceived()
 	quint8 byte; // currentByteBuffer
 
 	// FIN, RSV1-3, Opcode
-	BA = QIODevice::read(1);
+	BA = tcpSocket->read(1);
 	byte = BA[0];
 	quint8 FIN = (byte >> 7);
 	quint8 RSV1 = ((byte & 0x7F) >> 6);
@@ -30,19 +32,19 @@ void QWsSocket::dataReceived()
 	EOpcode Opcode = (EOpcode)(byte & 0x0F);
 
 	// Mask, PayloadLength
-	BA = QIODevice::read(1);
+	BA = tcpSocket->read(1);
 	byte = BA[0];
 	quint8 Mask = (byte >> 7);
 	quint64 PayloadLength = (byte & 0x7F);
 	// Extended PayloadLength
 	if ( PayloadLength == 126 )
 	{
-		BA = QIODevice::read(2);
+		BA = tcpSocket->read(2);
 		PayloadLength = (BA[0] << 1*8) + (BA[1] << 0*8);
 	}
 	else if ( PayloadLength == 127 )
 	{
-		BA = QIODevice::read(8);
+		BA = tcpSocket->read(8);
 		PayloadLength = ((quint64)BA[0] << 7*8) + ((quint64)BA[1] << 6*8) + ((quint64)BA[2] << 5*8) + ((quint64)BA[3] << 4*8) + ((quint64)BA[4] << 3*8) + ((quint64)BA[5] << 2*8) + ((quint64)BA[6] << 1*8) + ((quint64)BA[7] << 0*8);
 	}
 
@@ -50,7 +52,7 @@ void QWsSocket::dataReceived()
 	QByteArray MaskingKey;
 	if ( Mask )
 	{
-		MaskingKey = QIODevice::read(4);
+		MaskingKey = tcpSocket->read(4);
 	}
 
 	// Extension // UNSUPPORTED FOR NOW
@@ -58,7 +60,7 @@ void QWsSocket::dataReceived()
 	// ApplicationData
 	if ( PayloadLength )
 	{
-		QByteArray ApplicationData = QIODevice::read( PayloadLength );
+		QByteArray ApplicationData = tcpSocket->read( PayloadLength );
 		if ( Mask )
 			ApplicationData = QWsSocket::mask( ApplicationData, MaskingKey );
 		currentFrame.append( ApplicationData );
@@ -90,7 +92,7 @@ void QWsSocket::dataReceived()
 		}
 		else if ( Opcode == OpClose )
 		{
-			QAbstractSocket::close();
+			tcpSocket->close();
 		}
 		currentFrame.clear();
 	}
@@ -119,7 +121,7 @@ qint64 QWsSocket::write ( const QByteArray & byteArray, int maxFrameBytes )
 
 qint64 QWsSocket::writeFrame ( const QByteArray & byteArray )
 {
-	return QIODevice::write( byteArray );
+	return tcpSocket->write( byteArray );
 }
 
 qint64 QWsSocket::writeFrames ( QList<QByteArray> framesList )
@@ -145,14 +147,19 @@ void QWsSocket::close( QString reason )
 
 	// Reason // UNSUPPORTED FOR NOW
 	
-	QAbstractSocket::write( BA );
+	tcpSocket->write( BA );
 
-	QAbstractSocket::close();
+	tcpSocket->close();
 }
 
-void QWsSocket::aboutToClose()
+void QWsSocket::tcpSocketAboutToClose()
 {
-	//close( "Connection closed by QWsSocket" );
+	emit aboutToClose();
+}
+
+void QWsSocket::tcpSocketDisconnected()
+{
+	emit disconnected();
 }
 
 QByteArray QWsSocket::generateMaskingKey()

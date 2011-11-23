@@ -42,7 +42,7 @@ void ServerExample::onDataReceived(QString data)
 	if (socket == 0)
 		return;
 
-	Log::display( "Message recu = " + data );
+	Log::display( "Message received: " + data );
 
 	socket->write( data );
 

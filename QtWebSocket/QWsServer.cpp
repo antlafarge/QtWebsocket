@@ -161,10 +161,11 @@ void QWsServer::addPendingConnection( QWsSocket * socket )
 
 void QWsServer::incomingConnection( int socketDescriptor )
 {
-	QWsSocket * socket = new QWsSocket(this);
-	socket->setSocketDescriptor( socketDescriptor, QAbstractSocket::ConnectedState );
+	QTcpSocket * tcpSocket = new QTcpSocket;
+	tcpSocket->setSocketDescriptor( socketDescriptor, QAbstractSocket::ConnectedState );
+	QWsSocket * wsSocket = new QWsSocket( tcpSocket );
 
-	addPendingConnection( socket );
+	addPendingConnection( wsSocket );
 
 	emit QWsServer::newConnection();
 }
