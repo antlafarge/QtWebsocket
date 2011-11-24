@@ -2,7 +2,8 @@
 
 int QWsSocket::maxBytesPerFrame = 1400;
 
-QWsSocket::QWsSocket(QTcpSocket * socket)
+QWsSocket::QWsSocket(QObject * parent, QTcpSocket * socket) :
+	QAbstractSocket( QAbstractSocket::UnknownSocketType, parent )
 {
 	tcpSocket = socket;
 

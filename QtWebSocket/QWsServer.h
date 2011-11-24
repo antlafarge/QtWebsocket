@@ -1,6 +1,7 @@
 #ifndef QWSSERVER_H
 #define QWSSERVER_H
 
+#include <QObject>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QString>
@@ -8,7 +9,7 @@
 
 #include "QWsSocket.h"
 
-class QWsServer : public QTcpServer
+class QWsServer : public QObject
 {
 	Q_OBJECT
 
@@ -25,6 +26,10 @@ public:
 	QString errorString();
 	bool hasPendingConnections();
 	virtual QWsSocket * nextPendingConnection();
+	int maxPendingConnections();
+
+signals:
+	void newConnection();
 
 protected:
 	// Protected methods

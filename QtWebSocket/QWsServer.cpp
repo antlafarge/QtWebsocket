@@ -15,9 +15,10 @@ const QString QWsServer::regExpProtocolStr( "Sec-WebSocket-Protocol:\\s(.+)\r\n"
 const QString QWsServer::regExpExtensionsStr( "Sec-WebSocket-Extensions:\\s(.+)\r\n" );
 
 QWsServer::QWsServer(QObject * parent)
-	: QTcpServer(parent)
+	: QObject(parent)
 {
 	tcpServer = new QTcpServer(this);
+
 	connect(tcpServer, SIGNAL(newConnection()), this, SLOT(newTcpConnection()));
 
 	qsrand( QDateTime::currentMSecsSinceEpoch() );
@@ -153,6 +154,11 @@ QString QWsServer::computeAcceptV8(QString key)
 	return hash.toBase64();
 }
 
+int QWsServer::maxPendingConnections()
+{
+	return tcpServer->maxPendingConnections();
+}
+
 void QWsServer::addPendingConnection( QWsSocket * socket )
 {
 	if ( pendingConnections.size() < maxPendingConnections() )
@@ -163,11 +169,11 @@ void QWsServer::incomingConnection( int socketDescriptor )
 {
 	QTcpSocket * tcpSocket = new QTcpSocket;
 	tcpSocket->setSocketDescriptor( socketDescriptor, QAbstractSocket::ConnectedState );
-	QWsSocket * wsSocket = new QWsSocket( tcpSocket );
+	QWsSocket * wsSocket = new QWsSocket( this, tcpSocket );
 
 	addPendingConnection( wsSocket );
 
-	emit QWsServer::newConnection();
+	emit newConnection();
 }
 
 bool QWsServer::hasPendingConnections()

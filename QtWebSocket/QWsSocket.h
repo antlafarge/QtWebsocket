@@ -1,10 +1,11 @@
 #ifndef QWSSOCKET_H
 #define QWSSOCKET_H
 
+#include <QAbstractSocket>
 #include <QTcpSocket>
 #include <QTime>
 
-class QWsSocket : public QTcpSocket
+class QWsSocket : public QAbstractSocket
 {
 	Q_OBJECT
 
@@ -31,7 +32,7 @@ public:
 
 public:
 	// ctor
-	QWsSocket(QTcpSocket * socket);
+	QWsSocket(QObject * parent, QTcpSocket * socket);
 	// dtor
 	virtual ~QWsSocket();
 
