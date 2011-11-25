@@ -6,6 +6,7 @@
 #include <QTcpSocket>
 #include <QString>
 #include <QQueue>
+#include <QNetworkProxy>
 
 #include "QWsSocket.h"
 
@@ -19,26 +20,35 @@ public:
 	// dtor
 	virtual ~QWsServer();
 
-	// public methods
-	bool listen(const QHostAddress & address = QHostAddress::Any, quint16 port = 0);
+	// public functions
 	void close();
-	QAbstractSocket::SocketError serverError();
 	QString errorString();
 	bool hasPendingConnections();
-	virtual QWsSocket * nextPendingConnection();
+	bool isListening();
+	bool listen(const QHostAddress & address = QHostAddress::Any, quint16 port = 0);
 	int maxPendingConnections();
+	virtual QWsSocket * nextPendingConnection();
+	QNetworkProxy proxy();
+	QHostAddress serverAddress();
+	QAbstractSocket::SocketError serverError();
+	quint16 serverPort();
+	void setMaxPendingConnections( int numConnections );
+	void setProxy( const QNetworkProxy & networkProxy );
+	bool setSocketDescriptor( int socketDescriptor );
+	int socketDescriptor();
+	bool waitForNewConnection( int msec = 0, bool * timedOut = 0 );
 
 signals:
 	void newConnection();
 
 protected:
-	// Protected methods
+	// protected functions
 	void addPendingConnection( QWsSocket * socket );
-	void incomingConnection( int socketDescriptor );
+	virtual void incomingConnection( int socketDescriptor );
 
 private:
 	// private methods
-	void treatSocketError();
+	//void treatSocketError();
 	QString computeAcceptV8( QString key );
 
 private slots:
@@ -49,8 +59,8 @@ private slots:
 private:
 	// private attributes
 	QTcpServer * tcpServer;
-	QAbstractSocket::SocketError serverSocketError;
-	QString serverSocketErrorString;
+	//QAbstractSocket::SocketError serverSocketError;
+	//QString serverSocketErrorString;
 	QQueue<QWsSocket*> pendingConnections;
 
 public:

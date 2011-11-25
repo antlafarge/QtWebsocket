@@ -31,12 +31,7 @@ QWsServer::~QWsServer()
 
 bool QWsServer::listen(const QHostAddress & address, quint16 port)
 {
-	bool launched = tcpServer->listen(address, port);
-
-	if ( ! launched )
-		treatSocketError();
-
-	return launched;
+	return tcpServer->listen(address, port);
 }
 
 void QWsServer::close()
@@ -44,20 +39,20 @@ void QWsServer::close()
 	tcpServer->close();
 }
 
-void QWsServer::treatSocketError()
+/*void QWsServer::treatSocketError()
 {
 	serverSocketError = tcpServer->serverError();
 	serverSocketErrorString = tcpServer->errorString();
-}
+}*/
 
 QAbstractSocket::SocketError QWsServer::serverError()
 {
-	return serverSocketError;
+	return tcpServer->serverError();
 }
 
 QString QWsServer::errorString()
 {
-	return serverSocketErrorString;
+	return tcpServer->errorString();
 }
 
 void QWsServer::newTcpConnection()
@@ -186,4 +181,49 @@ bool QWsServer::hasPendingConnections()
 QWsSocket * QWsServer::nextPendingConnection()
 {
 	return pendingConnections.dequeue();
+}
+
+bool QWsServer::isListening()
+{
+	return tcpServer->isListening();
+}
+
+QNetworkProxy QWsServer::proxy()
+{
+	return tcpServer->proxy();
+}
+
+QHostAddress QWsServer::serverAddress()
+{
+	return tcpServer->serverAddress();
+}
+
+quint16 QWsServer::serverPort()
+{
+	return tcpServer->serverPort();
+}
+
+void QWsServer::setMaxPendingConnections( int numConnections )
+{
+	tcpServer->setMaxPendingConnections( numConnections );
+}
+
+void QWsServer::setProxy( const QNetworkProxy & networkProxy )
+{
+	tcpServer->setProxy( networkProxy );
+}
+
+bool QWsServer::setSocketDescriptor( int socketDescriptor )
+{
+	return tcpServer->setSocketDescriptor( socketDescriptor );
+}
+
+int QWsServer::socketDescriptor()
+{
+	return tcpServer->socketDescriptor();
+}
+
+bool QWsServer::waitForNewConnection( int msec, bool * timedOut )
+{
+	return tcpServer->waitForNewConnection( msec, timedOut );
 }
