@@ -39,12 +39,6 @@ void QWsServer::close()
 	tcpServer->close();
 }
 
-/*void QWsServer::treatSocketError()
-{
-	serverSocketError = tcpServer->serverError();
-	serverSocketErrorString = tcpServer->errorString();
-}*/
-
 QAbstractSocket::SocketError QWsServer::serverError()
 {
 	return tcpServer->serverError();

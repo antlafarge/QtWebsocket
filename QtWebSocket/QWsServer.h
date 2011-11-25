@@ -46,11 +46,6 @@ protected:
 	void addPendingConnection( QWsSocket * socket );
 	virtual void incomingConnection( int socketDescriptor );
 
-private:
-	// private methods
-	//void treatSocketError();
-	QString computeAcceptV8( QString key );
-
 private slots:
 	// private slots
 	void newTcpConnection();
@@ -59,11 +54,11 @@ private slots:
 private:
 	// private attributes
 	QTcpServer * tcpServer;
-	//QAbstractSocket::SocketError serverSocketError;
-	//QString serverSocketErrorString;
 	QQueue<QWsSocket*> pendingConnections;
 
 public:
+	// public static functions
+	QString computeAcceptV8( QString key );
 	// public static vars
 	static const QString regExpResourceNameStr;
 	static const QString regExpHostStr;
