@@ -12,7 +12,7 @@
 			<textarea id="debugTextArea" style="width:400px;height:200px;"></textarea>
 		</p>
 		<p>
-			<input type="text" id="inputText"/> <button onClick="sendMessage();">Envoyer</button>
+			<input type="text" id="inputText"  onkeydown="if(event.keyCode==13)sendMessage();"/> <button onClick="sendMessage();">Envoyer</button>
 		</p>
 		
 		<script type="text/javascript">

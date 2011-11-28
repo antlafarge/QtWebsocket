@@ -58,7 +58,9 @@ private:
 
 public:
 	// public static functions
-	QString computeAcceptV8( QString key );
+	static QString computeAcceptV2( QString key );
+	static QString computeAcceptV1( QString key1, QString key2, QString thirdPart );
+	static QString serializeInt( quint32 number, quint8 nbBytes = 4 );
 	// public static vars
 	static const QString regExpResourceNameStr;
 	static const QString regExpHostStr;

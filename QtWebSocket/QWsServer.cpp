@@ -115,7 +115,8 @@ void QWsServer::dataReceived()
 		|| hostPort.isEmpty()
 		|| resourceName.isEmpty()
 		|| key.isEmpty()
-		|| version != "8" )
+		|| version.isEmpty()
+		|| version.toInt() < 8 )
 		return;
 
 	// Handshake OK, new connection
@@ -124,7 +125,7 @@ void QWsServer::dataReceived()
 	incomingConnection( socketDescriptor );
 
 	// Compose handshake answer
-	QString accept = computeAcceptV8( key );
+	QString accept = computeAcceptV2( key );
 	
 	QString answer("HTTP/1.1 101 Switching Protocols\r\n");
 	answer.append("Upgrade: websocket\r\n");
@@ -136,11 +137,64 @@ void QWsServer::dataReceived()
 	clientSocket->write( answer.toUtf8() );
 }
 
-QString QWsServer::computeAcceptV8(QString key)
+QString QWsServer::computeAcceptV2(QString key)
 {
 	key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 	QByteArray hash = QCryptographicHash::hash ( key.toUtf8(), QCryptographicHash::Sha1 );
 	return hash.toBase64();
+}
+
+QString QWsServer::computeAcceptV1( QString key1, QString key2, QString thirdPart )
+{
+	QString numStr1;
+	QString numStr2;
+
+	QChar carac;
+	for ( int i=0 ; i<key1.size() ; i++ )
+	{
+		carac = key1[ i ];
+		if ( carac.isDigit() )
+			numStr1.append( carac );
+	}
+	for ( int i=0 ; i<key2.size() ; i++ )
+	{
+	    carac = key2[ i ];
+		if ( carac.isDigit() )
+			numStr2.append( carac );
+	}
+
+	quint32 num1 = numStr1.toUInt();
+	quint32 num2 = numStr2.toUInt();
+
+	int numSpaces1 = key1.count( ' ' );
+	int numSpaces2 = key2.count( ' ' );
+
+	num1 /= numSpaces1;
+	num2 /= numSpaces2;
+
+	QString concat = serializeInt( num1 ) + serializeInt( num2 ) + thirdPart;
+	
+	QByteArray md5 = QCryptographicHash::hash( concat.toAscii(), QCryptographicHash::Md5 );
+  
+	return QString( md5 );
+}
+
+QString QWsServer::serializeInt( quint32 number, quint8 nbBytes )
+{
+	QString bin;
+	quint8 currentNbBytes = 0;
+	while (number > 0 && currentNbBytes < nbBytes)
+	{  
+		bin.prepend( QChar::fromAscii(number) );
+		number = number >> 8;
+		currentNbBytes++;
+	}
+	while (currentNbBytes < nbBytes)
+	{
+		bin.prepend( QChar::fromAscii(0) );
+		currentNbBytes++;
+    }
+	return bin;
 }
 
 int QWsServer::maxPendingConnections()
