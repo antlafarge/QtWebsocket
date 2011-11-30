@@ -11,6 +11,7 @@ const QString QWsServer::regExpHostStr( "Host:\\s(.+:\\d+)\r\n" );
 const QString QWsServer::regExpKeyStr( "Sec-WebSocket-Key:\\s(.{24})\r\n" );
 const QString QWsServer::regExpVersionStr( "Sec-WebSocket-Version:\\s(\\d)\r\n" );
 const QString QWsServer::regExpOriginStr( "Sec-WebSocket-Origin:\\s(.+)\r\n" );
+const QString QWsServer::regExpOriginV13Str( "Origin:\\s(.+)\r\n" );
 const QString QWsServer::regExpProtocolStr( "Sec-WebSocket-Protocol:\\s(.+)\r\n" );
 const QString QWsServer::regExpExtensionsStr( "Sec-WebSocket-Extensions:\\s(.+)\r\n" );
 
@@ -96,9 +97,19 @@ void QWsServer::dataReceived()
 	
 	// Extract optional datas
 	// Origin
-	regExp.setPattern( QWsServer::regExpOriginStr );
-	regExp.indexIn(request);
-	QString origin = regExp.cap(1);
+	QString origin;
+	if ( version == "13" )
+	{
+		regExp.setPattern( QWsServer::regExpOriginV13Str );
+		regExp.indexIn(request);
+		origin = regExp.cap(1);
+	}
+	else //if ( version == "8" )
+	{
+		regExp.setPattern( QWsServer::regExpOriginStr );
+		regExp.indexIn(request);
+		origin = regExp.cap(1);
+	}
 
 	// Protocol
 	regExp.setPattern( QWsServer::regExpProtocolStr );

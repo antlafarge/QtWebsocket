@@ -67,6 +67,7 @@ public:
 	static const QString regExpKeyStr;
 	static const QString regExpVersionStr;
 	static const QString regExpOriginStr;
+	static const QString regExpOriginV13Str;
 	static const QString regExpProtocolStr;
 	static const QString regExpExtensionsStr;
 };

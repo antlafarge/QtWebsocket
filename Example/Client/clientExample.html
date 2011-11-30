@@ -12,7 +12,9 @@
 			<textarea id="debugTextArea" style="width:400px;height:200px;"></textarea>
 		</p>
 		<p>
-			<input type="text" id="inputText"  onkeydown="if(event.keyCode==13)sendMessage();"/> <button onClick="sendMessage();">Envoyer</button>
+			<input type="text" id="inputPseudo" value="pseudo" onkeydown="if(event.keyCode==13)alert(this.value);" />
+			<input type="text" id="inputText" onkeydown="if(event.keyCode==13)sendMessage();"/>
+			<button onClick="sendMessage();">Envoyer</button>
 		</p>
 		
 		<script type="text/javascript">
@@ -25,11 +27,13 @@
 			
 			function sendMessage()
 			{
+				var pseudo = document.getElementById("inputPseudo").value;
 				var msg = document.getElementById("inputText").value;
+				var strToSend = pseudo + ": " + msg;
 				if ( websocket != null )
 				{
 					document.getElementById("inputText").value = "";
-					websocket.send( msg );
+					websocket.send( strToSend );
 				}
 			}
 			
@@ -41,13 +45,12 @@
 					websocket = new WebSocket(wsUri);
 					websocket.onopen = function (evt) {
 						debug("CONNECTED");
-						websocket.send("Hello guy !");
 					};
 					websocket.onclose = function (evt) {
 						debug("DISCONNECTED");
 					};
 					websocket.onmessage = function (evt) {
-						debug( "Message received: " + evt.data );
+						debug( evt.data );
 					};
 					websocket.onerror = function (evt) {
 						debug('ERROR: ' + evt.data);

@@ -42,11 +42,13 @@ void ServerExample::onDataReceived(QString data)
 	if (socket == 0)
 		return;
 
-	Log::display( "Message received: " + data );
-
-	socket->write( data );
-
-	socket->ping();
+	Log::display( data );
+	
+	QWsSocket * client;
+	foreach ( client, clients )
+	{
+		client->write( data );
+	}
 }
 
 void ServerExample::onPong(quint64 elapsedTime)
