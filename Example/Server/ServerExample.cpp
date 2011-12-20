@@ -9,6 +9,7 @@ ServerExample::ServerExample()
 	if ( ! server->listen(QHostAddress::Any, port) )
 	{
 		Log::display( "Error: Can't launch server" );
+		QMessageBox::critical(0, "QWsServer error", server->errorString());
 	}
 	else
 	{

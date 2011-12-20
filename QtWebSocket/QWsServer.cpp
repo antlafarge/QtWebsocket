@@ -9,7 +9,7 @@
 const QString QWsServer::regExpResourceNameStr( "GET\\s(.*)\\sHTTP/1.1\r\n" );
 const QString QWsServer::regExpHostStr( "Host:\\s(.+:\\d+)\r\n" );
 const QString QWsServer::regExpKeyStr( "Sec-WebSocket-Key:\\s(.{24})\r\n" );
-const QString QWsServer::regExpVersionStr( "Sec-WebSocket-Version:\\s(\\d)\r\n" );
+const QString QWsServer::regExpVersionStr( "Sec-WebSocket-Version:\\s(\\d+)\r\n" );
 const QString QWsServer::regExpOriginStr( "Sec-WebSocket-Origin:\\s(.+)\r\n" );
 const QString QWsServer::regExpOriginV13Str( "Origin:\\s(.+)\r\n" );
 const QString QWsServer::regExpProtocolStr( "Sec-WebSocket-Protocol:\\s(.+)\r\n" );
