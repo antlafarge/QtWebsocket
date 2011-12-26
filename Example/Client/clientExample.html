@@ -40,8 +40,11 @@
 			var wsUri = "ws://localhost:1337";
 			var websocket = null;
 
-			function initWebsocket() { 
-				try { 
+			function initWebsocket()
+			{
+				try {
+					if (MozWebSocket)
+						WebSocket = MozWebSocket;
 					websocket = new WebSocket(wsUri);
 					websocket.onopen = function (evt) {
 						debug("CONNECTED");
@@ -56,36 +59,41 @@
 						debug('ERROR: ' + evt.data);
 					};
 				} catch (exception) {
-					debug('ERROR: ' + evt.data);
-					alert('<span style="color: red;">ERROR:</span> ' + evt.data);
+					debug('ERROR: ' + exception);
 				}
 			}
 			
-			function stopWebsocket() {
+			function stopWebsocket()
+			{
 				if (websocket)
 					websocket.close();
 			}
 			
-			function checkSocket() {
-				var stateStr;
-				switch (websocket.readyState) {
-					case 0:
-					stateStr = "CONNECTING";
-					break;
-					case 1:
-					stateStr = "OPEN";
-					break;
-					case 2:
-					stateStr = "CLOSING";
-					break;
-					case 3:
-					stateStr = "CLOSED";
-					break;
-					default:
-					stateStr = "UNKNOW";
-					break;
+			function checkSocket()
+			{
+				if ( websocket != null ) {
+					var stateStr;
+					switch (websocket.readyState) {
+						case 0:
+						stateStr = "CONNECTING";
+						break;
+						case 1:
+						stateStr = "OPEN";
+						break;
+						case 2:
+						stateStr = "CLOSING";
+						break;
+						case 3:
+						stateStr = "CLOSED";
+						break;
+						default:
+						stateStr = "UNKNOW";
+						break;
+					}
+					debug("Websocket state = " + websocket.readyState + " ( " + stateStr + " )");
+				} else {
+					debug("Websocket is null");
 				}
-				debug("Websocket state = " + websocket.readyState + " ( " + stateStr + " )");
 			}
 			
 			//initWebsocket();
