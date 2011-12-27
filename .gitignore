@@ -89,3 +89,6 @@ Icon?
 
 # Some specific files
 Log.txt
+
+# git patch files
+*.patch
