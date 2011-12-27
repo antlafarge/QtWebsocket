@@ -99,7 +99,7 @@ void QWsSocket::dataReceived()
 		currentFrame.clear();
 	}
 
-	if ( bytesAvailable() )
+	if ( tcpSocket->bytesAvailable() )
 		dataReceived();
 }
 
