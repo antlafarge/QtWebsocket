@@ -43,7 +43,7 @@
 			function initWebsocket()
 			{
 				try {
-					if (MozWebSocket)
+					if (typeof MozWebSocket == 'function')
 						WebSocket = MozWebSocket;
 					websocket = new WebSocket(wsUri);
 					websocket.onopen = function (evt) {
