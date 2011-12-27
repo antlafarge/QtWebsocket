@@ -121,7 +121,7 @@ void QWsServer::dataReceived()
 	regExp.indexIn(request);
 	QString extensions = regExp.cap(1);
 
-	// If the mandatory params are not setted, we abord the handshake
+	// If the mandatory params are not setted, we abord the connection to the Websocket server
 	if ( hostAddress.isEmpty()
 		|| hostPort.isEmpty()
 		|| resourceName.isEmpty()
@@ -129,12 +129,7 @@ void QWsServer::dataReceived()
 		|| version.isEmpty()
 		|| version.toInt() < 8 )
 		return;
-
-	// Handshake OK, new connection
-	disconnect(clientSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
-	int socketDescriptor = clientSocket->socketDescriptor();
-	incomingConnection( socketDescriptor );
-
+	
 	// Compose handshake answer
 	QString accept = computeAcceptV2( key );
 	
@@ -146,6 +141,12 @@ void QWsServer::dataReceived()
 
 	// Send handshake answer
 	clientSocket->write( answer.toUtf8() );
+	clientSocket->flush();
+
+	// Handshake OK, new connection
+	disconnect(clientSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
+	int socketDescriptor = clientSocket->socketDescriptor();
+	incomingConnection( socketDescriptor );
 }
 
 QString QWsServer::computeAcceptV2(QString key)
@@ -213,21 +214,21 @@ int QWsServer::maxPendingConnections()
 	return tcpServer->maxPendingConnections();
 }
 
-void QWsServer::addPendingConnection( QWsSocket * socket )
-{
-	if ( pendingConnections.size() < maxPendingConnections() )
-		pendingConnections.enqueue(socket);
-}
-
 void QWsServer::incomingConnection( int socketDescriptor )
 {
-	QTcpSocket * tcpSocket = new QTcpSocket;
+	QTcpSocket * tcpSocket = new QTcpSocket(tcpServer);
 	tcpSocket->setSocketDescriptor( socketDescriptor, QAbstractSocket::ConnectedState );
-	QWsSocket * wsSocket = new QWsSocket( this, tcpSocket );
+	QWsSocket * wsSocket = new QWsSocket( tcpSocket, this );
 
 	addPendingConnection( wsSocket );
 
 	emit newConnection();
+}
+
+void QWsServer::addPendingConnection( QWsSocket * socket )
+{
+	if ( pendingConnections.size() < maxPendingConnections() )
+		pendingConnections.enqueue(socket);
 }
 
 bool QWsServer::hasPendingConnections()

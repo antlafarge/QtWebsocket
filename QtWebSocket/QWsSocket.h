@@ -32,7 +32,7 @@ public:
 
 public:
 	// ctor
-	QWsSocket(QObject * parent = 0, QTcpSocket * socket = 0);
+	QWsSocket(QTcpSocket * socket = 0, QObject * parent = 0);
 	// dtor
 	virtual ~QWsSocket();
 

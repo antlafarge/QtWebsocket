@@ -2,12 +2,13 @@
 
 int QWsSocket::maxBytesPerFrame = 1400;
 
-QWsSocket::QWsSocket(QObject * parent, QTcpSocket * socket) :
+QWsSocket::QWsSocket(QTcpSocket * socket, QObject * parent) :
 	QAbstractSocket( QAbstractSocket::UnknownSocketType, parent )
 {
 	tcpSocket = socket;
 
-	setSocketState( QAbstractSocket::UnconnectedState );
+	//setSocketState( QAbstractSocket::UnconnectedState );
+	setSocketState( socket->state() );
 
 	connect( tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()) );
 	connect( tcpSocket, SIGNAL(disconnected()), this, SLOT(tcpSocketDisconnected()) );
