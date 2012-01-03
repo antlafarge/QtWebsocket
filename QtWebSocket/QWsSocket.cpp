@@ -18,7 +18,7 @@ QWsSocket::QWsSocket(QTcpSocket * socket, QObject * parent) :
 QWsSocket::~QWsSocket()
 {
 }
-
+#include "Log.h"
 void QWsSocket::dataReceived()
 {
 	QByteArray BA; // ReadBuffer
@@ -42,12 +42,22 @@ void QWsSocket::dataReceived()
 	if ( PayloadLength == 126 )
 	{
 		BA = tcpSocket->read(2);
-		PayloadLength = (BA[0] << 1*8) + (BA[1] << 0*8);
+		quint16 BA0 = (quint8)BA[0];
+		quint16 BA1 = (quint8)BA[1];
+		PayloadLength = (BA0 << 8) + BA1;
 	}
 	else if ( PayloadLength == 127 )
 	{
 		BA = tcpSocket->read(8);
-		PayloadLength = ((quint64)BA[0] << 7*8) + ((quint64)BA[1] << 6*8) + ((quint64)BA[2] << 5*8) + ((quint64)BA[3] << 4*8) + ((quint64)BA[4] << 3*8) + ((quint64)BA[5] << 2*8) + ((quint64)BA[6] << 1*8) + ((quint64)BA[7] << 0*8);
+		quint16 BA0 = (quint8)BA[0];
+		quint16 BA1 = (quint8)BA[1];
+		quint16 BA2 = (quint8)BA[2];
+		quint16 BA3 = (quint8)BA[2];
+		quint16 BA4 = (quint8)BA[4];
+		quint16 BA5 = (quint8)BA[5];
+		quint16 BA6 = (quint8)BA[6];
+		quint16 BA7 = (quint8)BA[7];
+		PayloadLength = (BA0 << 7*8) + (BA1 << 6*8) + (BA2 << 5*8) + (BA3 << 4*8) + (BA4 << 3*8) + (BA5 << 2*8) + (BA6 << 8) + BA7;
 	}
 
 	// MaskingKey
