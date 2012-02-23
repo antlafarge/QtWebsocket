@@ -73,6 +73,7 @@ public:
 	static QByteArray mask( QByteArray data, QByteArray maskingKey );
 	static QList<QByteArray> composeFrames( QByteArray byteArray, bool asBinary = false, int maxFrameBytes = 0 );
 	static QByteArray composeHeader( bool fin, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray() );
+	static QString composeOpeningHandShake( QString ressourceName, QString host, QString origin, QString extensions, QString key );
 
 	// static vars
 	static int maxBytesPerFrame;

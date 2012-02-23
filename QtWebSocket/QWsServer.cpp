@@ -9,9 +9,12 @@
 const QString QWsServer::regExpResourceNameStr( "GET\\s(.*)\\sHTTP/1.1\r\n" );
 const QString QWsServer::regExpHostStr( "Host:\\s(.+:\\d+)\r\n" );
 const QString QWsServer::regExpKeyStr( "Sec-WebSocket-Key:\\s(.{24})\r\n" );
+const QString QWsServer::regExpKey1Str( "Sec-WebSocket-Key1:\\s(.{24})\r\n" );
+const QString QWsServer::regExpKey2Str( "Sec-WebSocket-Key2:\\s(.{24})\r\n" );
+const QString QWsServer::regExpKey3Str( "(.{8})(\r\n)*$" );
 const QString QWsServer::regExpVersionStr( "Sec-WebSocket-Version:\\s(\\d+)\r\n" );
-const QString QWsServer::regExpOriginStr( "Sec-WebSocket-Origin:\\s(.+)\r\n" );
-const QString QWsServer::regExpOriginV13Str( "Origin:\\s(.+)\r\n" );
+const QString QWsServer::regExpOriginStr( "Origin:\\s(.+)\r\n" );
+const QString QWsServer::regExpOriginV6Str( "Sec-WebSocket-Origin:\\s(.+)\r\n" );
 const QString QWsServer::regExpProtocolStr( "Sec-WebSocket-Protocol:\\s(.+)\r\n" );
 const QString QWsServer::regExpExtensionsStr( "Sec-WebSocket-Extensions:\\s(.+)\r\n" );
 
@@ -67,6 +70,15 @@ void QWsServer::dataReceived()
 	regExp.setMinimal( true );
 	
 	// Extract mandatory datas
+	
+	// Version
+	regExp.setPattern( QWsServer::regExpVersionStr );
+	regExp.indexIn(request);
+	QString versionStr = regExp.cap(1);
+	int version = 0;
+	if ( ! versionStr.isEmpty() )
+		version = versionStr.toInt();
+	
 	// Resource name
 	regExp.setPattern( QWsServer::regExpResourceNameStr );
 	regExp.indexIn(request);
@@ -76,33 +88,44 @@ void QWsServer::dataReceived()
 	regExp.setPattern( QWsServer::regExpHostStr );
 	regExp.indexIn(request);
 	QStringList sl = regExp.cap(1).split(':');
+	QString hostAddress = sl[0];
 	QString hostPort;
 	if ( sl.size() > 1 )
 		hostPort = sl[1];
-	QString hostAddress = sl[0];
 	
 	// Key
-	regExp.setPattern( QWsServer::regExpKeyStr );
-	regExp.indexIn(request);
-	QString key = regExp.cap(1);
-	
-	// Version
-	regExp.setPattern( QWsServer::regExpVersionStr );
-	regExp.indexIn(request);
-	QString version = regExp.cap(1);
+	QString key, key1, key2, key3;
+	if ( version >= 6 )
+	{
+		regExp.setPattern( QWsServer::regExpKeyStr );
+		regExp.indexIn(request);
+		key = regExp.cap(1);
+	}
+	else
+	{
+		regExp.setPattern( QWsServer::regExpKey1Str );
+		regExp.indexIn(request);
+		key1 = regExp.cap(1);
+		regExp.setPattern( QWsServer::regExpKey2Str );
+		regExp.indexIn(request);
+		key2 = regExp.cap(1);
+		regExp.setPattern( QWsServer::regExpKey3Str );
+		regExp.indexIn(request);
+		key3 = regExp.cap(1);
+	}
 	
 	// Extract optional datas
 	// Origin
 	QString origin;
-	if ( version == "13" )
+	if ( version < 6 || version > 8 )
 	{
-		regExp.setPattern( QWsServer::regExpOriginV13Str );
+		regExp.setPattern( QWsServer::regExpOriginStr );
 		regExp.indexIn(request);
 		origin = regExp.cap(1);
 	}
-	else //if ( version == "8" )
+	else
 	{
-		regExp.setPattern( QWsServer::regExpOriginStr );
+		regExp.setPattern( QWsServer::regExpOriginV6Str );
 		regExp.indexIn(request);
 		origin = regExp.cap(1);
 	}
@@ -116,24 +139,54 @@ void QWsServer::dataReceived()
 	regExp.setPattern( QWsServer::regExpExtensionsStr );
 	regExp.indexIn(request);
 	QString extensions = regExp.cap(1);
+	
+	////////////////////////////////////////////////////////////////////
 
 	// If the mandatory params are not setted, we abord the connection to the Websocket server
 	if ( hostAddress.isEmpty()
-		|| hostPort.isEmpty()
 		|| resourceName.isEmpty()
-		|| key.isEmpty()
-		|| version.isEmpty()
-		|| version.toInt() < 8 )
+		|| ( key.isEmpty() && ( key1.isEmpty() || key2.isEmpty() || key3.isEmpty() ) )
+	   )
 		return;
 	
-	// Compose handshake answer
-	QString accept = computeAcceptV2( key );
+	////////////////////////////////////////////////////////////////////
 	
-	QString answer("HTTP/1.1 101 Switching Protocols\r\n");
+	// Compose handshake answer
+	
+	QString answer;
+	
+	if ( version >= 6 )
+		answer.append("HTTP/1.1 101 Switching Protocols\r\n");
+	else
+		answer.append("HTTP/1.1 101 WebSocket Protocol Handshake\r\n");
+	
 	answer.append("Upgrade: websocket\r\n");
 	answer.append("Connection: Upgrade\r\n");
-	answer.append("Sec-WebSocket-Accept: " + accept + "\r\n");
-	answer.append("\r\n");
+	
+	QString accept;
+	if ( version >= 6 )
+		accept = computeAcceptV2( key );
+	else
+		accept = computeAcceptV1( key1, key2, key3 );
+	
+	if ( version < 6 )
+	{
+		answer.append("Sec-WebSocket-Origin: " + origin + "\r\n");
+		answer.append("Sec-WebSocket-Location: ws://" + hostAddress + resourceName + "\r\n");
+		answer.append("Sec-WebSocket-Protocol: sample\r\n");
+	}
+	
+	if ( version >= 6 )
+	{
+		answer.append("Sec-WebSocket-Accept: " + accept + "\r\n");
+		answer.append("\r\n");
+	}
+	else
+	{
+		answer.append("\r\n");
+		answer.append(accept + "\r\n");
+		answer.append("\r\n");
+	}
 
 	// Send handshake answer
 	clientSocket->write( answer.toUtf8() );

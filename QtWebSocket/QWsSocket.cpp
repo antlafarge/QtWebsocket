@@ -47,7 +47,13 @@ void QWsSocket::dataReceived()
 	else if ( PayloadLength == 127 )
 	{
 		BA = tcpSocket->read(8);
-		PayloadLength = ((quint8)BA[0] << 7*8) + ((quint8)BA[1] << 6*8) + ((quint8)BA[2] << 5*8) + ((quint8)BA[3] << 4*8) + ((quint8)BA[4] << 3*8) + ((quint8)BA[5] << 2*8) + ((quint8)BA[6] << 8) + (quint8)BA[7];
+		PayloadLength = 0;
+		quint64 plbyte;
+		for ( int i=0 ; i<8 ; i++ )
+		{
+			plbyte = (quint8)BA[i];
+			PayloadLength += ( plbyte << (7-i)*8 );
+		}
 	}
 
 	// MaskingKey
@@ -298,4 +304,19 @@ void QWsSocket::ping()
 	pingTimer.restart();
 	QByteArray pingFrame = QWsSocket::composeHeader( true, OpPing, 0 );
 	writeFrame( pingFrame );
+}
+
+QString QWsSocket::composeOpeningHandShake( QString ressourceName, QString host, QString origin, QString extensions, QString key )
+{
+	QString hs;
+	hs.append("GET /ws HTTP/1.1\r\n");
+	hs.append("Host: pmx\r\n");
+	hs.append("Upgrade: websocket\r\n");
+	hs.append("Connection: Upgrade\r\n");
+	hs.append("Sec-WebSocket-Version: 6\r\n");
+	hs.append("Sec-WebSocket-Origin: http://pmx\r\n");
+	hs.append("Sec-WebSocket-Extensions: deflate-stream\r\n");
+	hs.append("Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n");
+	hs.append("\r\n");
+	return hs;
 }
