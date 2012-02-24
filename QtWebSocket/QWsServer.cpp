@@ -9,8 +9,8 @@
 const QString QWsServer::regExpResourceNameStr( "GET\\s(.*)\\sHTTP/1.1\r\n" );
 const QString QWsServer::regExpHostStr( "Host:\\s(.+:\\d+)\r\n" );
 const QString QWsServer::regExpKeyStr( "Sec-WebSocket-Key:\\s(.{24})\r\n" );
-const QString QWsServer::regExpKey1Str( "Sec-WebSocket-Key1:\\s(.{24})\r\n" );
-const QString QWsServer::regExpKey2Str( "Sec-WebSocket-Key2:\\s(.{24})\r\n" );
+const QString QWsServer::regExpKey1Str( "Sec-WebSocket-Key1:\\s(.+)\r\n" );
+const QString QWsServer::regExpKey2Str( "Sec-WebSocket-Key2:\\s(.+)\r\n" );
 const QString QWsServer::regExpKey3Str( "(.{8})(\r\n)*$" );
 const QString QWsServer::regExpVersionStr( "Sec-WebSocket-Version:\\s(\\d+)\r\n" );
 const QString QWsServer::regExpOriginStr( "Origin:\\s(.+)\r\n" );
@@ -172,7 +172,7 @@ void QWsServer::dataReceived()
 	if ( version < 6 )
 	{
 		answer.append("Sec-WebSocket-Origin: " + origin + "\r\n");
-		answer.append("Sec-WebSocket-Location: ws://" + hostAddress + resourceName + "\r\n");
+		answer.append("Sec-WebSocket-Location: ws://" + hostAddress + ":" + hostPort + resourceName + "\r\n");
 		answer.append("Sec-WebSocket-Protocol: sample\r\n");
 	}
 	
