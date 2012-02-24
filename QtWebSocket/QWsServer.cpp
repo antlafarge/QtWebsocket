@@ -7,7 +7,7 @@
 #include <QDateTime>
 
 const QString QWsServer::regExpResourceNameStr( "GET\\s(.*)\\sHTTP/1.1\r\n" );
-const QString QWsServer::regExpHostStr( "Host:\\s(.+:\\d+)\r\n" );
+const QString QWsServer::regExpHostStr( "Host:\\s(.+(:\\d+)?)\r\n" );
 const QString QWsServer::regExpKeyStr( "Sec-WebSocket-Key:\\s(.{24})\r\n" );
 const QString QWsServer::regExpKey1Str( "Sec-WebSocket-Key1:\\s(.+)\r\n" );
 const QString QWsServer::regExpKey2Str( "Sec-WebSocket-Key2:\\s(.+)\r\n" );
@@ -66,9 +66,9 @@ void QWsServer::dataReceived()
 
 	QString request( clientSocket->readAll() );
 
-	Log::display( "======== Handshake Received ========" );
+	Log::display( "======== Handshake Received" );
 	Log::display( request );
-	Log::display( "====================================" );
+	Log::display( "========" );
 
 	QRegExp regExp;
 	regExp.setMinimal( true );
@@ -159,25 +159,26 @@ void QWsServer::dataReceived()
 	
 	QString answer;
 	
-	if ( version >= 6 )
-		answer.append("HTTP/1.1 101 Switching Protocols\r\n");
-	else
-		answer.append("HTTP/1.1 101 WebSocket Protocol Handshake\r\n");
-	
-	answer.append("Upgrade: websocket\r\n");
-	answer.append("Connection: Upgrade\r\n");
-	
 	QString accept;
 	if ( version >= 6 )
 		accept = computeAcceptV2( key );
 	else
 		accept = computeAcceptV1( key1, key2, key3 );
 	
+	if ( version >= 6 )
+		answer.append("HTTP/1.1 101 Switching Protocols\r\n");
+	else
+		answer.append("HTTP/1.1 101 WebSocket Protocol Handshake\r\n");
+	
+	answer.append("Upgrade: Websocket\r\n");
+	answer.append("Connection: Upgrade\r\n");
+	
 	if ( version < 6 )
 	{
 		answer.append("Sec-WebSocket-Origin: " + origin + "\r\n");
-		answer.append("Sec-WebSocket-Location: ws://" + hostAddress + ":" + hostPort + resourceName + "\r\n");
-		answer.append("Sec-WebSocket-Protocol: sample\r\n");
+		answer.append("Sec-WebSocket-Location: ws://" + hostAddress + ( hostPort.isEmpty() ? "" : (":"+hostPort) ) + resourceName + "\r\n");
+		if ( !protocol.isEmpty() )
+			answer.append("Sec-WebSocket-Protocol: " + protocol + "\r\n");
 	}
 	
 	if ( version >= 6 )
@@ -188,27 +189,27 @@ void QWsServer::dataReceived()
 	else
 	{
 		answer.append("\r\n");
-		answer.append(accept + "\r\n");
-		answer.append("\r\n");
+		answer.append(accept);
 	}
 
-	Log::display( "========== Handshake sent ==========" );
+	Log::display( "======== Handshake sent" );
 	Log::display( answer );
-	Log::display( "====================================" );
+	Log::display( "========" );
+
+	// Handshake OK, new connection
+	disconnect(clientSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 
 	// Send handshake answer
 	clientSocket->write( answer.toUtf8() );
 	clientSocket->flush();
 
-	// Handshake OK, new connection
-	disconnect(clientSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
-	
 	// TEMPORARY CODE FOR LINUX COMPATIBILITY
 	QWsSocket * wsSocket = new QWsSocket( clientSocket, this );
 	addPendingConnection( wsSocket );
 	emit newConnection();
 
 	/*
+	// ORIGINAL CODE
 	int socketDescriptor = clientSocket->socketDescriptor();
 	incomingConnection( socketDescriptor );
 	*/
