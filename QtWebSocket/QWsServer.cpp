@@ -66,6 +66,10 @@ void QWsServer::dataReceived()
 
 	QString request( clientSocket->readAll() );
 
+	Log::display( "======== Handshake Received ========" );
+	Log::display( request );
+	Log::display( "====================================" );
+
 	QRegExp regExp;
 	regExp.setMinimal( true );
 	
