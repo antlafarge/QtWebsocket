@@ -57,7 +57,7 @@ void QWsServer::newTcpConnection()
 	QObject * clientObject = qobject_cast<QObject*>(clientSocket);
 	connect(clientObject, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 }
-
+#include "Log.h"
 void QWsServer::dataReceived()
 {
 	QTcpSocket * clientSocket = qobject_cast<QTcpSocket*>(sender());
@@ -191,6 +191,10 @@ void QWsServer::dataReceived()
 		answer.append(accept + "\r\n");
 		answer.append("\r\n");
 	}
+
+	Log::display( "========== Handshake sent ==========" );
+	Log::display( answer );
+	Log::display( "====================================" );
 
 	// Send handshake answer
 	clientSocket->write( answer.toUtf8() );
