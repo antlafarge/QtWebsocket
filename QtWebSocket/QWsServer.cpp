@@ -5,6 +5,7 @@
 #include <QByteArray>
 #include <QCryptographicHash>
 #include <QDateTime>
+#include <QDebug>
 
 const QString QWsServer::regExpResourceNameStr( "GET\\s(.*)\\sHTTP/1.1\r\n" );
 const QString QWsServer::regExpHostStr( "Host:\\s(.+(:\\d+)?)\r\n" );
@@ -66,10 +67,9 @@ void QWsServer::dataReceived()
 
 	QString request( clientSocket->readAll() );
 
-//	Log::display( "======== Handshake Received" );
-//	Log::display( request );
-//	Log::display( "========" );
-//	Log::display( "" );
+    qDebug() << "======== Handshake Received \n"
+        << request
+        << "======== \n";
 
 	QRegExp regExp;
 	regExp.setMinimal( true );
@@ -183,10 +183,9 @@ void QWsServer::dataReceived()
 		answer.append( accept );
 	}
 	
-//	Log::display( "======== Handshake sent" );
-//	Log::display( answer );
-//	Log::display( "========" );
-//	Log::display( "" );
+    qDebug() << "======== Handshake sent \n"
+        << answer
+        << "======== \n";
 
 	// Handshake OK, new connection
 	disconnect(clientSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
