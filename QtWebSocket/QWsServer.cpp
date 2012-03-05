@@ -162,35 +162,27 @@ void QWsServer::dataReceived()
 	
 	QString accept;
 	if ( version >= 6 )
-		accept = computeAcceptV2( key );
-	else
-		accept = computeAcceptV1( key1, key2, key3 );
-	
-	if ( version >= 6 )
-		answer.append("HTTP/1.1 101 Switching Protocols\r\n");
-	else
-		answer.append("HTTP/1.1 101 WebSocket Protocol Handshake\r\n");
-	
-	answer.append("Upgrade: Websocket\r\n");
-	answer.append("Connection: Upgrade\r\n");
-	
-	if ( version < 6 )
 	{
+		accept = computeAcceptV2( key );
+		answer.append("HTTP/1.1 101 Switching Protocols\r\n");
+		answer.append("Upgrade: websocket\r\n");
+		answer.append("Connection: Upgrade\r\n");
+		answer.append("Sec-WebSocket-Accept: " + accept + "\r\n" + "\r\n");
+	}
+	else if ( version < 6 )
+	{
+		accept = computeAcceptV1( key1, key2, key3 );
+		answer.append("HTTP/1.1 101 WebSocket Protocol Handshake\r\n");
+		answer.append("Upgrade: Websocket\r\n");
+		answer.append("Connection: Upgrade\r\n");
 		answer.append("Sec-WebSocket-Origin: " + origin + "\r\n");
 		answer.append("Sec-WebSocket-Location: ws://" + hostAddress + ( hostPort.isEmpty() ? "" : (":"+hostPort) ) + resourceName + "\r\n");
 		if ( !protocol.isEmpty() )
 			answer.append("Sec-WebSocket-Protocol: " + protocol + "\r\n");
+		//answer.append( "\r\n" );
+		answer.append( accept );
 	}
 	
-	if ( version >= 6 )
-	{
-		answer.append("Sec-WebSocket-Accept: " + accept + "\r\n");
-	}
-	else
-	{
-		answer.append(accept);
-	}
-
 	Log::display( "======== Handshake sent" );
 	Log::display( answer );
 	Log::display( "========" );
