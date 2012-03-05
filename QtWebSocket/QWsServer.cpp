@@ -57,7 +57,7 @@ void QWsServer::newTcpConnection()
 	QObject * clientObject = qobject_cast<QObject*>(clientSocket);
 	connect(clientObject, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 }
-#include "Log.h"
+//#include "Log.h"
 void QWsServer::dataReceived()
 {
 	QTcpSocket * clientSocket = qobject_cast<QTcpSocket*>(sender());
@@ -66,10 +66,10 @@ void QWsServer::dataReceived()
 
 	QString request( clientSocket->readAll() );
 
-	Log::display( "======== Handshake Received" );
-	Log::display( request );
-	Log::display( "========" );
-	Log::display( "" );
+//	Log::display( "======== Handshake Received" );
+//	Log::display( request );
+//	Log::display( "========" );
+//	Log::display( "" );
 
 	QRegExp regExp;
 	regExp.setMinimal( true );
@@ -183,10 +183,10 @@ void QWsServer::dataReceived()
 		answer.append( accept );
 	}
 	
-	Log::display( "======== Handshake sent" );
-	Log::display( answer );
-	Log::display( "========" );
-	Log::display( "" );
+//	Log::display( "======== Handshake sent" );
+//	Log::display( answer );
+//	Log::display( "========" );
+//	Log::display( "" );
 
 	// Handshake OK, new connection
 	disconnect(clientSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
