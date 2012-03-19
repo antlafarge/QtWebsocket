@@ -10,7 +10,7 @@ ressources_raw
 *.user
 
 # VS projects
-*.sln
+#*.sln
 *.vcproj
 
 # Build results
@@ -92,3 +92,10 @@ Log.txt
 
 # git patch files
 *.patch
+
+# QtCreator specific
+*.pro.user
+
+
+#Vim backup files: 
+*~

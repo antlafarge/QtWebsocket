@@ -5,6 +5,7 @@
 #include <QByteArray>
 #include <QCryptographicHash>
 #include <QDateTime>
+#include <QDebug>
 
 const QString QWsServer::regExpResourceNameStr( "GET\\s(.*)\\sHTTP/1.1\r\n" );
 const QString QWsServer::regExpHostStr( "Host:\\s(.+(:\\d+)?)\r\n" );
@@ -57,7 +58,7 @@ void QWsServer::newTcpConnection()
 	QObject * clientObject = qobject_cast<QObject*>(clientSocket);
 	connect(clientObject, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 }
-#include "Log.h"
+
 void QWsServer::dataReceived()
 {
 	QTcpSocket * clientSocket = qobject_cast<QTcpSocket*>(sender());
@@ -144,10 +145,9 @@ void QWsServer::dataReceived()
 
 	if ( version < 6 )
 	{
-		Log::display( "======== Handshake Received" );
-		Log::display( request );
-		Log::display( "========" );
-		Log::display( "" );
+		qDebug() << "======== Handshake Received \n"
+				 << request
+				 << "======== \n";
 	}
 
 	// If the mandatory params are not setted, we abord the connection to the Websocket server
@@ -187,10 +187,9 @@ void QWsServer::dataReceived()
 	
 	if ( version < 6 )
 	{
-		Log::display( "======== Handshake sent" );
-		Log::display( answer );
-		Log::display( "========" );
-		Log::display( "" );
+		qDebug() << "======== Handshake sent \n"
+				 << answer
+				 << "======== \n";
 	}
 
 	// Handshake OK, new connection
@@ -296,7 +295,7 @@ QString QWsServer::computeAcceptV2(QString key)
 	QByteArray hash = QCryptographicHash::hash ( key.toUtf8(), QCryptographicHash::Sha1 );
 	return hash.toBase64();
 }
-#include "Log.h"
+
 QString QWsServer::computeAcceptV1( QString key1, QString key2, QString key3 )
 {
 	QString numStr1;
@@ -319,14 +318,14 @@ QString QWsServer::computeAcceptV1( QString key1, QString key2, QString key3 )
 	quint32 num1 = numStr1.toUInt();
 	quint32 num2 = numStr2.toUInt();
 
-	Log::display( QString::number(num1) );
-	Log::display( QString::number(num2) );
+	qDebug() << QString::number(num1);
+	qDebug() << QString::number(num2);
 
 	int numSpaces1 = key1.count( ' ' );
 	int numSpaces2 = key2.count( ' ' );
 
-	Log::display( QString::number(numSpaces1) );
-	Log::display( QString::number(numSpaces2) );
+	qDebug() << QString::number(numSpaces1);
+	qDebug() << QString::number(numSpaces2);
 
 	num1 /= numSpaces1;
 	num2 /= numSpaces2;
