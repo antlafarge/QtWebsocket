@@ -66,11 +66,6 @@ void QWsServer::dataReceived()
 
 	QString request( clientSocket->readAll() );
 
-	Log::display( "======== Handshake Received" );
-	Log::display( request );
-	Log::display( "========" );
-	Log::display( "" );
-
 	QRegExp regExp;
 	regExp.setMinimal( true );
 	
@@ -147,6 +142,14 @@ void QWsServer::dataReceived()
 	
 	////////////////////////////////////////////////////////////////////
 
+	if ( version < 6 )
+	{
+		Log::display( "======== Handshake Received" );
+		Log::display( request );
+		Log::display( "========" );
+		Log::display( "" );
+	}
+
 	// If the mandatory params are not setted, we abord the connection to the Websocket server
 	if ( hostAddress.isEmpty()
 		|| resourceName.isEmpty()
@@ -179,14 +182,16 @@ void QWsServer::dataReceived()
 		answer.append("Sec-WebSocket-Location: ws://" + hostAddress + ( hostPort.isEmpty() ? "" : (":"+hostPort) ) + resourceName + "\r\n");
 		if ( !protocol.isEmpty() )
 			answer.append("Sec-WebSocket-Protocol: " + protocol + "\r\n");
-		//answer.append( "\r\n" );
 		answer.append( accept );
 	}
 	
-	Log::display( "======== Handshake sent" );
-	Log::display( answer );
-	Log::display( "========" );
-	Log::display( "" );
+	if ( version < 6 )
+	{
+		Log::display( "======== Handshake sent" );
+		Log::display( answer );
+		Log::display( "========" );
+		Log::display( "" );
+	}
 
 	// Handshake OK, new connection
 	disconnect(clientSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
@@ -291,8 +296,8 @@ QString QWsServer::computeAcceptV2(QString key)
 	QByteArray hash = QCryptographicHash::hash ( key.toUtf8(), QCryptographicHash::Sha1 );
 	return hash.toBase64();
 }
-
-QString QWsServer::computeAcceptV1( QString key1, QString key2, QString thirdPart )
+#include "Log.h"
+QString QWsServer::computeAcceptV1( QString key1, QString key2, QString key3 )
 {
 	QString numStr1;
 	QString numStr2;
@@ -314,14 +319,20 @@ QString QWsServer::computeAcceptV1( QString key1, QString key2, QString thirdPar
 	quint32 num1 = numStr1.toUInt();
 	quint32 num2 = numStr2.toUInt();
 
+	Log::display( QString::number(num1) );
+	Log::display( QString::number(num2) );
+
 	int numSpaces1 = key1.count( ' ' );
 	int numSpaces2 = key2.count( ' ' );
+
+	Log::display( QString::number(numSpaces1) );
+	Log::display( QString::number(numSpaces2) );
 
 	num1 /= numSpaces1;
 	num2 /= numSpaces2;
 
-	QString concat = serializeInt( num1 ) + serializeInt( num2 ) + thirdPart;
-	
+	QString concat = serializeInt( num1 ) + serializeInt( num2 ) + key3;
+
 	QByteArray md5 = QCryptographicHash::hash( concat.toAscii(), QCryptographicHash::Md5 );
   
 	return QString( md5 );
