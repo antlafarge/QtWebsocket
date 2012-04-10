@@ -143,12 +143,12 @@ void QWsServer::dataReceived()
 	
 	////////////////////////////////////////////////////////////////////
 
-	if ( version < 6 )
-	{
-		qDebug() << "======== Handshake Received \n"
-				 << request
-				 << "======== \n";
-	}
+	//if ( version < 6 )
+	//{
+	//	qDebug() << "======== Handshake Received \n"
+	//			 << request
+	//			 << "======== \n";
+	//}
 
 	// If the mandatory params are not setted, we abord the connection to the Websocket server
 	if ( hostAddress.isEmpty()
@@ -182,21 +182,22 @@ void QWsServer::dataReceived()
 		answer.append("Sec-WebSocket-Location: ws://" + hostAddress + ( hostPort.isEmpty() ? "" : (":"+hostPort) ) + resourceName + "\r\n");
 		if ( !protocol.isEmpty() )
 			answer.append("Sec-WebSocket-Protocol: " + protocol + "\r\n");
+		answer.append("\r\n");
 		answer.append( accept );
 	}
 	
-	if ( version < 6 )
-	{
-		qDebug() << "======== Handshake sent \n"
-				 << answer
-				 << "======== \n";
-	}
+	//if ( version < 6 )
+	//{
+	//	qDebug() << "======== Handshake sent \n"
+	//			 << answer
+	//			 << "======== \n";
+	//}
 
 	// Handshake OK, new connection
 	disconnect(clientSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 
 	// Send handshake answer
-	clientSocket->write( answer.toUtf8() );
+	clientSocket->write( answer.toAscii() );
 	clientSocket->flush();
 
 	// TEMPORARY CODE FOR LINUX COMPATIBILITY
@@ -318,14 +319,14 @@ QString QWsServer::computeAcceptV1( QString key1, QString key2, QString key3 )
 	quint32 num1 = numStr1.toUInt();
 	quint32 num2 = numStr2.toUInt();
 
-	qDebug() << QString::number(num1);
-	qDebug() << QString::number(num2);
+	//qDebug() << QString::number(num1);
+	//qDebug() << QString::number(num2);
 
 	int numSpaces1 = key1.count( ' ' );
 	int numSpaces2 = key2.count( ' ' );
 
-	qDebug() << QString::number(numSpaces1);
-	qDebug() << QString::number(numSpaces2);
+	//qDebug() << QString::number(numSpaces1);
+	//qDebug() << QString::number(numSpaces2);
 
 	num1 /= numSpaces1;
 	num2 /= numSpaces2;
