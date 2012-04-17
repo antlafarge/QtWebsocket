@@ -57,6 +57,7 @@ void QWsServer::newTcpConnection()
 	QTcpSocket * clientSocket = tcpServer->nextPendingConnection();
 	QObject * clientObject = qobject_cast<QObject*>(clientSocket);
 	connect(clientObject, SIGNAL(readyRead()), this, SLOT(dataReceived()));
+	headerBuffer.insert(clientSocket, QStringList());
 }
 
 void QWsServer::dataReceived()
@@ -65,7 +66,25 @@ void QWsServer::dataReceived()
 	if (clientSocket == 0)
 		return;
 
-	QString request( clientSocket->readAll() );
+	bool allHeadersFetched = false;
+
+	const QLatin1String emptyLine("\r\n");
+
+	while (clientSocket->canReadLine()) {
+		QString line = clientSocket->readLine();
+
+		if (line == emptyLine) {
+			allHeadersFetched = true;
+			break;
+		}
+
+		headerBuffer[clientSocket].append(line);
+	}
+
+	if (!allHeadersFetched)
+	    return;
+
+	QString request( headerBuffer.take(clientSocket).join("") );
 
 	QRegExp regExp;
 	regExp.setMinimal( true );

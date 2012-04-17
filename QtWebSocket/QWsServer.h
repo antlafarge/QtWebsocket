@@ -2,13 +2,17 @@
 #define QWSSERVER_H
 
 #include <QObject>
+#include <QMap>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QString>
+#include <QStringList>
 #include <QQueue>
 #include <QNetworkProxy>
 
 #include "QWsSocket.h"
+
+class QTcpSocket;
 
 class QWsServer : public QObject
 {
@@ -55,6 +59,7 @@ private:
 	// private attributes
 	QTcpServer * tcpServer;
 	QQueue<QWsSocket*> pendingConnections;
+	QMap<const QTcpSocket*, QStringList> headerBuffer;
 
 public:
 	// public static functions
