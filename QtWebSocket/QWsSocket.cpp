@@ -83,7 +83,7 @@ void QWsSocket::dataReceived()
 			break;
 		}
 
-		if (tcpSocket->bytesAvailable() < 2)
+		if (tcpSocket->bytesAvailable() < 4)
 			return;
 
 		tcpSocket->read(maskingKey.data(), 4); // XXX: Handle return value
