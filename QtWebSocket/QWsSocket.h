@@ -60,6 +60,15 @@ private slots:
 	// private func
 	void tcpSocketAboutToClose();
 	void tcpSocketDisconnected();
+private:
+	enum EState
+	{
+		HeaderPending,
+		PayloadLengthPending,
+		BigPayloadLenghPending,
+		MaskPending,
+		PayloadBodyPending
+	};
 
 private:
 	// private vars
@@ -67,6 +76,12 @@ private:
 	QByteArray currentFrame;
 	QTime pingTimer;
 
+	EState state;
+	EOpcode opcode;
+	bool isFinalFragment;
+	bool hasMask;
+	quint64 payloadLength;
+	QByteArray maskingKey;
 public:
 	// Static functions
 	static QByteArray generateMaskingKey();
