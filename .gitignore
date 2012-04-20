@@ -48,6 +48,9 @@ ressources_raw
 Ankh.NoLoad
 *.sln.cache
 
+# Test results
+Test/reports/
+
 # Visual C++ cache files
 ipch/
 obj/
