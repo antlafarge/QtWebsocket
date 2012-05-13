@@ -147,7 +147,7 @@ void QWsServer::dataReceived()
 	//{
 	//	qDebug() << "======== Handshake Received \n"
 	//			 << request
-	//			 << "======== \n";
+	//			 << "\n======== \n";
 	//}
 
 	// If the mandatory params are not setted, we abord the connection to the Websocket server
@@ -190,7 +190,7 @@ void QWsServer::dataReceived()
 	//{
 	//	qDebug() << "======== Handshake sent \n"
 	//			 << answer
-	//			 << "======== \n";
+	//			 << "\n======== \n";
 	//}
 
 	// Handshake OK, new connection
@@ -201,7 +201,7 @@ void QWsServer::dataReceived()
 	clientSocket->flush();
 
 	// TEMPORARY CODE FOR LINUX COMPATIBILITY
-	QWsSocket * wsSocket = new QWsSocket( clientSocket, this );
+	QWsSocket * wsSocket = new QWsSocket( clientSocket, this, version );
 	addPendingConnection( wsSocket );
 	emit newConnection();
 

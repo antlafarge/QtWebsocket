@@ -32,7 +32,7 @@ public:
 
 public:
 	// ctor
-	QWsSocket(QTcpSocket * socket = 0, QObject * parent = 0);
+	QWsSocket(QTcpSocket * socket = 0, QObject * parent = 0, quint8 protVersion = 13);
 	// dtor
 	virtual ~QWsSocket();
 
@@ -52,6 +52,7 @@ signals:
 protected:
 	qint64 writeFrames ( QList<QByteArray> framesList );
 	qint64 writeFrame ( const QByteArray & byteArray );
+	void dataReceivedV0();
 
 protected slots:
 	void dataReceived();
@@ -66,6 +67,7 @@ private:
 	QTcpSocket * tcpSocket;
 	QByteArray currentFrame;
 	QTime pingTimer;
+	quint8 protocolVersion;
 
 public:
 	// Static functions

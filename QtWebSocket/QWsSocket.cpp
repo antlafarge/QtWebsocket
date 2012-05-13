@@ -2,10 +2,11 @@
 
 int QWsSocket::maxBytesPerFrame = 1400;
 
-QWsSocket::QWsSocket(QTcpSocket * socket, QObject * parent) :
+QWsSocket::QWsSocket( QTcpSocket * socket, QObject * parent, quint8 protVers ) :
 	QAbstractSocket( QAbstractSocket::UnknownSocketType, parent )
 {
 	tcpSocket = socket;
+	protocolVersion = protVers;
 
 	//setSocketState( QAbstractSocket::UnconnectedState );
 	setSocketState( socket->state() );
@@ -21,6 +22,12 @@ QWsSocket::~QWsSocket()
 
 void QWsSocket::dataReceived()
 {
+	if ( protocolVersion == 0 )
+	{
+		dataReceivedV0();
+		return;
+	}
+
 	QByteArray BA; // ReadBuffer
 	quint8 byte; // currentByteBuffer
 
@@ -109,8 +116,83 @@ void QWsSocket::dataReceived()
 		dataReceived();
 }
 
+void QWsSocket::dataReceivedV0()
+{
+	QByteArray BA, rawData;
+	quint8 type, b = 0x00;
+
+	BA = tcpSocket->read(1);
+	type = BA[0];
+
+	if ( ( type & 0x80 ) == 0x00 ) // MSB of type not set
+	{
+		if ( type != 0x00 )
+		{
+			// ABORT CONNEXION
+			tcpSocket->readAll();
+			return;
+		}
+		
+		// read data
+		do
+		{
+			BA = tcpSocket->read(1);
+			b = BA[0];
+			if ( b != 0xFF )
+				rawData.append( b );
+		} while ( b != 0xFF );
+
+		currentFrame.append( rawData );
+	}
+	else // MSB of type set
+	{
+		if ( type != 0xFF )
+		{
+			// ABORT CONNEXION
+			tcpSocket->readAll();
+			return;
+		}
+
+		quint8 length = 0x00;
+		
+		bool bIsNotZero = true;
+		do
+		{
+			BA = tcpSocket->read(1);
+			b = BA[0];
+			bIsNotZero = ( b != 0x00 ? true : false );
+			if ( bIsNotZero ) // b must be != 0
+			{
+				quint8 b_v = b & 0x7F;
+				length *= 128;
+				length += b_v;
+			}
+		} while ( ( ( b & 0x80 ) == 0x80 ) && bIsNotZero );
+
+		BA = tcpSocket->read(length); // discard this bytes
+	}
+
+	if ( currentFrame.size() > 0 )
+	{
+		QString byteString;
+		byteString.reserve( currentFrame.size() );
+		for (int i=0 ; i<currentFrame.size() ; i++)
+			byteString[i] = currentFrame[i];
+		emit frameReceived( byteString );
+		currentFrame.clear();
+	}
+
+	if ( tcpSocket->bytesAvailable() )
+		dataReceived();
+}
+
 qint64 QWsSocket::write ( const QString & string, int maxFrameBytes )
 {
+	if ( protocolVersion == 0 )
+	{
+		return QWsSocket::write( string.toAscii(), maxFrameBytes );
+	}
+
 	if ( maxFrameBytes == 0 )
 		maxFrameBytes = maxBytesPerFrame;
 
@@ -120,6 +202,15 @@ qint64 QWsSocket::write ( const QString & string, int maxFrameBytes )
 
 qint64 QWsSocket::write ( const QByteArray & byteArray, int maxFrameBytes )
 {
+	if ( protocolVersion == 0 )
+	{
+		QByteArray BA;
+		BA.append( (char)0x00 );
+		BA.append( byteArray );
+		BA.append( (char)0xFF );
+		return writeFrame( BA );
+	}
+
 	if ( maxFrameBytes == 0 )
 		maxFrameBytes = maxBytesPerFrame;
 
@@ -144,6 +235,16 @@ qint64 QWsSocket::writeFrames ( QList<QByteArray> framesList )
 
 void QWsSocket::close( QString reason )
 {
+	if ( protocolVersion == 0 )
+	{
+		QByteArray BA;
+		BA.append( (char)0xFF );
+		BA.append( (char)0x00 );
+		tcpSocket->write(BA);
+		tcpSocket->close();
+		return;
+	}
+
 	// Compose and send close frame
 	quint64 messageSize = reason.size();
 	QByteArray maskingKey = generateMaskingKey();
