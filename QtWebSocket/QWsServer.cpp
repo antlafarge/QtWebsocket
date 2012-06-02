@@ -143,13 +143,6 @@ void QWsServer::dataReceived()
 	
 	////////////////////////////////////////////////////////////////////
 
-	//if ( version < 6 )
-	//{
-	//	qDebug() << "======== Handshake Received \n"
-	//			 << request
-	//			 << "\n======== \n";
-	//}
-
 	// If the mandatory params are not setted, we abord the connection to the Websocket server
 	if ( hostAddress.isEmpty()
 		|| resourceName.isEmpty()
@@ -186,13 +179,6 @@ void QWsServer::dataReceived()
 		answer.append( accept );
 	}
 	
-	//if ( version < 6 )
-	//{
-	//	qDebug() << "======== Handshake sent \n"
-	//			 << answer
-	//			 << "\n======== \n";
-	//}
-
 	// Handshake OK, new connection
 	disconnect(clientSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 

@@ -247,7 +247,6 @@ void QWsSocket::close( QString reason )
 
 	// Compose and send close frame
 	quint64 messageSize = reason.size();
-	QByteArray maskingKey = generateMaskingKey();
 	QByteArray BA;
 	quint8 byte;
 
@@ -299,7 +298,7 @@ QList<QByteArray> QWsSocket::composeFrames( QByteArray byteArray, bool asBinary,
 
 	QList<QByteArray> framesList;
 
-	QByteArray maskingKey = generateMaskingKey();
+	QByteArray maskingKey;// = generateMaskingKey();
 
 	int nbFrames = byteArray.size() / maxFrameBytes + 1;
 
@@ -332,7 +331,7 @@ QList<QByteArray> QWsSocket::composeFrames( QByteArray byteArray, bool asBinary,
 		QByteArray dataForThisFrame = byteArray.left( size );
 		byteArray.remove( 0, size );
 		
-		dataForThisFrame = QWsSocket::mask( dataForThisFrame, maskingKey );
+		//dataForThisFrame = QWsSocket::mask( dataForThisFrame, maskingKey );
 		BA.append( dataForThisFrame );
 		
 		framesList << BA;
