@@ -1,0 +1,11 @@
+
+{
+   "options": {"failByDrop": false},
+   "outdir": "./reports/servers",
+
+	"servers": [{"agent": "QtWebSocket", "url": "ws://localhost:1337", "options": {"version": 18}}],
+
+   "cases": ["*"],
+   "exclude-cases": ["9.*", "10.*"],
+   "exclude-agent-cases": {}
+}
