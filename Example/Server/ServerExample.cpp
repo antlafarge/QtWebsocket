@@ -9,11 +9,11 @@ ServerExample::ServerExample()
 	if ( ! server->listen(QHostAddress::Any, port) )
 	{
 		Log::display( "Error: Can't launch server" );
-		QMessageBox::critical(0, "QWsServer error", server->errorString());
+		Log::display( "QWsServer error : " + server->errorString() );
 	}
 	else
 	{
-		Log::display( "Server is listening port " + QString::number(port) );
+		Log::display( "Server is listening porté " + QString::number(port) );
 	}
 	connect(server, SIGNAL(newConnection()), this, SLOT(onClientConnection()));
 }
@@ -43,7 +43,7 @@ void ServerExample::onDataReceived(QString data)
 	if (socket == 0)
 		return;
 
-	Log::display( data );
+	Log::display( QString(data.toLatin1()) );
 	
 	QWsSocket * client;
 	foreach ( client, clients )

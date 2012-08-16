@@ -112,33 +112,25 @@ void QWsSocket::dataReceived()
 		if ( !isFinalFragment )
 			break;
 
-		// XXX: Consider switch/case instead
-		if ( opcode == OpBinary )
+		switch ( opcode )
 		{
-			emit frameReceived( currentFrame );
+			case OpBinary:
+				emit frameReceived( currentFrame );
+				break;
+			case OpText:
+				emit frameReceived( QString::fromAscii(currentFrame) );
+				break;
+			case OpPing:
+				write( QWsSocket::composeHeader( true, OpPong, 0 ) );
+				break;
+			case OpPong:
+				emit pong( pingTimer.elapsed() );
+				break;
+			case OpClose:
+				tcpSocket->close();
+				break;
 		}
-		else if ( opcode == OpText )
-		{
-			QString byteString;
-			byteString.reserve(currentFrame.size());
-			for (int i=0 ; i<currentFrame.size() ; i++)
-				byteString[i] = currentFrame[i];
-			emit frameReceived( byteString );
-		}
-		else if ( opcode == OpPing )
-		{
-			QByteArray pongRequest = QWsSocket::composeHeader( true, OpPong, 0 );
-			write( pongRequest );
-		}
-		else if ( opcode == OpPong )
-		{
-			quint64 ms = pingTimer.elapsed();
-			emit pong(ms);
-		}
-		else if ( opcode == OpClose )
-		{
-			tcpSocket->close();
-		}
+
 		currentFrame.clear();
 	}; break;
 	} /* while (true) switch */

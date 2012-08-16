@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QtWebSocket", "QtWebSocket\QtWebSocket.vcproj", "{7B7BC528-6BF7-4F0A-BD84-4B57CA0A2606}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AutobahnTestSuite", "AutobahnTestSuite\Test.vcproj", "{CF0BAFAA-70E5-4777-8196-AAE035657648}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QtWebsocket", "QtWebsocket\QtWebsocket.vcproj", "{7E3A920C-4257-41A1-B9B9-BFA138C1C8A2}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ServerExample", "Example\Server\ServerExample.vcproj", "{11ADF8AB-7848-464E-AC82-C30F32A46184}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,14 +13,18 @@ Global
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{7B7BC528-6BF7-4F0A-BD84-4B57CA0A2606}.Debug|Win32.ActiveCfg = Debug|Win32
-		{7B7BC528-6BF7-4F0A-BD84-4B57CA0A2606}.Debug|Win32.Build.0 = Debug|Win32
-		{7B7BC528-6BF7-4F0A-BD84-4B57CA0A2606}.Release|Win32.ActiveCfg = Release|Win32
-		{7B7BC528-6BF7-4F0A-BD84-4B57CA0A2606}.Release|Win32.Build.0 = Release|Win32
 		{CF0BAFAA-70E5-4777-8196-AAE035657648}.Debug|Win32.ActiveCfg = Debug|Win32
 		{CF0BAFAA-70E5-4777-8196-AAE035657648}.Debug|Win32.Build.0 = Debug|Win32
 		{CF0BAFAA-70E5-4777-8196-AAE035657648}.Release|Win32.ActiveCfg = Release|Win32
 		{CF0BAFAA-70E5-4777-8196-AAE035657648}.Release|Win32.Build.0 = Release|Win32
+		{7E3A920C-4257-41A1-B9B9-BFA138C1C8A2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7E3A920C-4257-41A1-B9B9-BFA138C1C8A2}.Debug|Win32.Build.0 = Debug|Win32
+		{7E3A920C-4257-41A1-B9B9-BFA138C1C8A2}.Release|Win32.ActiveCfg = Release|Win32
+		{7E3A920C-4257-41A1-B9B9-BFA138C1C8A2}.Release|Win32.Build.0 = Release|Win32
+		{11ADF8AB-7848-464E-AC82-C30F32A46184}.Debug|Win32.ActiveCfg = Debug|Win32
+		{11ADF8AB-7848-464E-AC82-C30F32A46184}.Debug|Win32.Build.0 = Debug|Win32
+		{11ADF8AB-7848-464E-AC82-C30F32A46184}.Release|Win32.ActiveCfg = Release|Win32
+		{11ADF8AB-7848-464E-AC82-C30F32A46184}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
