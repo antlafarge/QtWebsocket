@@ -21,6 +21,7 @@
 			var debugTextArea = document.getElementById("debugTextArea");
 			function debug(message)
 			{
+				//console.log( "string received :", '"'+message+'"' );
 				debugTextArea.value += message + "\n";
 				debugTextArea.scrollTop = debugTextArea.scrollHeight;
 			}
@@ -54,6 +55,7 @@
 						debug("DISCONNECTED");
 					};
 					websocket.onmessage = function (evt) {
+						console.log( "arguments", arguments );
 						debug( evt.data );
 					};
 					websocket.onerror = function (evt) {

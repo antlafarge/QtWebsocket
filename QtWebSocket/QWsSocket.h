@@ -5,6 +5,18 @@
 #include <QTcpSocket>
 #include <QTime>
 
+enum EWebsocketVersion
+{
+	WS_VUnknow = -1,
+	WS_V0 = 0,
+	WS_V4 = 4,
+	WS_V5 = 5,
+	WS_V6 = 6,
+	WS_V7 = 7,
+	WS_V8 = 8,
+	WS_V13 = 13
+};
+
 class QWsSocket : public QAbstractSocket
 {
 	Q_OBJECT
@@ -32,7 +44,7 @@ public:
 
 public:
 	// ctor
-	QWsSocket(QTcpSocket * socket = 0, QObject * parent = 0, quint8 protVersion = 13);
+	QWsSocket( QTcpSocket * socket = 0, QObject * parent = 0, EWebsocketVersion websocketVersion = WS_V13 );
 	// dtor
 	virtual ~QWsSocket();
 
@@ -61,14 +73,29 @@ private slots:
 	// private func
 	void tcpSocketAboutToClose();
 	void tcpSocketDisconnected();
+private:
+	enum EState
+	{
+		HeaderPending,
+		PayloadLengthPending,
+		BigPayloadLenghPending,
+		MaskPending,
+		PayloadBodyPending
+	};
 
 private:
 	// private vars
 	QTcpSocket * tcpSocket;
 	QByteArray currentFrame;
 	QTime pingTimer;
-	quint8 protocolVersion;
+	EWebsocketVersion websocketVersion;
 
+	EState state;
+	EOpcode opcode;
+	bool isFinalFragment;
+	bool hasMask;
+	quint64 payloadLength;
+	QByteArray maskingKey;
 public:
 	// Static functions
 	static QByteArray generateMaskingKey();
