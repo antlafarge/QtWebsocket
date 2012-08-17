@@ -1,10 +1,11 @@
 #include "QWsSocket.h"
 
+#include <QCryptographicHash>
 #include <QtEndian>
 
 int QWsSocket::maxBytesPerFrame = 1400;
 
-QWsSocket::QWsSocket( QTcpSocket * socket, QObject * parent, EWebsocketVersion ws_v ) :
+QWsSocket::QWsSocket( QTcpSocket * socket, QObject * parent ) :
 	QAbstractSocket( QAbstractSocket::UnknownSocketType, parent ),
 	state(HeaderPending),
 	isFinalFragment(false),
@@ -13,7 +14,8 @@ QWsSocket::QWsSocket( QTcpSocket * socket, QObject * parent, EWebsocketVersion w
 	maskingKey(4, 0)
 {
 	tcpSocket = socket;
-	websocketVersion = ws_v;
+	_version = WS_VUnknow;
+	_hostPort = -1;
 
 	//setSocketState( QAbstractSocket::UnconnectedState );
 	setSocketState( socket->state() );
@@ -30,7 +32,7 @@ QWsSocket::~QWsSocket()
 
 void QWsSocket::dataReceived()
 {
-	if ( websocketVersion == WS_V0 )
+	if ( _version == WS_V0 )
 	{
 		dataReceivedV0();
 		return;
@@ -208,7 +210,7 @@ void QWsSocket::dataReceivedV0()
 
 qint64 QWsSocket::write ( const QString & string, int maxFrameBytes )
 {
-	if ( websocketVersion == WS_V0 )
+	if ( _version == WS_V0 )
 	{
 		return QWsSocket::write( string.toAscii(), maxFrameBytes );
 	}
@@ -222,7 +224,7 @@ qint64 QWsSocket::write ( const QString & string, int maxFrameBytes )
 
 qint64 QWsSocket::write ( const QByteArray & byteArray, int maxFrameBytes )
 {
-	if ( websocketVersion == WS_V0 )
+	if ( _version == WS_V0 )
 	{
 		QByteArray BA;
 		BA.append( (char)0x00 );
@@ -255,7 +257,7 @@ qint64 QWsSocket::writeFrames ( QList<QByteArray> framesList )
 
 void QWsSocket::close( QString reason )
 {
-	if ( websocketVersion == WS_V0 )
+	if ( _version == WS_V0 )
 	{
 		QByteArray BA;
 		BA.append( (char)0xFF );
@@ -299,6 +301,13 @@ QByteArray QWsSocket::generateMaskingKey()
 	}
 
 	return key;
+}
+
+QByteArray QWsSocket::generateMaskingKeyV4( QString key, QString nonce )
+{
+	QString concat = key + nonce + "61AC5F19-FBBA-4540-B96F-6561F1AB40A8";
+	QByteArray hash = QCryptographicHash::hash ( concat.toAscii(), QCryptographicHash::Sha1 );
+	return hash;
 }
 
 QByteArray QWsSocket::mask( QByteArray data, QByteArray maskingKey )
@@ -426,10 +435,90 @@ void QWsSocket::ping()
 	writeFrame( pingFrame );
 }
 
-QString QWsSocket::composeOpeningHandShake( QString ressourceName, QString host, QString origin, QString extensions, QString key )
+void QWsSocket::setVersion( EWebsocketVersion ws_v )
+{
+	_version = ws_v;
+}
+
+void QWsSocket::setResourceName( QString rn )
+{
+	_resourceName = rn;
+}
+
+void QWsSocket::setHost( QString h )
+{
+	_host = h;
+}
+
+void QWsSocket::setHostAddress( QString ha )
+{
+	_hostAddress = ha;
+}
+
+void QWsSocket::setHostPort( int hp )
+{
+	_hostPort = hp;
+}
+
+void QWsSocket::setOrigin( QString o )
+{
+	_origin = o;
+}
+
+void QWsSocket::setProtocol( QString p )
+{
+	_protocol = p;
+}
+
+void QWsSocket::setExtensions( QString e )
+{
+	_extensions = e;
+}
+
+EWebsocketVersion QWsSocket::version()
+{
+	return _version;
+}
+
+QString QWsSocket::resourceName()
+{
+	return _resourceName;
+}
+
+QString QWsSocket::host()
+{
+	return _host;
+}
+
+QString QWsSocket::hostAddress()
+{
+	return _hostAddress;
+}
+
+int QWsSocket::hostPort()
+{
+	return _hostPort;
+}
+
+QString QWsSocket::origin()
+{
+	return _origin;
+}
+
+QString QWsSocket::protocol()
+{
+	return _protocol;
+}
+
+QString QWsSocket::extensions()
+{
+	return _extensions;
+}
+
+QString QWsSocket::composeOpeningHandShake( QString resourceName, QString host, QString origin, QString extensions, QString key )
 {
 	QString hs;
-	hs.append("GET " + ressourceName + " HTTP/1.1\r\n");
+	hs.append("GET " + resourceName + " HTTP/1.1\r\n");
 	hs.append("Host: " + host + "\r\n");
 	hs.append("Upgrade: websocket\r\n");
 	hs.append("Connection: Upgrade\r\n");

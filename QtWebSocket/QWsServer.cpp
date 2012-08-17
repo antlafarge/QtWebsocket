@@ -7,16 +7,17 @@
 #include <QDateTime>
 #include <QDebug>
 
-const QString QWsServer::regExpResourceNameStr( "GET\\s(.*)\\sHTTP/1.1\r\n" );
-const QString QWsServer::regExpHostStr( "Host:\\s(.+(:\\d+)?)\r\n" );
-const QString QWsServer::regExpKeyStr( "Sec-WebSocket-Key:\\s(.{24})\r\n" );
-const QString QWsServer::regExpKey1Str( "Sec-WebSocket-Key1:\\s(.+)\r\n" );
-const QString QWsServer::regExpKey2Str( "Sec-WebSocket-Key2:\\s(.+)\r\n" );
-const QString QWsServer::regExpKey3Str( "(.{8})(\r\n)*$" );
-const QString QWsServer::regExpVersionStr( "Sec-WebSocket-Version:\\s(\\d+)\r\n" );
-const QString QWsServer::regExpOriginStr( "Origin:\\s(.+)\r\n" );
-const QString QWsServer::regExpProtocolStr( "Sec-WebSocket-Protocol:\\s(.+)\r\n" );
-const QString QWsServer::regExpExtensionsStr( "Sec-WebSocket-Extensions:\\s(.+)\r\n" );
+const QString QWsServer::regExpResourceNameStr( "^GET\\s(.*)\\sHTTP/1.1\r\n" );
+const QString QWsServer::regExpHostStr( "\r\nHost:\\s(.+(:\\d+)?)\r\n" );
+const QString QWsServer::regExpKeyStr( "\r\nSec-WebSocket-Key:\\s(.{24})\r\n" );
+const QString QWsServer::regExpKey1Str( "\r\nSec-WebSocket-Key1:\\s(.+)\r\n" );
+const QString QWsServer::regExpKey2Str( "\r\nSec-WebSocket-Key2:\\s(.+)\r\n" );
+const QString QWsServer::regExpKey3Str( "\r\n(.{8})$" );
+const QString QWsServer::regExpVersionStr( "\r\nSec-WebSocket-Version:\\s(\\d+)\r\n" );
+const QString QWsServer::regExpOriginStr( "\r\nSec-WebSocket-Origin:\\s(.+)\r\n" );
+const QString QWsServer::regExpOrigin2Str( "\r\nOrigin:\\s(.+)\r\n" );
+const QString QWsServer::regExpProtocolStr( "\r\nSec-WebSocket-Protocol:\\s(.+)\r\n" );
+const QString QWsServer::regExpExtensionsStr( "\r\nSec-WebSocket-Extensions:\\s(.+)\r\n" );
 
 QWsServer::QWsServer(QObject * parent)
 	: QObject(parent)
@@ -89,6 +90,7 @@ void QWsServer::dataReceived()
 	regExp.setMinimal( true );
 	
 	// Extract mandatory datas
+	EWebsocketVersion version2 = (EWebsocketVersion)14;
 	
 	// Version
 	regExp.setPattern( QWsServer::regExpVersionStr );
@@ -96,7 +98,9 @@ void QWsServer::dataReceived()
 	QString versionStr = regExp.cap(1);
 	EWebsocketVersion version;
 	if ( ! versionStr.isEmpty() )
+	{
 		version = (EWebsocketVersion)versionStr.toInt();
+	}
 	else if ( clientSocket->bytesAvailable() >= 8 )
 	{
 		version = WS_V0;
@@ -115,11 +119,12 @@ void QWsServer::dataReceived()
 	// Host (address & port)
 	regExp.setPattern( QWsServer::regExpHostStr );
 	regExp.indexIn(request);
-	QStringList sl = regExp.cap(1).split(':');
-	QString hostAddress = sl[0];
+	QString host = regExp.cap(1);
+	QStringList hostTmp = host.split(':');
+	QString hostAddress = hostTmp[0];
 	QString hostPort;
-	if ( sl.size() > 1 )
-		hostPort = sl[1];
+	if ( hostTmp.size() > 1 )
+		hostPort = hostTmp[1];
 	
 	// Key
 	QString key, key1, key2, key3;
@@ -145,10 +150,10 @@ void QWsServer::dataReceived()
 	////////////////////////////////////////////////////////////////////
 
 	// If the mandatory fields are not specified, we abord the connection to the Websocket server
-	if ( version == WS_VUnknow || hostAddress.isEmpty() || resourceName.isEmpty() || ( key.isEmpty() && ( key1.isEmpty() || key2.isEmpty() || key3.isEmpty() ) ) )
+	if ( version == WS_VUnknow || resourceName.isEmpty() || hostAddress.isEmpty() || ( key.isEmpty() && ( key1.isEmpty() || key2.isEmpty() || key3.isEmpty() ) ) )
 	{
-		QString response = QWsServer::composeBadRequestResponse();
 		// Send bad request response
+		QString response = QWsServer::composeBadRequestResponse( QList<EWebsocketVersion>() << WS_V6 << WS_V7 << WS_V8 << WS_V13 );
 		clientSocket->write( response.toAscii() );
 		clientSocket->flush();
 		return;
@@ -157,9 +162,14 @@ void QWsServer::dataReceived()
 	////////////////////////////////////////////////////////////////////
 	
 	// Extract optional datas
+
 	// Origin
 	regExp.setPattern( QWsServer::regExpOriginStr );
-	regExp.indexIn(request);
+	if ( regExp.indexIn(request) == -1 )
+	{
+		regExp.setPattern( QWsServer::regExpOrigin2Str );
+		regExp.indexIn(request);
+	}
 	QString origin = regExp.cap(1);
 
 	// Protocol
@@ -185,7 +195,8 @@ void QWsServer::dataReceived()
 	else if ( version >= WS_V4 )
 	{
 		QString accept = computeAcceptV4( key );
-		response = QWsServer::composeOpeningHandshakeResponseV4( accept, "nonce", protocol ); // TODO : nonce
+		QString nonce = generateNonce();
+		response = QWsServer::composeOpeningHandshakeResponseV4( accept, nonce, protocol );
 	}
 	else
 	{
@@ -201,7 +212,15 @@ void QWsServer::dataReceived()
 	clientSocket->flush();
 
 	// TEMPORARY CODE FOR LINUX COMPATIBILITY
-	QWsSocket * wsSocket = new QWsSocket( clientSocket, this, version );
+	QWsSocket * wsSocket = new QWsSocket( clientSocket, this );
+	wsSocket->setVersion( version );
+	wsSocket->setResourceName( resourceName );
+	wsSocket->setHost( host );
+	wsSocket->setHostAddress( hostAddress );
+	wsSocket->setHostPort( hostPort.toInt() );
+	wsSocket->setOrigin( origin );
+	wsSocket->setProtocol( protocol );
+	wsSocket->setExtensions( extensions );
 	addPendingConnection( wsSocket );
 	emit newConnection();
 
@@ -290,13 +309,6 @@ bool QWsServer::waitForNewConnection( int msec, bool * timedOut )
 	return tcpServer->waitForNewConnection( msec, timedOut );
 }
 
-QString QWsServer::computeAcceptV4(QString key)
-{
-	key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-	QByteArray hash = QCryptographicHash::hash ( key.toAscii(), QCryptographicHash::Sha1 );
-	return hash.toBase64();
-}
-
 QString QWsServer::computeAcceptV0( QString key1, QString key2, QString key3 )
 {
 	QString numStr1;
@@ -330,6 +342,25 @@ QString QWsServer::computeAcceptV0( QString key1, QString key2, QString key3 )
 	QByteArray md5 = QCryptographicHash::hash( concat.toAscii(), QCryptographicHash::Md5 );
   
 	return QString( md5 );
+}
+
+QString QWsServer::computeAcceptV4(QString key)
+{
+	key += "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+	QByteArray hash = QCryptographicHash::hash ( key.toAscii(), QCryptographicHash::Sha1 );
+	return hash.toBase64();
+}
+
+QString QWsServer::generateNonce()
+{
+	QByteArray nonce;
+	int i = 16;
+	while( i-- )
+	{
+		nonce.append( qrand() % 0x100 );
+	}
+
+	return QString( nonce.toBase64() );
 }
 
 QString QWsServer::serializeInt( quint32 number, quint8 nbBytes )
@@ -409,7 +440,7 @@ QString QWsServer::composeBadRequestResponse( QList<EWebsocketVersion> versions 
 		int i = versions.size();
 		while ( i-- )
 		{
-			versionsStr.append( QString::number( (int)versions.takeLast() ) );
+			versionsStr.append( ", " + QString::number( (int)versions.takeLast() ) );
 		}
 		response.append( "Sec-WebSocket-Version: " + versionsStr + "\r\n" );
 	}

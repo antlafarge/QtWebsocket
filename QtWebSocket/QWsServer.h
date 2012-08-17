@@ -64,6 +64,7 @@ public:
 	static QString serializeInt( quint32 number, quint8 nbBytes = 4 );
 	static QString computeAcceptV0( QString key1, QString key2, QString thirdPart );
 	static QString computeAcceptV4( QString key );
+	static QString generateNonce();
 	static QString composeOpeningHandshakeResponseV0( QString accept, QString origin, QString hostAddress, QString hostPort, QString resourceName, QString protocol = "" );
 	static QString composeOpeningHandshakeResponseV4( QString accept, QString nonce, QString protocol = "" );
 	static QString composeOpeningHandshakeResponseV6( QString accept, QString protocol = "" );
@@ -78,7 +79,7 @@ public:
 	static const QString regExpKey3Str;
 	static const QString regExpVersionStr;
 	static const QString regExpOriginStr;
-	static const QString regExpOriginV6Str;
+	static const QString regExpOrigin2Str;
 	static const QString regExpProtocolStr;
 	static const QString regExpExtensionsStr;
 };

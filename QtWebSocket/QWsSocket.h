@@ -44,11 +44,29 @@ public:
 
 public:
 	// ctor
-	QWsSocket( QTcpSocket * socket = 0, QObject * parent = 0, EWebsocketVersion websocketVersion = WS_V13 );
+	QWsSocket( QTcpSocket * socket = 0, QObject * parent = 0 );
 	// dtor
 	virtual ~QWsSocket();
 
 	// Public methods
+	EWebsocketVersion version();
+	QString resourceName();
+	QString host();
+	QString hostAddress();
+	int hostPort();
+	QString origin();
+	QString protocol();
+	QString extensions();
+
+	void setVersion( EWebsocketVersion ws_v );
+	void setResourceName( QString rn );
+	void setHost( QString h );
+	void setHostAddress( QString ha );
+	void setHostPort( int hp );
+	void setOrigin( QString o );
+	void setProtocol( QString p );
+	void setExtensions( QString e );
+
 	qint64 write ( const QString & string, int maxFrameBytes = 0 ); // write data as text
 	qint64 write ( const QByteArray & byteArray, int maxFrameBytes = 0 ); // write data as binary
 
@@ -88,7 +106,15 @@ private:
 	QTcpSocket * tcpSocket;
 	QByteArray currentFrame;
 	QTime pingTimer;
-	EWebsocketVersion websocketVersion;
+
+	EWebsocketVersion _version;
+	QString _resourceName;
+	QString _host;
+	QString _hostAddress;
+	int _hostPort;
+	QString _origin;
+	QString _protocol;
+	QString _extensions;
 
 	EState state;
 	EOpcode opcode;
@@ -99,10 +125,11 @@ private:
 public:
 	// Static functions
 	static QByteArray generateMaskingKey();
+	static QByteArray generateMaskingKeyV4( QString key, QString nonce );
 	static QByteArray mask( QByteArray data, QByteArray maskingKey );
 	static QList<QByteArray> composeFrames( QByteArray byteArray, bool asBinary = false, int maxFrameBytes = 0 );
 	static QByteArray composeHeader( bool fin, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray() );
-	static QString composeOpeningHandShake( QString ressourceName, QString host, QString origin, QString extensions, QString key );
+	static QString composeOpeningHandShake( QString resourceName, QString host, QString origin, QString extensions, QString key );
 
 	// static vars
 	static int maxBytesPerFrame;
