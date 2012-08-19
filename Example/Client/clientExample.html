@@ -47,7 +47,9 @@
 				try {
 					if (typeof MozWebSocket == 'function')
 						WebSocket = MozWebSocket;
-					websocket = new WebSocket(wsUri);
+					if ( websocket && websocket.readyState == 1 )
+						websocket.close();
+					websocket = new WebSocket( wsUri );
 					websocket.onopen = function (evt) {
 						debug("CONNECTED");
 					};

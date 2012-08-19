@@ -5,7 +5,6 @@
 #include <QByteArray>
 #include <QCryptographicHash>
 #include <QDateTime>
-#include <QDebug>
 
 const QString QWsServer::regExpResourceNameStr( "^GET\\s(.*)\\sHTTP/1.1\r\n" );
 const QString QWsServer::regExpHostStr( "\r\nHost:\\s(.+(:\\d+)?)\r\n" );
@@ -54,46 +53,47 @@ QString QWsServer::errorString()
 
 void QWsServer::newTcpConnection()
 {
-	QTcpSocket * clientSocket = tcpServer->nextPendingConnection();
-	QObject * clientObject = qobject_cast<QObject*>(clientSocket);
-	connect( clientObject, SIGNAL(readyRead()), this, SLOT(dataReceived()) );
-	headerBuffer.insert(clientSocket, QStringList());
+	QTcpSocket * tcpSocket = tcpServer->nextPendingConnection();
+	connect( tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()) );
+	headerBuffer.insert( tcpSocket, QStringList() );
 }
 
 void QWsServer::closeTcpConnection()
 {
-	QTcpSocket * clientSocket = qobject_cast<QTcpSocket*>( sender() );
-	if (clientSocket == 0)
+	QTcpSocket * tcpSocket = qobject_cast<QTcpSocket*>( sender() );
+	if (tcpSocket == 0)
 		return;
 
-	clientSocket->close();
+	tcpSocket->close();
 }
 
 void QWsServer::dataReceived()
 {
-	QTcpSocket * clientSocket = qobject_cast<QTcpSocket*>( sender() );
-	if (clientSocket == 0)
+	QTcpSocket * tcpSocket = qobject_cast<QTcpSocket*>( sender() );
+	if (tcpSocket == 0)
 		return;
 
 	bool allHeadersFetched = false;
 
 	const QLatin1String emptyLine("\r\n");
 
-	while (clientSocket->canReadLine()) {
-		QString line = clientSocket->readLine();
+	while ( tcpSocket->canReadLine() )
+	{
+		QString line = tcpSocket->readLine();
 
-		if (line == emptyLine) {
+		if (line == emptyLine)
+		{
 			allHeadersFetched = true;
 			break;
 		}
 
-		headerBuffer[clientSocket].append(line);
+		headerBuffer[ tcpSocket ].append(line);
 	}
 
 	if (!allHeadersFetched)
 	    return;
 
-	QString request( headerBuffer[clientSocket].join("") );
+	QString request( headerBuffer[ tcpSocket ].join("") );
 
 	QRegExp regExp;
 	regExp.setMinimal( true );
@@ -110,10 +110,10 @@ void QWsServer::dataReceived()
 	{
 		version = (EWebsocketVersion)versionStr.toInt();
 	}
-	else if ( clientSocket->bytesAvailable() >= 8 )
+	else if ( tcpSocket->bytesAvailable() >= 8 )
 	{
 		version = WS_V0;
-		request.append( clientSocket->read(8) );
+		request.append( tcpSocket->read(8) );
 	}
 	else
 	{
@@ -163,8 +163,8 @@ void QWsServer::dataReceived()
 	{
 		// Send bad request response
 		QString response = QWsServer::composeBadRequestResponse( QList<EWebsocketVersion>() << WS_V6 << WS_V7 << WS_V8 << WS_V13 );
-		clientSocket->write( response.toAscii() );
-		clientSocket->flush();
+		tcpSocket->write( response.toAscii() );
+		tcpSocket->flush();
 		return;
 	}
 	
@@ -214,15 +214,13 @@ void QWsServer::dataReceived()
 	}
 	
 	// Handshake OK, disconnect readyRead
-	disconnect( clientSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()) );
+	disconnect( tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()) );
 
 	// Send opening handshake response
-	clientSocket->write( response.toAscii() );
-	clientSocket->flush();
+	tcpSocket->write( response.toAscii() );
+	tcpSocket->flush();
 
-	// TEMPORARY CODE FOR LINUX COMPATIBILITY
-	QWsSocket * wsSocket = new QWsSocket( clientSocket );
-	wsSocket->setVersion( version );
+	QWsSocket * wsSocket = new QWsSocket( this, tcpSocket, version );
 	wsSocket->setResourceName( resourceName );
 	wsSocket->setHost( host );
 	wsSocket->setHostAddress( hostAddress );
@@ -230,23 +228,21 @@ void QWsServer::dataReceived()
 	wsSocket->setOrigin( origin );
 	wsSocket->setProtocol( protocol );
 	wsSocket->setExtensions( extensions );
+	
+	// ORIGINAL CODE
+	//int socketDescriptor = tcpSocket->socketDescriptor();
+	//incomingConnection( socketDescriptor );
+	
+	// CHANGED CODE FOR LINUX COMPATIBILITY
 	addPendingConnection( wsSocket );
 	emit newConnection();
-
-	//connect( wsSocket, SIGNAL(closeAsked()), this, SLOT(closeSocket()) );
-
-	/*
-	// ORIGINAL CODE
-	int socketDescriptor = clientSocket->socketDescriptor();
-	incomingConnection( socketDescriptor );
-	*/
 }
 
 void QWsServer::incomingConnection( int socketDescriptor )
 {
-	QTcpSocket * tcpSocket = new QTcpSocket(tcpServer);
+	QTcpSocket * tcpSocket = new QTcpSocket( tcpServer );
 	tcpSocket->setSocketDescriptor( socketDescriptor, QAbstractSocket::ConnectedState );
-	QWsSocket * wsSocket = new QWsSocket( tcpSocket, this );
+	QWsSocket * wsSocket = new QWsSocket( this, tcpSocket );
 
 	addPendingConnection( wsSocket );
 	emit newConnection();
@@ -409,7 +405,7 @@ QString QWsServer::composeOpeningHandshakeResponseV0( QString accept, QString or
 	return response;
 }
 
-QString QWsServer::composeOpeningHandshakeResponseV4( QString accept, QString nonce, QString protocol )
+QString QWsServer::composeOpeningHandshakeResponseV4( QString accept, QString nonce, QString protocol, QString extensions )
 {
 	QString response;
 	
@@ -420,12 +416,14 @@ QString QWsServer::composeOpeningHandshakeResponseV4( QString accept, QString no
 	response.append( "Sec-WebSocket-Nonce: " + nonce + "\r\n" );
 	if ( ! protocol.isEmpty() )
 		response.append( "Sec-WebSocket-Protocol: " + protocol + "\r\n" );
+	if ( ! extensions.isEmpty() )
+		response.append( "Sec-WebSocket-Extensions: " + extensions + "\r\n" );
 	response.append( "\r\n" );
 
 	return response;
 }
 
-QString QWsServer::composeOpeningHandshakeResponseV6( QString accept, QString protocol )
+QString QWsServer::composeOpeningHandshakeResponseV6( QString accept, QString protocol, QString extensions )
 {
 	QString response;
 	
@@ -435,6 +433,8 @@ QString QWsServer::composeOpeningHandshakeResponseV6( QString accept, QString pr
 	response.append( "Sec-WebSocket-Accept: " + accept + "\r\n" );
 	if ( ! protocol.isEmpty() )
 		response.append( "Sec-WebSocket-Protocol: " + protocol + "\r\n" );
+	if ( ! extensions.isEmpty() )
+		response.append( "Sec-WebSocket-Extensions: " + extensions + "\r\n" );
 	response.append( "\r\n" );
 
 	return response;

@@ -10,16 +10,20 @@ class SocketThread : public QThread
 	Q_OBJECT
 
 public:
-	SocketThread();
+	SocketThread( QWsSocket * wsSocket );
 	~SocketThread();
 
 	QWsSocket * socket;
 	void run();
 
 private slots:
-	void onDataReceived(QString data);
-	void onPong(quint64 elapsedTime);
-	void onClientDisconnection();
+	void processMessage( QString message );
+	void sendMessage( QString message );
+	void processPong( quint64 elapsedTime );
+	void socketDisconnected();
+
+signals:
+	void messageReceived( QString frame );
 
 private:
 	

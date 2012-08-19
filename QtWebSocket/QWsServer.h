@@ -1,14 +1,13 @@
 #ifndef QWSSERVER_H
 #define QWSSERVER_H
 
-#include <QObject>
-#include <QMap>
 #include <QTcpServer>
 #include <QTcpSocket>
+#include <QNetworkProxy>
 #include <QString>
 #include <QStringList>
+#include <QMap>
 #include <QQueue>
-#include <QNetworkProxy>
 
 #include "QWsSocket.h"
 
@@ -67,8 +66,8 @@ public:
 	static QString computeAcceptV4( QString key );
 	static QString generateNonce();
 	static QString composeOpeningHandshakeResponseV0( QString accept, QString origin, QString hostAddress, QString hostPort, QString resourceName, QString protocol = "" );
-	static QString composeOpeningHandshakeResponseV4( QString accept, QString nonce, QString protocol = "" );
-	static QString composeOpeningHandshakeResponseV6( QString accept, QString protocol = "" );
+	static QString composeOpeningHandshakeResponseV4( QString accept, QString nonce, QString protocol = "", QString extensions = "" );
+	static QString composeOpeningHandshakeResponseV6( QString accept, QString protocol = "", QString extensions = "" );
 	static QString composeBadRequestResponse( QList<EWebsocketVersion> versions = QList<EWebsocketVersion>() );
 
 	// public static vars

@@ -2,6 +2,7 @@
 #include <QtDebug>
 
 #include "ServerExample.h"
+
 #include "Log.h"
 
 void myMessageHandler( QtMsgType type, const char *msg )

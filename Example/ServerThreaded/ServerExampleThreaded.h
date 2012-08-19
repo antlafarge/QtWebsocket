@@ -8,16 +8,20 @@
 #include "QWsSocket.h"
 #include "SocketThread.h"
 
-class ServerExample : public QObject
+class ServerExampleThreaded : public QObject
 {
 	Q_OBJECT
 
 public:
-	ServerExample();
-	~ServerExample();
+	ServerExampleThreaded();
+	~ServerExampleThreaded();
 
 public slots:
-	void onClientConnection();
+	void processNewConnection();
+	void displayMessage( QString message );
+
+signals:
+	void broadcastMessage( QString message );
 
 private:
 	QWsServer * server;

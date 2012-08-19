@@ -15,51 +15,49 @@ ServerExample::ServerExample()
 	{
 		Log::display( "Server is listening port " + QString::number(port) );
 	}
-	connect(server, SIGNAL(newConnection()), this, SLOT(onClientConnection()));
+	connect(server, SIGNAL(newConnection()), this, SLOT(processNewConnection()));
 }
 
 ServerExample::~ServerExample()
 {
 }
 
-void ServerExample::onClientConnection()
+void ServerExample::processNewConnection()
 {
 	QWsSocket * clientSocket = server->nextPendingConnection();
 
-	QObject * clientObject = qobject_cast<QObject*>(clientSocket);
-
-	connect( clientObject, SIGNAL(frameReceived(QString)), this, SLOT(onDataReceived(QString)) );
-	connect( clientObject, SIGNAL(disconnected()), this, SLOT(onClientDisconnection()) );
-	connect( clientObject, SIGNAL(pong(quint64)), this, SLOT(onPong(quint64)) );
+	connect( clientSocket, SIGNAL(frameReceived(QString)), this, SLOT(processMessage(QString)) );
+	connect( clientSocket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()) );
+	connect( clientSocket, SIGNAL(pong(quint64)), this, SLOT(processPong(quint64)) );
 
 	clients << clientSocket;
 
 	Log::display("Client connected");
 }
 
-void ServerExample::onDataReceived( QString data )
+void ServerExample::processMessage( QString frame )
 {
 	QWsSocket * socket = qobject_cast<QWsSocket*>( sender() );
 	if (socket == 0)
 		return;
 
-	Log::display( QString(data.toLatin1()) );
+	Log::display( QString::fromUtf8(frame.toStdString().c_str()) );
 	
 	QWsSocket * client;
 	foreach ( client, clients )
 	{
-		client->write( data );
+		client->write( frame );
 	}
 }
 
-void ServerExample::onPong( quint64 elapsedTime )
+void ServerExample::processPong( quint64 elapsedTime )
 {
 	Log::display( "ping: " + QString::number(elapsedTime) + " ms" );
 }
 
-void ServerExample::onClientDisconnection()
+void ServerExample::socketDisconnected()
 {
-	QWsSocket * socket = qobject_cast<QWsSocket*>(sender());
+	QWsSocket * socket = qobject_cast<QWsSocket*>( sender() );
 	if (socket == 0)
 		return;
 

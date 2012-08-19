@@ -1,7 +1,6 @@
 #ifndef QWSSOCKET_H
 #define QWSSOCKET_H
 
-#include <QAbstractSocket>
 #include <QTcpSocket>
 #include <QTime>
 
@@ -44,7 +43,7 @@ public:
 	enum ECloseStatusCode
 	{
 		CloseNormal = 1000,
-		CloseAway = 1001,
+		CloseGoingAway = 1001,
 		CloseProtocolError = 1002,
 		CloseDataTypeNotSupported = 1003,
 		CloseReserved1004 = 1004,
@@ -60,7 +59,7 @@ public:
 
 public:
 	// ctor
-	QWsSocket( QTcpSocket * socket = 0, QObject * parent = 0 );
+	QWsSocket( QObject * parent = 0, QTcpSocket * socket = 0, EWebsocketVersion ws_v = WS_V13 );
 	// dtor
 	virtual ~QWsSocket();
 
@@ -74,7 +73,6 @@ public:
 	QString protocol();
 	QString extensions();
 
-	void setVersion( EWebsocketVersion ws_v );
 	void setResourceName( QString rn );
 	void setHost( QString h );
 	void setHostAddress( QString ha );
@@ -96,15 +94,16 @@ signals:
 	void pong(quint64 elapsedTime);
 
 protected:
-	qint64 writeFrames ( QList<QByteArray> framesList );
+	qint64 writeFrames ( const QList<QByteArray> & framesList );
 	qint64 writeFrame ( const QByteArray & byteArray );
 
 protected slots:
-	void dataReceivedV0();
-	void dataReceived();
+	void processDataV0();
+	void processDataV4();
+	void processTcpStateChanged( QAbstractSocket::SocketState socketState );
 
 private:
-	enum EState
+	enum EReadingState
 	{
 		HeaderPending,
 		PayloadLengthPending,
@@ -130,19 +129,20 @@ private:
 	bool closingHandshakeSent;
 	bool closingHandshakeReceived;
 
-	EState state;
+	EReadingState readingState;
 	EOpcode opcode;
 	bool isFinalFragment;
 	bool hasMask;
 	quint64 payloadLength;
 	QByteArray maskingKey;
+
 public:
 	// Static functions
 	static QByteArray generateMaskingKey();
 	static QByteArray generateMaskingKeyV4( QString key, QString nonce );
-	static QByteArray mask( QByteArray data, QByteArray maskingKey );
+	static QByteArray mask( QByteArray & data, QByteArray & maskingKey );
 	static QList<QByteArray> composeFrames( QByteArray byteArray, bool asBinary = false, int maxFrameBytes = 0 );
-	static QByteArray composeHeader( bool fin, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray() );
+	static QByteArray composeHeader( bool fin, EOpcode opcode, quint64 payloadLength, QByteArray & maskingKey = QByteArray() );
 	static QString composeOpeningHandShake( QString resourceName, QString host, QString origin, QString extensions, QString key );
 
 	// static vars
