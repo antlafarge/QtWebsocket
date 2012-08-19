@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QtWebsocket", "QtWebsocket\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ServerExample", "Example\Server\ServerExample.vcproj", "{11ADF8AB-7848-464E-AC82-C30F32A46184}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ServerExampleThreaded", "Example\ServerThreaded\ServerThreaded.vcproj", "{04429A95-6334-4138-8162-4791D1298792}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -25,6 +27,10 @@ Global
 		{11ADF8AB-7848-464E-AC82-C30F32A46184}.Debug|Win32.Build.0 = Debug|Win32
 		{11ADF8AB-7848-464E-AC82-C30F32A46184}.Release|Win32.ActiveCfg = Release|Win32
 		{11ADF8AB-7848-464E-AC82-C30F32A46184}.Release|Win32.Build.0 = Release|Win32
+		{04429A95-6334-4138-8162-4791D1298792}.Debug|Win32.ActiveCfg = Debug|Win32
+		{04429A95-6334-4138-8162-4791D1298792}.Debug|Win32.Build.0 = Debug|Win32
+		{04429A95-6334-4138-8162-4791D1298792}.Release|Win32.ActiveCfg = Release|Win32
+		{04429A95-6334-4138-8162-4791D1298792}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

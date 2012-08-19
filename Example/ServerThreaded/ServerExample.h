@@ -6,6 +6,7 @@
 
 #include "QWsServer.h"
 #include "QWsSocket.h"
+#include "SocketThread.h"
 
 class ServerExample : public QObject
 {
@@ -17,13 +18,9 @@ public:
 
 public slots:
 	void onClientConnection();
-	void onDataReceived( QString data );
-	void onPong( quint64 elapsedTime );
-	void onClientDisconnection();
 
 private:
 	QWsServer * server;
-	QList<QWsSocket*> clients;
 };
 
 #endif

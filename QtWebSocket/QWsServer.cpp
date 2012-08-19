@@ -23,7 +23,7 @@ QWsServer::QWsServer(QObject * parent)
 	: QObject(parent)
 {
 	tcpServer = new QTcpServer(this);
-	connect(tcpServer, SIGNAL(newConnection()), this, SLOT(newTcpConnection()));
+	connect( tcpServer, SIGNAL(newConnection()), this, SLOT(newTcpConnection()) );
 	qsrand( QDateTime::currentMSecsSinceEpoch() );
 }
 
@@ -56,13 +56,22 @@ void QWsServer::newTcpConnection()
 {
 	QTcpSocket * clientSocket = tcpServer->nextPendingConnection();
 	QObject * clientObject = qobject_cast<QObject*>(clientSocket);
-	connect(clientObject, SIGNAL(readyRead()), this, SLOT(dataReceived()));
+	connect( clientObject, SIGNAL(readyRead()), this, SLOT(dataReceived()) );
 	headerBuffer.insert(clientSocket, QStringList());
+}
+
+void QWsServer::closeTcpConnection()
+{
+	QTcpSocket * clientSocket = qobject_cast<QTcpSocket*>( sender() );
+	if (clientSocket == 0)
+		return;
+
+	clientSocket->close();
 }
 
 void QWsServer::dataReceived()
 {
-	QTcpSocket * clientSocket = qobject_cast<QTcpSocket*>(sender());
+	QTcpSocket * clientSocket = qobject_cast<QTcpSocket*>( sender() );
 	if (clientSocket == 0)
 		return;
 
@@ -212,7 +221,7 @@ void QWsServer::dataReceived()
 	clientSocket->flush();
 
 	// TEMPORARY CODE FOR LINUX COMPATIBILITY
-	QWsSocket * wsSocket = new QWsSocket( clientSocket, this );
+	QWsSocket * wsSocket = new QWsSocket( clientSocket );
 	wsSocket->setVersion( version );
 	wsSocket->setResourceName( resourceName );
 	wsSocket->setHost( host );
@@ -223,6 +232,8 @@ void QWsServer::dataReceived()
 	wsSocket->setExtensions( extensions );
 	addPendingConnection( wsSocket );
 	emit newConnection();
+
+	//connect( wsSocket, SIGNAL(closeAsked()), this, SLOT(closeSocket()) );
 
 	/*
 	// ORIGINAL CODE

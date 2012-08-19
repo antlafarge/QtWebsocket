@@ -13,7 +13,7 @@ ServerExample::ServerExample()
 	}
 	else
 	{
-		Log::display( "Server is listening porté " + QString::number(port) );
+		Log::display( "Server is listening port " + QString::number(port) );
 	}
 	connect(server, SIGNAL(newConnection()), this, SLOT(onClientConnection()));
 }
@@ -28,16 +28,16 @@ void ServerExample::onClientConnection()
 
 	QObject * clientObject = qobject_cast<QObject*>(clientSocket);
 
-	connect(clientObject, SIGNAL(frameReceived(QString)), this, SLOT(onDataReceived(QString)));
-	connect(clientObject, SIGNAL(disconnected()), this, SLOT(onClientDisconnection()));
-	connect(clientObject, SIGNAL(pong(quint64)), this, SLOT(onPong(quint64)));
+	connect( clientObject, SIGNAL(frameReceived(QString)), this, SLOT(onDataReceived(QString)) );
+	connect( clientObject, SIGNAL(disconnected()), this, SLOT(onClientDisconnection()) );
+	connect( clientObject, SIGNAL(pong(quint64)), this, SLOT(onPong(quint64)) );
 
 	clients << clientSocket;
 
 	Log::display("Client connected");
 }
 
-void ServerExample::onDataReceived(QString data)
+void ServerExample::onDataReceived( QString data )
 {
 	QWsSocket * socket = qobject_cast<QWsSocket*>( sender() );
 	if (socket == 0)
@@ -52,7 +52,7 @@ void ServerExample::onDataReceived(QString data)
 	}
 }
 
-void ServerExample::onPong(quint64 elapsedTime)
+void ServerExample::onPong( quint64 elapsedTime )
 {
 	Log::display( "ping: " + QString::number(elapsedTime) + " ms" );
 }

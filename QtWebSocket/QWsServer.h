@@ -51,6 +51,7 @@ protected:
 private slots:
 	// private slots
 	void newTcpConnection();
+	void closeTcpConnection();
 	void dataReceived();
 
 private:

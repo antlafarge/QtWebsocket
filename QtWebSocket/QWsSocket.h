@@ -27,19 +27,35 @@ public:
 		OpContinue = 0x0,
 		OpText = 0x1,
 		OpBinary = 0x2,
-		OpReserved1 = 0x3,
-		OpReserved2 = 0x4,
-		OpReserved3 = 0x5,
-		OpReserved4 = 0x6,
-		OpReserved5 = 0x7,
+		OpReserved3 = 0x3,
+		OpReserved4 = 0x4,
+		OpReserved5 = 0x5,
+		OpReserved6 = 0x6,
+		OpReserved7 = 0x7,
 		OpClose = 0x8,
 		OpPing = 0x9,
 		OpPong = 0xA,
-		OpReserved6 = 0xB,
-		OpReserved7 = 0xC,
-		OpReserved8 = 0xD,
-		OpReserved9 = 0xE,
-		OpReserved10 = 0xF
+		OpReservedB = 0xB,
+		OpReservedV = 0xC,
+		OpReservedD = 0xD,
+		OpReservedE = 0xE,
+		OpReservedF = 0xF
+	};
+	enum ECloseStatusCode
+	{
+		CloseNormal = 1000,
+		CloseAway = 1001,
+		CloseProtocolError = 1002,
+		CloseDataTypeNotSupported = 1003,
+		CloseReserved1004 = 1004,
+		CloseMissingStatusCode = 1005,
+		CloseAbnormalDisconnection = 1006,
+		CloseWrongDataType = 1007,
+		ClosePolicyViolated = 1008,
+		CloseTooMuchData = 1009,
+		CloseMissingExtension = 1010,
+		CloseBadOperation = 1011,
+		CloseTLSHandshakeFailed = 1015
 	};
 
 public:
@@ -67,11 +83,11 @@ public:
 	void setProtocol( QString p );
 	void setExtensions( QString e );
 
-	qint64 write ( const QString & string, int maxFrameBytes = 0 ); // write data as text
-	qint64 write ( const QByteArray & byteArray, int maxFrameBytes = 0 ); // write data as binary
+	qint64 write ( const QString & string ); // write data as text
+	qint64 write ( const QByteArray & byteArray ); // write data as binary
 
 public slots:
-	virtual void close( QString reason = QString() );
+	virtual void close( ECloseStatusCode closeStatusCode = CloseNormal, QString reason = QString() );
 	void ping();
 
 signals:
@@ -82,15 +98,11 @@ signals:
 protected:
 	qint64 writeFrames ( QList<QByteArray> framesList );
 	qint64 writeFrame ( const QByteArray & byteArray );
-	void dataReceivedV0();
 
 protected slots:
+	void dataReceivedV0();
 	void dataReceived();
 
-private slots:
-	// private func
-	void tcpSocketAboutToClose();
-	void tcpSocketDisconnected();
 private:
 	enum EState
 	{
@@ -101,7 +113,6 @@ private:
 		PayloadBodyPending
 	};
 
-private:
 	// private vars
 	QTcpSocket * tcpSocket;
 	QByteArray currentFrame;
@@ -115,6 +126,9 @@ private:
 	QString _origin;
 	QString _protocol;
 	QString _extensions;
+
+	bool closingHandshakeSent;
+	bool closingHandshakeReceived;
 
 	EState state;
 	EOpcode opcode;

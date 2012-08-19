@@ -55,7 +55,7 @@
 						debug("DISCONNECTED");
 					};
 					websocket.onmessage = function (evt) {
-						console.log( "arguments", arguments );
+						console.log( "Message received :", evt.data );
 						debug( evt.data );
 					};
 					websocket.onerror = function (evt) {
