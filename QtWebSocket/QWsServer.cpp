@@ -99,8 +99,6 @@ void QWsServer::dataReceived()
 	regExp.setMinimal( true );
 	
 	// Extract mandatory datas
-	EWebsocketVersion version2 = (EWebsocketVersion)14;
-	
 	// Version
 	regExp.setPattern( QWsServer::regExpVersionStr );
 	regExp.indexIn(request);

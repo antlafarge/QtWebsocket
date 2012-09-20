@@ -36,7 +36,6 @@ QWsSocket::QWsSocket( QObject * parent, QTcpSocket * socket, EWebsocketVersion w
 
 QWsSocket::~QWsSocket()
 {
-	QAbstractSocket::SocketState socketState = state();
 	if ( state() == QAbstractSocket::ConnectedState )
 	{
 		qDebug() << "CloseAway, socket destroyed in server";
@@ -139,6 +138,9 @@ void QWsSocket::processDataV4()
 			case OpClose:
 				closingHandshakeReceived = true;
 				close();
+				break;
+			default:
+				// DO NOTHING
 				break;
 		}
 
@@ -288,6 +290,8 @@ void QWsSocket::processTcpStateChanged( QAbstractSocket::SocketState tcpSocketSt
 			}
 			break;
 		}
+		default:
+			break;
 	}
 }
 
@@ -396,13 +400,13 @@ QList<QByteArray> QWsSocket::composeFrames( QByteArray byteArray, bool asBinary,
 	{
 		QByteArray BA;
 
-		// fin, size
-		bool fin = false;
+		// end, size
+		bool end = false;
 		quint64 size = maxFrameBytes;
 		EOpcode opcode = OpContinue;
 		if ( i == nbFrames-1 ) // for multi-frames
 		{
-			fin = true;
+			end = true;
 			size = byteArray.size();
 		}
 		if ( i == 0 )
@@ -414,7 +418,7 @@ QList<QByteArray> QWsSocket::composeFrames( QByteArray byteArray, bool asBinary,
 		}
 		
 		// Header
-		BA.append( QWsSocket::composeHeader( fin, opcode, size, maskingKey ) );
+		BA.append( QWsSocket::composeHeader( end, opcode, size, maskingKey ) );
 		
 		// Application Data
 		QByteArray dataForThisFrame = byteArray.left( size );
@@ -429,15 +433,15 @@ QList<QByteArray> QWsSocket::composeFrames( QByteArray byteArray, bool asBinary,
 	return framesList;
 }
 
-QByteArray QWsSocket::composeHeader( bool fin, EOpcode opcode, quint64 payloadLength, QByteArray & maskingKey )
+QByteArray QWsSocket::composeHeader( bool end, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey )
 {
 	QByteArray BA;
 	quint8 byte;
 
-	// FIN, RSV1-3, Opcode
+	// end, RSV1-3, Opcode
 	byte = 0x00;
-	// FIN
-	if ( fin )
+	// end
+	if ( end )
 		byte = (byte | 0x80);
 	// Opcode
 	byte = (byte | opcode);
