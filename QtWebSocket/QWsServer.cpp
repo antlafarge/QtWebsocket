@@ -131,7 +131,7 @@ void QWsServer::dataReceived()
 	QString hostAddress = hostTmp[0];
 	QString hostPort;
 	if ( hostTmp.size() > 1 )
-		hostPort = hostTmp[1];
+        hostPort = hostTmp.last(); // fix for IPv6
 	
 	// Key
 	QString key, key1, key2, key3;
