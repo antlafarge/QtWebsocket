@@ -351,6 +351,8 @@ void QWsSocket::connectToHost(const QHostAddress &address, quint16 port, OpenMod
 {
     handshakeResponse.clear();
     setSocketState( QAbstractSocket::ConnectingState );
+    setPeerAddress( address );
+    setPeerPort( port );
     emit stateChanged( QAbstractSocket::ConnectingState );
     tcpSocket->connectToHost(address, port, mode);
 }
@@ -679,21 +681,6 @@ int QWsSocket::hostPort()
 QString QWsSocket::origin()
 {
     return _origin;
-}
-
-QHostAddress QWsSocket::peerAddress() const
-{
-    return tcpSocket->peerAddress();
-}
-
-QString QWsSocket::peerName() const
-{
-    return tcpSocket->peerName();
-}
-
-quint16 QWsSocket::peerPort() const
-{
-    return tcpSocket->peerPort();
 }
 
 QString QWsSocket::protocol()

@@ -70,9 +70,6 @@ public:
 	QString hostAddress();
 	int hostPort();
 	QString origin();
-    QHostAddress peerAddress() const;
-    QString peerName() const;
-    quint16 peerPort() const;
 	QString protocol();
 	QString extensions();
 
