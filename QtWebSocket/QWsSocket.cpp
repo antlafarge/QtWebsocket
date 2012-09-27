@@ -6,10 +6,13 @@
 #include "QWsServer.h"
 
 int QWsSocket::maxBytesPerFrame = 1400;
+const QString QWsSocket::regExpAcceptStr("Sec-WebSocket-Accept:\\s(.{28})\r\n");
+const QString QWsSocket::regExpUpgradeStr("Upgrade:\\s(.+)\r\n");
+const QString QWsSocket::regExpConnectionStr("Connection:\\s(.+)\r\n");
 
 QWsSocket::QWsSocket( QObject * parent, QTcpSocket * socket, EWebsocketVersion ws_v ) :
 	QAbstractSocket( QAbstractSocket::UnknownSocketType, parent ),
-	tcpSocket( socket ),
+    tcpSocket( socket ? socket : new QTcpSocket(this) ),
 	_version( ws_v ),
 	_hostPort( -1 ),
 	closingHandshakeSent( false ),
@@ -23,6 +26,8 @@ QWsSocket::QWsSocket( QObject * parent, QTcpSocket * socket, EWebsocketVersion w
 	tcpSocket->setParent( this );
 
 	setSocketState( tcpSocket->state() );
+    setPeerAddress( tcpSocket->peerAddress() );
+    setPeerPort( tcpSocket->peerPort() );
 
 	if ( _version == WS_V0 )
 		connect( tcpSocket, SIGNAL(readyRead()), this, SLOT(processDataV0()) );
@@ -45,7 +50,11 @@ QWsSocket::~QWsSocket()
 
 void QWsSocket::processDataV4()
 {
-	while (true) switch ( readingState ) {
+    if( state() == QAbstractSocket::ConnectingState )
+        processHandshake();
+    else
+    while (true)
+    switch ( readingState ) {
 	case HeaderPending: {
 		if (tcpSocket->bytesAvailable() < 2)
 			return;
@@ -146,15 +155,104 @@ void QWsSocket::processDataV4()
 
 		currentFrame.clear();
 	}; break;
-	} /* while (true) switch */
+    } /* while (true) switch */
+}
+
+void QWsSocket::processHandshake()
+{
+    //copy from QWsServer::dataReceived();
+    QTcpSocket * tcpSocket = qobject_cast<QTcpSocket*>( sender() );
+    if (tcpSocket == 0)
+        return;
+
+    bool allHeadersFetched = false;
+
+    const QLatin1String emptyLine("\r\n");
+
+    while ( tcpSocket->canReadLine() )
+    {
+        QString line = tcpSocket->readLine();
+
+        if (line == emptyLine)
+        {
+            allHeadersFetched = true;
+            break;
+        }
+
+        handshakeResponse.append(line);
+    }
+
+    if (!allHeadersFetched)
+        return;
+
+    QRegExp regExp;
+    regExp.setMinimal( true );
+
+    // check accept field
+    regExp.setPattern(regExpAcceptStr);
+    regExp.indexIn(handshakeResponse);
+    QString acceptFromServer = regExp.cap(1);
+
+    // check upgrade field
+    regExp.setPattern(regExpUpgradeStr);
+    regExp.indexIn(handshakeResponse);
+    QString upgrade = regExp.cap(1);
+
+    // check connection field
+    regExp.setPattern(regExpConnectionStr);
+    regExp.indexIn(handshakeResponse);
+    QString connection = regExp.cap(1);
+
+    // check extensions field
+    regExp.setPattern(QWsServer::regExpExtensionsStr);
+    regExp.indexIn(handshakeResponse);
+    QString extensions = regExp.cap(1);
+
+    //TODO: check extensions field
+    // If the mandatory params are not setted, we abord the connection to the Websocket server
+    if((acceptFromServer.isEmpty()) || (!upgrade.contains("websocket", Qt::CaseInsensitive)) ||
+            (!connection.contains("Upgrade", Qt::CaseInsensitive)))
+    {
+        emit error(QAbstractSocket::ConnectionRefusedError);
+        return;
+    }
+
+    //TODO: check HTTP code
+
+    //TODO: check protocol field
+
+    //if(webSocket->protocolVersion >= 6)
+    {
+        QString accept = QWsServer::computeAcceptV4(key);
+        if(accept != acceptFromServer)
+        {
+            emit error(QAbstractSocket::ConnectionRefusedError);
+            return;
+        }
+    }
+//    else
+//    {
+
+//    }
+
+    // handshake procedure succeeded
+    setSocketState( QAbstractSocket::ConnectedState );
+    emit stateChanged( QAbstractSocket::ConnectedState );
+    emit connected();
 }
 
 void QWsSocket::processDataV0()
 {
+    if( state() == QAbstractSocket::ConnectingState )
+    {
+        processHandshake();
+        return;
+    }
+
 	QByteArray BA, buffer;
 	quint8 type, b = 0x00;
 
-	BA = tcpSocket->read(1);
+    BA = tcpSocket->read(1); //TODO: refactor like processDataV4
 	type = BA[0];
 
 	if ( ( type & 0x80 ) == 0x00 ) // MSB of type not set
@@ -216,7 +314,7 @@ void QWsSocket::processDataV0()
 	}
 
 	if ( tcpSocket->bytesAvailable() )
-		processDataV0();
+        processDataV0();
 }
 
 qint64 QWsSocket::write ( const QString & string )
@@ -226,7 +324,7 @@ qint64 QWsSocket::write ( const QString & string )
 		return QWsSocket::write( string.toAscii() );
 	}
 
-	QList<QByteArray> & framesList = QWsSocket::composeFrames( string.toAscii(), false, maxBytesPerFrame );
+    const QList<QByteArray>& framesList = QWsSocket::composeFrames( string.toAscii(), false, maxBytesPerFrame );
 	return writeFrames( framesList );
 }
 
@@ -241,12 +339,22 @@ qint64 QWsSocket::write ( const QByteArray & byteArray )
 		return writeFrame( BA );
 	}
 
-	QList<QByteArray> & framesList = QWsSocket::composeFrames( byteArray, true, maxBytesPerFrame );
+    const QList<QByteArray>& framesList = QWsSocket::composeFrames( byteArray, true, maxBytesPerFrame );
 
 	qint64 nbBytesWritten = writeFrames( framesList );
 	emit bytesWritten( nbBytesWritten );
 
 	return nbBytesWritten;
+}
+
+void QWsSocket::connectToHost(const QHostAddress &address, quint16 port, OpenMode mode)
+{
+    handshakeResponse.clear();
+    setSocketState( QAbstractSocket::ConnectingState );
+    setPeerAddress( address );
+    setPeerPort( port );
+    emit stateChanged( QAbstractSocket::ConnectingState );
+    tcpSocket->connectToHost(address, port, mode);
 }
 
 qint64 QWsSocket::writeFrame ( const QByteArray & byteArray )
@@ -266,9 +374,20 @@ qint64 QWsSocket::writeFrames ( const QList<QByteArray> & framesList )
 
 void QWsSocket::processTcpStateChanged( QAbstractSocket::SocketState tcpSocketState )
 {
-	QAbstractSocket::SocketState wsSocketState = state();
+    QAbstractSocket::SocketState wsSocketState = state();
 	switch ( tcpSocketState )
 	{
+        case QAbstractSocket::ConnectedState:
+        {
+            if ( wsSocketState == QAbstractSocket::ConnectingState )
+            {
+                key = QWsServer::generateNonce();
+                QString handshake = composeOpeningHandShake("/", "example.com", "", "", key);
+                tcpSocket->write(handshake.toAscii());
+                tcpSocket->flush(); //TODO: why do we call flush() everywhere? Qt help says it is not necessary to call this function
+            }
+            break;
+        }
 		case QAbstractSocket::ClosingState:
 		{
 			if ( wsSocketState == QAbstractSocket::ConnectedState )
@@ -561,7 +680,7 @@ int QWsSocket::hostPort()
 
 QString QWsSocket::origin()
 {
-	return _origin;
+    return _origin;
 }
 
 QString QWsSocket::protocol()

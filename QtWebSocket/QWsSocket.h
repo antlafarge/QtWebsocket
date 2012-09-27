@@ -59,7 +59,7 @@ public:
 
 public:
 	// ctor
-	QWsSocket( QObject * parent = 0, QTcpSocket * socket = 0, EWebsocketVersion ws_v = WS_V13 );
+    QWsSocket( QObject * parent = 0, QTcpSocket * socket = 0, EWebsocketVersion ws_v = WS_V13 );
 	// dtor
 	virtual ~QWsSocket();
 
@@ -85,6 +85,7 @@ public:
 	qint64 write ( const QByteArray & byteArray ); // write data as binary
 
 public slots:
+    void connectToHost(const QHostAddress &address, quint16 port, OpenMode mode = ReadWrite);
 	virtual void close( ECloseStatusCode closeStatusCode = CloseNormal, QString reason = QString() );
 	void ping();
 
@@ -100,11 +101,12 @@ protected:
 protected slots:
 	void processDataV0();
 	void processDataV4();
+    void processHandshake();
 	void processTcpStateChanged( QAbstractSocket::SocketState socketState );
 
 private:
 	enum EReadingState
-	{
+    {
 		HeaderPending,
 		PayloadLengthPending,
 		BigPayloadLenghPending,
@@ -135,6 +137,12 @@ private:
 	bool hasMask;
 	quint64 payloadLength;
 	QByteArray maskingKey;
+
+    static const QString regExpAcceptStr;
+    static const QString regExpUpgradeStr;
+    static const QString regExpConnectionStr;
+    QString handshakeResponse;
+    QString key;
 
 public:
 	// Static functions
