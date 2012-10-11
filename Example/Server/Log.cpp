@@ -21,7 +21,7 @@ Log::Log() : QTextEdit()
 	setWindowTitle("Log");
 	//setTextInteractionFlags( Qt::TextBrowserInteraction );
 	setReadOnly(true);
-	setFixedSize(400, 800);
+    setFixedSize(480, 640);
 
 	connect( this, SIGNAL(newMessage(QString)), this, SLOT(appendToLog(QString)) );
 }
