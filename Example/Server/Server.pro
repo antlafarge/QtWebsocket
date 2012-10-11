@@ -1,7 +1,7 @@
 QT       += core
-
 QT       += gui
 QT       += network
+
 
 TARGET = Server
 CONFIG   -= console
@@ -13,7 +13,9 @@ TEMPLATE = app
 
 SOURCES += Log.cpp \
     ServerExample.cpp \
-    main.cpp
+    main.cpp \
+    ../../QtWebSocket/QWsSocket.cpp \
+    ../../QtWebSocket/QWsServer.cpp
 
 
 
@@ -23,13 +25,13 @@ HEADERS += Log.h \
     ServerExample.h
 
 
-win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../../QtWebSocket/release/ -lQtWebSocket
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../../QtWebSocket/debug/ -lQtWebSocket
-else:unix:!symbian: LIBS += -L$$OUT_PWD/../../QtWebSocket/ -lQtWebSocket
+win32:CONFIG(release, debug|release): LIBS += -L../../QtWebSocket/release/ -lQtWebSocket
+else:win32:CONFIG(debug, debug|release): LIBS += -L../../QtWebSocket/debug/ -lQtWebSocket
+else:unix:!symbian: LIBS += -L../../QtWebSocket/ -lQtWebSocket
 
-INCLUDEPATH += $$PWD/../../QtWebSocket
-DEPENDPATH += $$PWD/../../QtWebSocket
+INCLUDEPATH += ../../QtWebSocket
+DEPENDPATH += ../../QtWebSocket
 
-win32:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../QtWebSocket/release/QtWebSocket.lib
-else:win32:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../../QtWebSocket/debug/QtWebSocket.lib
-else:unix:!symbian: PRE_TARGETDEPS += $$OUT_PWD/../../QtWebSocket/libQtWebSocket.a
+win32:CONFIG(release, debug|release): PRE_TARGETDEPS += ../../QtWebSocket/release/QtWebSocket.lib
+else:win32:CONFIG(debug, debug|release): PRE_TARGETDEPS += ../../QtWebSocket/debug/QtWebSocket.lib
+else:unix:!symbian: PRE_TARGETDEPS += ../../QtWebSocket/libQtWebSocket.a

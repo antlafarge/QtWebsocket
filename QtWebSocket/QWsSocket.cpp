@@ -226,7 +226,7 @@ qint64 QWsSocket::write ( const QString & string )
 		return QWsSocket::write( string.toAscii() );
 	}
 
-	QList<QByteArray> & framesList = QWsSocket::composeFrames( string.toAscii(), false, maxBytesPerFrame );
+    QList<QByteArray> framesList = QWsSocket::composeFrames( string.toAscii(), false, maxBytesPerFrame );
 	return writeFrames( framesList );
 }
 
@@ -241,7 +241,7 @@ qint64 QWsSocket::write ( const QByteArray & byteArray )
 		return writeFrame( BA );
 	}
 
-	QList<QByteArray> & framesList = QWsSocket::composeFrames( byteArray, true, maxBytesPerFrame );
+    QList<QByteArray> framesList = QWsSocket::composeFrames( byteArray, true, maxBytesPerFrame );
 
 	qint64 nbBytesWritten = writeFrames( framesList );
 	emit bytesWritten( nbBytesWritten );

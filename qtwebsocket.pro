@@ -2,5 +2,4 @@ TEMPLATE = subdirs
 
 SUBDIRS += \
     QtWebSocket \
-    Example/Server \
-    Test
+    Example/Server
