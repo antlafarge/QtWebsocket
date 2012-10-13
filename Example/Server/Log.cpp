@@ -18,7 +18,7 @@ void Log::display()
 
 Log::Log() : QTextEdit()
 {
-	setWindowTitle("Log");
+	setWindowTitle(tr("Log"));
 	//setTextInteractionFlags( Qt::TextBrowserInteraction );
 	setReadOnly(true);
     setFixedSize(480, 640);
@@ -33,7 +33,7 @@ Log::~Log()
 
 void Log::closeEvent( QCloseEvent * e )
 {
-	QFile file("Log.txt");
+	QFile file(tr("Log.txt"));
 	if ( !file.open( QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text ) )
 		return;
 
