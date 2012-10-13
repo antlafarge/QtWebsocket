@@ -6,9 +6,9 @@
 #include "QWsServer.h"
 
 int QWsSocket::maxBytesPerFrame = 1400;
-const QString QWsSocket::regExpAcceptStr("Sec-WebSocket-Accept:\\s(.{28})\r\n");
-const QString QWsSocket::regExpUpgradeStr("Upgrade:\\s(.+)\r\n");
-const QString QWsSocket::regExpConnectionStr("Connection:\\s(.+)\r\n");
+const QString QWsSocket::regExpAcceptStr(QLatin1String("Sec-WebSocket-Accept:\\s(.{28})\r\n"));
+const QString QWsSocket::regExpUpgradeStr(QLatin1String("Upgrade:\\s(.+)\r\n"));
+const QString QWsSocket::regExpConnectionStr(QLatin1String("Connection:\\s(.+)\r\n"));
 
 QWsSocket::QWsSocket( QObject * parent, QTcpSocket * socket, EWebsocketVersion ws_v ) :
 	QAbstractSocket( QAbstractSocket::UnknownSocketType, parent ),
@@ -44,7 +44,7 @@ QWsSocket::~QWsSocket()
 	if ( state() == QAbstractSocket::ConnectedState )
 	{
 		qDebug() << "CloseAway, socket destroyed in server";
-		close( CloseGoingAway, "socket destroyed in server" );
+		close( CloseGoingAway, QLatin1String("socket destroyed in server") );
 	}
 }
 
@@ -210,8 +210,8 @@ void QWsSocket::processHandshake()
 
     //TODO: check extensions field
     // If the mandatory params are not setted, we abord the connection to the Websocket server
-    if((acceptFromServer.isEmpty()) || (!upgrade.contains("websocket", Qt::CaseInsensitive)) ||
-            (!connection.contains("Upgrade", Qt::CaseInsensitive)))
+    if((acceptFromServer.isEmpty()) || (!upgrade.contains(QLatin1String("websocket"), Qt::CaseInsensitive)) ||
+            (!connection.contains(QLatin1String("Upgrade"), Qt::CaseInsensitive)))
     {
         emit error(QAbstractSocket::ConnectionRefusedError);
         return;
@@ -382,7 +382,8 @@ void QWsSocket::processTcpStateChanged( QAbstractSocket::SocketState tcpSocketSt
             if ( wsSocketState == QAbstractSocket::ConnectingState )
             {
                 key = QWsServer::generateNonce();
-                QString handshake = composeOpeningHandShake("/", "example.com", "", "", key);
+                QString handshake = composeOpeningHandShake(QLatin1String("/"), QLatin1String("example.com"),
+                                                            QString(), QString(), key);
                 tcpSocket->write(handshake.toAscii());
                 tcpSocket->flush(); //TODO: why do we call flush() everywhere? Qt help says it is not necessary to call this function
             }
@@ -489,7 +490,7 @@ QByteArray QWsSocket::generateMaskingKey()
 
 QByteArray QWsSocket::generateMaskingKeyV4( QString key, QString nonce )
 {
-	QString concat = key + nonce + "61AC5F19-FBBA-4540-B96F-6561F1AB40A8";
+	QString concat = key + nonce + QLatin1String("61AC5F19-FBBA-4540-B96F-6561F1AB40A8");
 	QByteArray hash = QCryptographicHash::hash ( concat.toAscii(), QCryptographicHash::Sha1 );
 	return hash;
 }
@@ -696,14 +697,14 @@ QString QWsSocket::extensions()
 QString QWsSocket::composeOpeningHandShake( QString resourceName, QString host, QString origin, QString extensions, QString key )
 {
 	QString hs;
-	hs.append("GET " + resourceName + " HTTP/1.1\r\n");
-	hs.append("Host: " + host + "\r\n");
-	hs.append("Upgrade: websocket\r\n");
-	hs.append("Connection: Upgrade\r\n");
-	hs.append("Sec-WebSocket-Key: " + key + "\r\n");
-	hs.append("Origin: " + origin + "\r\n");
-	hs.append("Sec-WebSocket-Extensions: " + extensions + "\r\n");
-	hs.append("Sec-WebSocket-Version: 13\r\n");
-	hs.append("\r\n");
+	hs.append(QLatin1String("GET ") + resourceName + QLatin1String(" HTTP/1.1\r\n"));
+	hs.append(QLatin1String("Host: ") + host + "\r\n");
+	hs.append(QLatin1String("Upgrade: websocket\r\n"));
+	hs.append(QLatin1String("Connection: Upgrade\r\n"));
+	hs.append(QLatin1String("Sec-WebSocket-Key: ") + key + QLatin1String("\r\n"));
+	hs.append(QLatin1String("Origin: ") + origin + QLatin1String("\r\n"));
+	hs.append(QLatin1String("Sec-WebSocket-Extensions: ") + extensions + QLatin1String("\r\n"));
+	hs.append(QLatin1String("Sec-WebSocket-Version: 13\r\n"));
+	hs.append(QLatin1String("\r\n"));
 	return hs;
 }

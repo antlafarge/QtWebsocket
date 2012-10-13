@@ -24,7 +24,7 @@ ClientExample::~ClientExample()
 
 void ClientExample::sendMessage()
 {
-    QString message = ui->pseudoLineEdit->text() + ": " + ui->textLineEdit->text();
+    QString message = ui->pseudoLineEdit->text() + QLatin1String(": ") + ui->textLineEdit->text();
     ui->textLineEdit->clear();
     wsSocket->write( message );
 }
@@ -36,7 +36,7 @@ void ClientExample::displayMessage( QString message )
 
 void ClientExample::connectSocket()
 {
-    wsSocket->connectToHost( QHostAddress("127.0.0.1"), 1337 );
+    wsSocket->connectToHost( QHostAddress(QLatin1String("127.0.0.1")), 1337 );
 }
 
 void ClientExample::disconnectSocket()
