@@ -46,8 +46,7 @@ void ClientExample::disconnectSocket()
 
 void ClientExample::socketStateChanged(QAbstractSocket::SocketState socketState)
 {
-
-    switch ( wsSocket->state() )
+    switch ( socketState )
     {
     case QAbstractSocket::UnconnectedState:
         ui->socketStateLabel->setText("Unconnected");

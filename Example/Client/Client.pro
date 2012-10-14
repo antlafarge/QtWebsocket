@@ -15,9 +15,7 @@ CONFIG   -= app_bundle
 TEMPLATE = app
 
 SOURCES += main.cpp\
-        clientexample.cpp \
-    ../../QtWebSocket/QWsSocket.cpp \
-    ../../QtWebSocket/QWsServer.cpp
+        clientexample.cpp
 
 HEADERS  += clientexample.h \
     ../../QtWebSocket/QWsSocket.h \

@@ -2,20 +2,22 @@ QT       += core
 QT       += gui
 QT       += network
 
-TARGET = Server
+TARGET = ServerThreaded
 CONFIG   -= console
 CONFIG   -= app_bundle
 
 TEMPLATE = app
 
 SOURCES += Log.cpp \
-    ServerExample.cpp \
-    main.cpp
+    ServerExampleThreaded.cpp \
+    main.cpp \
+    SocketThread.cpp
 
 HEADERS += Log.h \
     QWsServer.h \
     QWsSocket.h \
-    ServerExample.h
+    ServerExampleThreaded.h \
+    SocketThread.h
 
 win32:CONFIG(release, debug|release): LIBS += -L../../QtWebSocket/release/ -lQtWebSocket
 else:win32:CONFIG(debug, debug|release): LIBS += -L../../QtWebSocket/debug/ -lQtWebSocket

@@ -35,9 +35,9 @@ void SocketThread::run()
 
 void SocketThread::processMessage( QString message )
 {
-	// ANY PROCESS OF THE FRAME HERE IS DONE IN THE SOCKET THREAD !
+    // ANY PROCESS OF THE FRAME IS DONE IN THE SOCKET THREAD !
 
-	Log::display( "Message received and processed in thread : " + QString::number((int)QThread::currentThreadId()) );
+    Log::display( "thread #" + QString::number((int)QThread::currentThreadId()) + " | " + message );
 }
 
 void SocketThread::sendMessage( QString message )
