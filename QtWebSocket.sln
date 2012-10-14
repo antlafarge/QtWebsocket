@@ -2,12 +2,26 @@
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AutobahnTestSuite", "AutobahnTestSuite\Test.vcproj", "{CF0BAFAA-70E5-4777-8196-AAE035657648}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7E3A920C-4257-41A1-B9B9-BFA138C1C8A2} = {7E3A920C-4257-41A1-B9B9-BFA138C1C8A2}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QtWebsocket", "QtWebsocket\QtWebsocket.vcproj", "{7E3A920C-4257-41A1-B9B9-BFA138C1C8A2}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ServerExample", "Example\Server\ServerExample.vcproj", "{11ADF8AB-7848-464E-AC82-C30F32A46184}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7E3A920C-4257-41A1-B9B9-BFA138C1C8A2} = {7E3A920C-4257-41A1-B9B9-BFA138C1C8A2}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ServerExampleThreaded", "Example\ServerThreaded\ServerThreaded.vcproj", "{04429A95-6334-4138-8162-4791D1298792}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7E3A920C-4257-41A1-B9B9-BFA138C1C8A2} = {7E3A920C-4257-41A1-B9B9-BFA138C1C8A2}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ClientExample", "Example\Client\ClientExample.vcproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7E3A920C-4257-41A1-B9B9-BFA138C1C8A2} = {7E3A920C-4257-41A1-B9B9-BFA138C1C8A2}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +45,10 @@ Global
 		{04429A95-6334-4138-8162-4791D1298792}.Debug|Win32.Build.0 = Debug|Win32
 		{04429A95-6334-4138-8162-4791D1298792}.Release|Win32.ActiveCfg = Release|Win32
 		{04429A95-6334-4138-8162-4791D1298792}.Release|Win32.Build.0 = Release|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Win32.Build.0 = Debug|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Win32.ActiveCfg = Release|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
