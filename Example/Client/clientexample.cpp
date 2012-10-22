@@ -24,7 +24,7 @@ ClientExample::~ClientExample()
 
 void ClientExample::sendMessage()
 {
-    QString message = ui->pseudoLineEdit->text() + ": " + ui->textLineEdit->text();
+    QString message = ui->pseudoLineEdit->text() + QLatin1String(": ") + ui->textLineEdit->text();
     ui->textLineEdit->clear();
     wsSocket->write( message );
 }
@@ -36,7 +36,7 @@ void ClientExample::displayMessage( QString message )
 
 void ClientExample::connectSocket()
 {
-    wsSocket->connectToHost( QHostAddress("127.0.0.1"), 1337 );
+    wsSocket->connectToHost( QHostAddress(QLatin1String("127.0.0.1")), 1337 );
 }
 
 void ClientExample::disconnectSocket()
@@ -49,30 +49,30 @@ void ClientExample::socketStateChanged(QAbstractSocket::SocketState socketState)
     switch ( socketState )
     {
     case QAbstractSocket::UnconnectedState:
-        ui->socketStateLabel->setText("Unconnected");
-        displayMessage( "DISCONNECTED" );
+        ui->socketStateLabel->setText(tr("Unconnected"));
+        displayMessage( tr("DISCONNECTED") );
         break;
     case QAbstractSocket::HostLookupState:
-        ui->socketStateLabel->setText("HostLookup");
+        ui->socketStateLabel->setText(tr("HostLookup"));
         break;
     case QAbstractSocket::ConnectingState:
-        ui->socketStateLabel->setText("Connecting");
+        ui->socketStateLabel->setText(tr("Connecting"));
         break;
     case QAbstractSocket::ConnectedState:
         ui->socketStateLabel->setText("Connected");
-        displayMessage( "CONNECTED" );
+        displayMessage( tr("CONNECTED") );
         break;
     case QAbstractSocket::BoundState:
-        ui->socketStateLabel->setText("Bound");
+        ui->socketStateLabel->setText(tr("Bound"));
         break;
     case QAbstractSocket::ClosingState:
-        ui->socketStateLabel->setText("Closing");
+        ui->socketStateLabel->setText(tr("Closing"));
         break;
     case QAbstractSocket::ListeningState:
-        ui->socketStateLabel->setText("Listening");
+        ui->socketStateLabel->setText(tr("Listening"));
         break;
     default:
-        ui->socketStateLabel->setText("Unknow");
+        ui->socketStateLabel->setText(tr("Unknown"));
         break;
     }
 }

@@ -8,12 +8,12 @@ ServerExample::ServerExample()
     server = new QWsServer(this);
 	if ( ! server->listen(QHostAddress::Any, port) )
 	{
-		Log::display( "Error: Can't launch server" );
-		Log::display( "QWsServer error : " + server->errorString() );
+		Log::display( tr("Error: Can't launch server") );
+		Log::display( tr("QWsServer error : %1") .arg(server->errorString()) );
 	}
 	else
 	{
-		Log::display( "Server is listening port " + QString::number(port) );
+		Log::display( tr("Server is listening on port %1") .arg(port) );
 	}
 	connect(server, SIGNAL(newConnection()), this, SLOT(processNewConnection()));
 }
@@ -32,7 +32,7 @@ void ServerExample::processNewConnection()
 
 	clients << clientSocket;
 
-	Log::display("Client connected");
+	Log::display(tr("Client connected"));
 }
 
 void ServerExample::processMessage( QString frame )
@@ -52,7 +52,7 @@ void ServerExample::processMessage( QString frame )
 
 void ServerExample::processPong( quint64 elapsedTime )
 {
-	Log::display( "ping: " + QString::number(elapsedTime) + " ms" );
+	Log::display( tr("ping: %1 ms") .arg(elapsedTime) );
 }
 
 void ServerExample::socketDisconnected()
@@ -65,5 +65,5 @@ void ServerExample::socketDisconnected()
 
 	socket->deleteLater();
 
-	Log::display("Client disconnected");
+	Log::display(tr("Client disconnected"));
 }
