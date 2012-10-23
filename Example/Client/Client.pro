@@ -18,18 +18,18 @@ SOURCES += main.cpp\
         Client.cpp
 
 HEADERS  += Client.h \
-    ../../QtWebSocket/QWsSocket.h \
-    ../../QtWebSocket/QWsServer.h
+    ../../QtWebsocket/QWsSocket.h \
+    ../../QtWebsocket/QWsServer.h
 
 FORMS    += Client.ui
 
-win32:CONFIG(release, debug|release): LIBS += -L../../QtWebSocket/release/ -lQtWebSocket
-else:win32:CONFIG(debug, debug|release): LIBS += -L../../QtWebSocket/debug/ -lQtWebSocket
-else:unix:!symbian: LIBS += -L../../QtWebSocket/ -lQtWebSocket
+win32:CONFIG(release, debug|release): LIBS += -L../../QtWebsocket/release/ -lQtWebsocket
+else:win32:CONFIG(debug, debug|release): LIBS += -L../../QtWebsocket/debug/ -lQtWebsocket
+else:unix:!symbian: LIBS += -L../../QtWebsocket/ -lQtWebsocket
 
-INCLUDEPATH += ../../QtWebSocket
-DEPENDPATH += ../../QtWebSocket
+INCLUDEPATH += ../../QtWebsocket
+DEPENDPATH += ../../QtWebsocket
 
-win32:CONFIG(release, debug|release): PRE_TARGETDEPS += ../../QtWebSocket/release/QtWebSocket.lib
-else:win32:CONFIG(debug, debug|release): PRE_TARGETDEPS += ../../QtWebSocket/debug/QtWebSocket.lib
-else:unix:!symbian: PRE_TARGETDEPS += ../../QtWebSocket/libQtWebSocket.a
+win32:CONFIG(release, debug|release): PRE_TARGETDEPS += ../../QtWebsocket/release/QtWebsocket.lib
+else:win32:CONFIG(debug, debug|release): PRE_TARGETDEPS += ../../QtWebsocket/debug/QtWebsocket.lib
+else:unix:!symbian: PRE_TARGETDEPS += ../../QtWebsocket/libQtWebsocket.a
