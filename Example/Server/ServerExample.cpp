@@ -9,11 +9,11 @@ ServerExample::ServerExample()
 	if ( ! server->listen(QHostAddress::Any, port) )
 	{
 		Log::display( tr("Error: Can't launch server") );
-		Log::display( tr("QWsServer error : %1") .arg(server->errorString()) );
+		Log::display( tr("QWsServer error : %1").arg(server->errorString()) );
 	}
 	else
 	{
-		Log::display( tr("Server is listening on port %1") .arg(port) );
+		Log::display( tr("Server is listening on port %1").arg(port) );
 	}
 	connect(server, SIGNAL(newConnection()), this, SLOT(processNewConnection()));
 }
@@ -41,7 +41,7 @@ void ServerExample::processMessage( QString frame )
 	if (socket == 0)
 		return;
 
-	Log::display( QString::fromUtf8(frame.toStdString().c_str()) );
+	Log::display( frame );
 	
 	QWsSocket * client;
 	foreach ( client, clients )
@@ -52,7 +52,7 @@ void ServerExample::processMessage( QString frame )
 
 void ServerExample::processPong( quint64 elapsedTime )
 {
-	Log::display( tr("ping: %1 ms") .arg(elapsedTime) );
+	Log::display( tr("ping: %1 ms").arg(elapsedTime) );
 }
 
 void ServerExample::socketDisconnected()

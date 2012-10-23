@@ -136,7 +136,7 @@ void QWsSocket::processDataV4()
 				emit frameReceived( currentFrame );
 				break;
 			case OpText:
-				emit frameReceived( QString::fromAscii(currentFrame) );
+				emit frameReceived( QString::fromUtf8(currentFrame) );
 				break;
 			case OpPing:
 				write( QWsSocket::composeHeader( true, OpPong, 0 ) );
@@ -305,11 +305,7 @@ void QWsSocket::processDataV0()
 
 	if ( currentFrame.size() > 0 )
 	{
-		QString byteString;
-		byteString.reserve( currentFrame.size() );
-		for (int i=0 ; i<currentFrame.size() ; i++)
-			byteString[i] = currentFrame[i];
-		emit frameReceived( byteString );
+		emit frameReceived( QString::fromUtf8(currentFrame) );
 		currentFrame.clear();
 	}
 
@@ -321,10 +317,10 @@ qint64 QWsSocket::write ( const QString & string )
 {
 	if ( _version == WS_V0 )
 	{
-		return QWsSocket::write( string.toAscii() );
+		return QWsSocket::write( string.toUtf8() );
 	}
 
-    const QList<QByteArray>& framesList = QWsSocket::composeFrames( string.toAscii(), false, maxBytesPerFrame );
+    const QList<QByteArray>& framesList = QWsSocket::composeFrames( string.toUtf8(), false, maxBytesPerFrame );
 	return writeFrames( framesList );
 }
 

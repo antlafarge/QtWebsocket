@@ -46,5 +46,5 @@ void ServerExampleThreaded::processNewConnection()
 void ServerExampleThreaded::displayMessage( QString message )
 {
 	// Just display in log the message received by a socket
-	Log::display( QString::fromUtf8( message.toStdString().c_str() ) );
+	Log::display( message );
 }	
