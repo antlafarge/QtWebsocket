@@ -1,9 +1,9 @@
-#include "clientexample.h"
-#include "ui_clientexample.h"
+#include "Client.h"
+#include "ui_Client.h"
 
-ClientExample::ClientExample(QWidget *parent) :
+Client::Client(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::ClientExample)
+    ui(new Ui::Client)
 {
     ui->setupUi(this);
 
@@ -17,34 +17,34 @@ ClientExample::ClientExample(QWidget *parent) :
     QObject::connect( wsSocket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(socketStateChanged(QAbstractSocket::SocketState)) );
 }
 
-ClientExample::~ClientExample()
+Client::~Client()
 {
     delete ui;
 }
 
-void ClientExample::sendMessage()
+void Client::sendMessage()
 {
     QString message = ui->pseudoLineEdit->text() + QLatin1String(": ") + ui->textLineEdit->text();
     ui->textLineEdit->clear();
     wsSocket->write( message );
 }
 
-void ClientExample::displayMessage( QString message )
+void Client::displayMessage( QString message )
 {
     ui->chatTextEdit->append( message );
 }
 
-void ClientExample::connectSocket()
+void Client::connectSocket()
 {
     wsSocket->connectToHost( QHostAddress(QLatin1String("127.0.0.1")), 1337 );
 }
 
-void ClientExample::disconnectSocket()
+void Client::disconnectSocket()
 {
     wsSocket->disconnect();
 }
 
-void ClientExample::socketStateChanged(QAbstractSocket::SocketState socketState)
+void Client::socketStateChanged(QAbstractSocket::SocketState socketState)
 {
     switch ( socketState )
     {

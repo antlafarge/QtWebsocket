@@ -9,14 +9,14 @@ CONFIG   -= app_bundle
 TEMPLATE = app
 
 SOURCES += Log.cpp \
-    ServerExampleThreaded.cpp \
+    ServerThreaded.cpp \
     main.cpp \
     SocketThread.cpp
 
 HEADERS += Log.h \
     QWsServer.h \
     QWsSocket.h \
-    ServerExampleThreaded.h \
+    ServerThreaded.h \
     SocketThread.h
 
 win32:CONFIG(release, debug|release): LIBS += -L../../QtWebSocket/release/ -lQtWebSocket

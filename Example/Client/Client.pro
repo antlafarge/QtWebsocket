@@ -15,13 +15,13 @@ CONFIG   -= app_bundle
 TEMPLATE = app
 
 SOURCES += main.cpp\
-        clientexample.cpp
+        Client.cpp
 
-HEADERS  += clientexample.h \
+HEADERS  += Client.h \
     ../../QtWebSocket/QWsSocket.h \
     ../../QtWebSocket/QWsServer.h
 
-FORMS    += clientexample.ui
+FORMS    += Client.ui
 
 win32:CONFIG(release, debug|release): LIBS += -L../../QtWebSocket/release/ -lQtWebSocket
 else:win32:CONFIG(debug, debug|release): LIBS += -L../../QtWebSocket/debug/ -lQtWebSocket

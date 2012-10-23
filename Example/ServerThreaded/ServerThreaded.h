@@ -1,5 +1,5 @@
-#ifndef HEADER_WebSocketServer
-#define HEADER_WebSocketServer
+#ifndef SERVERTHREADED_H
+#define SERVERTHREADED_H
 
 #include <QtCore>
 #include <QtNetwork>
@@ -8,13 +8,13 @@
 #include "QWsSocket.h"
 #include "SocketThread.h"
 
-class ServerExampleThreaded : public QObject
+class ServerThreaded : public QObject
 {
 	Q_OBJECT
 
 public:
-	ServerExampleThreaded();
-	~ServerExampleThreaded();
+	ServerThreaded();
+	~ServerThreaded();
 
 public slots:
 	void processNewConnection();
@@ -27,4 +27,4 @@ private:
 	QWsServer * server;
 };
 
-#endif
+#endif // SERVERTHREADED_H

@@ -1,5 +1,5 @@
-#ifndef HEADER_WebSocketServer
-#define HEADER_WebSocketServer
+#ifndef SERVER_H
+#define SERVER_H
 
 #include <QtCore>
 #include <QtNetwork>
@@ -7,13 +7,13 @@
 #include "QWsServer.h"
 #include "QWsSocket.h"
 
-class ServerExample : public QObject
+class Server : public QObject
 {
 	Q_OBJECT
 
 public:
-	ServerExample();
-	~ServerExample();
+	Server();
+	~Server();
 
 public slots:
 	void processNewConnection();
@@ -26,4 +26,4 @@ private:
 	QList<QWsSocket*> clients;
 };
 
-#endif
+#endif // SERVER_H

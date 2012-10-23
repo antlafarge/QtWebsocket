@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="ServerExampleThreaded"
+	Name="ServerThreaded"
 	ProjectGUID="{04429A95-6334-4138-8162-4791D1298792}"
 	Keyword="Qt4VSv1.0"
 	TargetFrameworkVersion="0"
@@ -170,13 +170,20 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ServerExampleThreaded.cpp"
+				RelativePath=".\ServerThreaded.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\SocketThread.cpp"
 				>
 			</File>
+			<Filter
+				Name="Resource Files"
+				Filter="qrc;*"
+				UniqueIdentifier="{D9D6E242-F8AF-46E4-B9FD-80ECBC20BA3E}"
+				ParseFiles="false"
+				>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -262,14 +269,14 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\ServerExampleThreaded.h"
+				RelativePath=".\ServerThreaded.h"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Moc&apos;ing ServerExampleThreaded.h..."
+						Description="Moc&apos;ing ServerThreaded.h..."
 						CommandLine="&quot;$(QTDIR)\bin\moc.exe&quot;  &quot;$(InputPath)&quot; -o &quot;.\GeneratedFiles\$(ConfigurationName)\moc_$(InputName).cpp&quot;  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DNDEBUG -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB &quot;-I.\GeneratedFiles&quot; &quot;-I.&quot; &quot;-I$(QTDIR)\include&quot; &quot;-I.\GeneratedFiles\$(ConfigurationName)\.&quot; &quot;-I$(QTDIR)\include\QtCore&quot; &quot;-I$(QTDIR)\include\QtGui&quot; &quot;-I$(QTDIR)\include\QtNetwork&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="&quot;$(QTDIR)\bin\moc.exe&quot;;$(InputPath)"
 						Outputs="&quot;.\GeneratedFiles\$(ConfigurationName)\moc_$(InputName).cpp&quot;"
@@ -280,7 +287,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						Description="Moc&apos;ing ServerExampleThreaded.h..."
+						Description="Moc&apos;ing ServerThreaded.h..."
 						CommandLine="&quot;$(QTDIR)\bin\moc.exe&quot;  &quot;$(InputPath)&quot; -o &quot;.\GeneratedFiles\$(ConfigurationName)\moc_$(InputName).cpp&quot;  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB &quot;-I.\..\..\QtWebsocket&quot; &quot;-I.\GeneratedFiles&quot; &quot;-I.&quot; &quot;-I$(QTDIR)\include&quot; &quot;-I.\GeneratedFiles\$(ConfigurationName)\.&quot; &quot;-I$(QTDIR)\include\QtCore&quot; &quot;-I$(QTDIR)\include\QtGui&quot; &quot;-I$(QTDIR)\include\QtNetwork&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="&quot;$(QTDIR)\bin\moc.exe&quot;;$(InputPath)"
 						Outputs="&quot;.\GeneratedFiles\$(ConfigurationName)\moc_$(InputName).cpp&quot;"
@@ -318,13 +325,6 @@
 			Name="Form Files"
 			Filter="ui"
 			UniqueIdentifier="{99349809-55BA-4b9d-BF79-8FDBB0286EB3}"
-			>
-		</Filter>
-		<Filter
-			Name="Resource Files"
-			Filter="qrc;*"
-			UniqueIdentifier="{D9D6E242-F8AF-46E4-B9FD-80ECBC20BA3E}"
-			ParseFiles="false"
 			>
 		</Filter>
 		<Filter
@@ -375,7 +375,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath=".\GeneratedFiles\Release\moc_ServerExampleThreaded.cpp"
+					RelativePath=".\GeneratedFiles\Release\moc_ServerThreaded.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -441,7 +441,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath=".\GeneratedFiles\Debug\moc_ServerExampleThreaded.cpp"
+					RelativePath=".\GeneratedFiles\Debug\moc_ServerThreaded.cpp"
 					>
 					<FileConfiguration
 						Name="Release|Win32"

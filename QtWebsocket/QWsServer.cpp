@@ -161,7 +161,7 @@ void QWsServer::dataReceived()
 	{
 		// Send bad request response
 		QString response = QWsServer::composeBadRequestResponse( QList<EWebsocketVersion>() << WS_V6 << WS_V7 << WS_V8 << WS_V13 );
-		tcpSocket->write( response.toAscii() );
+		tcpSocket->write( response.toUtf8() );
 		tcpSocket->flush();
 		return;
 	}
@@ -215,7 +215,10 @@ void QWsServer::dataReceived()
 	disconnect( tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()) );
 
 	// Send opening handshake response
-	tcpSocket->write( response.toAscii() );
+	if ( version == WS_V0 )
+		tcpSocket->write( response.toAscii() );
+	else
+		tcpSocket->write( response.toUtf8() );
 	tcpSocket->flush();
 
 	QWsSocket * wsSocket = new QWsSocket( this, tcpSocket, version );
@@ -352,7 +355,7 @@ QString QWsServer::computeAcceptV0( QString key1, QString key2, QString key3 )
 QString QWsServer::computeAcceptV4(QString key)
 {
 	key += QLatin1String("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-	QByteArray hash = QCryptographicHash::hash ( key.toAscii(), QCryptographicHash::Sha1 );
+	QByteArray hash = QCryptographicHash::hash ( key.toUtf8(), QCryptographicHash::Sha1 );
 	return hash.toBase64();
 }
 

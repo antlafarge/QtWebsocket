@@ -1,7 +1,7 @@
 #include <QApplication>
 #include <QtDebug>
 
-#include "ServerExampleThreaded.h"
+#include "ServerThreaded.h"
 
 #include "Log.h"
 
@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 
 	Log::display( "main thread : " + QString::number((int)QThread::currentThreadId()) );
 
-	ServerExampleThreaded myThreadedServer;
+	ServerThreaded myThreadedServer;
 
 	return app.exec();
 }

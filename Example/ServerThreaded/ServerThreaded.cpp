@@ -1,8 +1,8 @@
-#include "ServerExampleThreaded.h"
+#include "ServerThreaded.h"
 
 #include "Log.h"
 
-ServerExampleThreaded::ServerExampleThreaded()
+ServerThreaded::ServerThreaded()
 {
 	int port = 1337;
     server = new QWsServer( this );
@@ -18,11 +18,11 @@ ServerExampleThreaded::ServerExampleThreaded()
 	connect( server, SIGNAL(newConnection()), this, SLOT(processNewConnection()) );
 }
 
-ServerExampleThreaded::~ServerExampleThreaded()
+ServerThreaded::~ServerThreaded()
 {
 }
 
-void ServerExampleThreaded::processNewConnection()
+void ServerThreaded::processNewConnection()
 {
 	Log::display("Client connected");
 
@@ -43,7 +43,7 @@ void ServerExampleThreaded::processNewConnection()
 	thread->start();
 }
 
-void ServerExampleThreaded::displayMessage( QString message )
+void ServerThreaded::displayMessage( QString message )
 {
 	// Just display in log the message received by a socket
 	Log::display( message );

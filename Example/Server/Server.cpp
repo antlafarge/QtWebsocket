@@ -1,8 +1,8 @@
-#include "ServerExample.h"
+#include "Server.h"
 
 #include "Log.h"
 
-ServerExample::ServerExample()
+Server::Server()
 {
 	int port = 1337;
     server = new QWsServer(this);
@@ -18,11 +18,11 @@ ServerExample::ServerExample()
 	connect(server, SIGNAL(newConnection()), this, SLOT(processNewConnection()));
 }
 
-ServerExample::~ServerExample()
+Server::~Server()
 {
 }
 
-void ServerExample::processNewConnection()
+void Server::processNewConnection()
 {
 	QWsSocket * clientSocket = server->nextPendingConnection();
 
@@ -35,7 +35,7 @@ void ServerExample::processNewConnection()
 	Log::display(tr("Client connected"));
 }
 
-void ServerExample::processMessage( QString frame )
+void Server::processMessage( QString frame )
 {
 	QWsSocket * socket = qobject_cast<QWsSocket*>( sender() );
 	if (socket == 0)
@@ -50,12 +50,12 @@ void ServerExample::processMessage( QString frame )
 	}
 }
 
-void ServerExample::processPong( quint64 elapsedTime )
+void Server::processPong( quint64 elapsedTime )
 {
 	Log::display( tr("ping: %1 ms").arg(elapsedTime) );
 }
 
-void ServerExample::socketDisconnected()
+void Server::socketDisconnected()
 {
 	QWsSocket * socket = qobject_cast<QWsSocket*>( sender() );
 	if (socket == 0)

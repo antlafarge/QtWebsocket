@@ -1,10 +1,10 @@
 #include <QtGui/QApplication>
-#include "clientexample.h"
+#include "Client.h"
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    ClientExample w;
+    Client w;
     w.show();
     
     return a.exec();

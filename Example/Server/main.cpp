@@ -1,7 +1,7 @@
 #include <QApplication>
 #include <QtDebug>
 
-#include "ServerExample.h"
+#include "Server.h"
 
 #include "Log.h"
 
@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 
 	Log::display();
 
-	ServerExample myServer;
+	Server myServer;
 
 	return app.exec();
 }

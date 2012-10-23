@@ -1,21 +1,21 @@
-#ifndef CLIENTEXAMPLE_H
-#define CLIENTEXAMPLE_H
+#ifndef CLIENT_H
+#define CLIENT_H
 
 #include <QWidget>
 
 #include "QWsSocket.h"
 
 namespace Ui {
-class ClientExample;
+class Client;
 }
 
-class ClientExample : public QWidget
+class Client : public QWidget
 {
     Q_OBJECT
     
 public:
-    explicit ClientExample(QWidget *parent = 0);
-    ~ClientExample();
+    explicit Client(QWidget *parent = 0);
+    ~Client();
 
 protected slots:
     void sendMessage();
@@ -28,7 +28,7 @@ protected:
     QWsSocket * wsSocket;
     
 private:
-    Ui::ClientExample *ui;
+    Ui::Client *ui;
 };
 
-#endif // CLIENTEXAMPLE_H
+#endif // CLIENT_H
