@@ -82,12 +82,14 @@ public:
 	void setProtocol( QString p );
 	void setExtensions( QString e );
 
-	qint64 write ( const QString & string ); // write data as text
-	qint64 write ( const QByteArray & byteArray ); // write data as binary
+	qint64 write( const QString & string ); // write data as text
+	qint64 write( const QByteArray & byteArray ); // write data as binary
 
 public slots:
-    void connectToHost(const QHostAddress &address, quint16 port, OpenMode mode = ReadWrite);
-	virtual void close( ECloseStatusCode closeStatusCode = CloseNormal, QString reason = QString() );
+	void connectToHost( const QString & hostName, quint16 port, OpenMode mode = ReadWrite );
+    void connectToHost( const QHostAddress & address, quint16 port, OpenMode mode = ReadWrite );
+    void disconnectFromHost();
+    void abort( QString reason = QString() );
 	void ping();
 
 signals:
@@ -100,6 +102,7 @@ protected:
 	qint64 writeFrame ( const QByteArray & byteArray );
 
 protected slots:
+	virtual void close( ECloseStatusCode closeStatusCode = CloseNormal, QString reason = QString() );
 	void processDataV0();
 	void processDataV4();
     void processHandshake();
@@ -112,7 +115,8 @@ private:
 		PayloadLengthPending,
 		BigPayloadLenghPending,
 		MaskPending,
-		PayloadBodyPending
+		PayloadBodyPending,
+		CloseDataPending
 	};
 
 	// private vars

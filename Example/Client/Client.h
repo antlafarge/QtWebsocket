@@ -18,6 +18,8 @@ public:
     ~Client();
 
 protected slots:
+	void socketConnected();
+	void socketDisconnected();
     void sendMessage();
     void connectSocket();
     void disconnectSocket();

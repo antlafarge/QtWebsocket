@@ -361,8 +361,11 @@ QString QWsServer::computeAcceptV4(QString key)
 
 QString QWsServer::generateNonce()
 {
+	qsrand( QDateTime::currentDateTime().toTime_t() );
+
 	QByteArray nonce;
 	int i = 16;
+
 	while( i-- )
 	{
 		nonce.append( qrand() % 0x100 );
