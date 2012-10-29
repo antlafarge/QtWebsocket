@@ -1,39 +1,51 @@
 # QtWebsocket
 
 A Qt Websocket server and client implementation.  
-The client has been recently added in the project and is still an alpha implementation.
+The client has been recently added in the project and is still a beta implementation.
 
-# Installation
+## Informations
 
-**Static lib**  
-The QtWebsocket project should compile as a static lib.  
-You can easily compile it by opening the sln with Visual Studio or the pro with QtCreator.  
-Finaly you just have to link the static lib in your project (like the examples).
-
-# Informations
-
-**Supported clients**
-- Google Chrome 16+
-- Mozilla Firefox 9+
-- Safari 5.1+
+**Supported clients**  
+- Google Chrome 16+  
+- Mozilla Firefox 9+  
+- Safari 5.1+  
 - Opera 12.50+
 
-#Development
+## Installation
 
-**Implemented functionnalities**
-- Opening handshake
-- Closing handshake
-- Frames (send and receive)
-- Mask sent frames, receive masked frames
-- Control frames (ping, pong)
-- Differents payload Lengths
-- Multi-frames (send and receive)
-- Multi-thread support
+You have two possibilities described below.
+Don't hesitate to look at the examples.
+
+**Modular and clean method - Static lib**  
+- Open the project with QtCreator _(qtwebsocket.pro)_ or Visual Studio _(qtwebsocket.sln)_.  
+- Compile the QtWebsocket project, this will result in a static lib.  
+- Add the header files _(.h)_ from the _QtWebsocket_ directory in your project.  
+- Link the generated static lib to your project.  
+- Compile your project !
+
+**Easy and hard method - Add the sources to your project**  
+- Copy the _QtWebsocket_ directory in your project  
+- Add the _header_ and _cpp_ files in your project  
+- Compile your project !
+
+## DOC
+
+No doc for the moment, the best way is to look at the examples.
+I created it to show how you can use properly the lib.
+
+## Development
+
+**Implemented functionnalities**  
+- Opening handshake  
+- Frames (send and receive)  
+- Mask sent frames, receive masked frames  
+- Control frames (close, ping, pong)  
+- Multi-frames (send and receive)  
+- Multi-thread support  
 - Client implementation _(beta)_
 
 **Todo**
 - Websocket extensions
-- WSS protocol
+- WSS protocol (SSL)
 
-
-_Thanks for your interest_
+_Thanks for your interest._
