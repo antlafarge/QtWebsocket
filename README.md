@@ -1,13 +1,13 @@
 # QtWebsocket
 
-A Qt Websocket server and client implementation.
+A Qt Websocket server and client implementation.  
 The client has been recently added in the project and is still an alpha implementation.
 
 # Installation
 
-**Static lib**
-The QtWebsocket project should compile as a static lib.
-You can easily compile it by opening the sln with Visual Studio or the pro with QtCreator.
+**Static lib**  
+The QtWebsocket project should compile as a static lib.  
+You can easily compile it by opening the sln with Visual Studio or the pro with QtCreator.  
 Finaly you just have to link the static lib in your project (like the examples).
 
 # Informations
