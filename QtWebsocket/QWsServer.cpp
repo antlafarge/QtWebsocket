@@ -229,6 +229,7 @@ void QWsServer::dataReceived()
 	wsSocket->setOrigin( origin );
 	wsSocket->setProtocol( protocol );
 	wsSocket->setExtensions( extensions );
+	wsSocket->serverSideSocket = true;
 	
 	// ORIGINAL CODE
 	//int socketDescriptor = tcpSocket->socketDescriptor();
@@ -252,7 +253,7 @@ void QWsServer::incomingConnection( int socketDescriptor )
 void QWsServer::addPendingConnection( QWsSocket * socket )
 {
 	if ( pendingConnections.size() < maxPendingConnections() )
-		pendingConnections.enqueue(socket);
+		pendingConnections.enqueue( socket );
 }
 
 QWsSocket * QWsServer::nextPendingConnection()
@@ -374,22 +375,24 @@ QString QWsServer::generateNonce()
 	return QString( nonce.toBase64() );
 }
 
-QString QWsServer::serializeInt( quint32 number, quint8 nbBytes )
+QByteArray QWsServer::serializeInt( quint32 number, quint8 nbBytes )
 {
-	QString bin;
+	QByteArray ba;
 	quint8 currentNbBytes = 0;
 	while (number > 0 && currentNbBytes < nbBytes)
 	{  
-		bin.prepend( QChar::fromAscii(number) );
+		char car = static_cast<char>(number & 0xFF);
+		ba.prepend( car );
 		number = number >> 8;
 		currentNbBytes++;
 	}
+	char car = 0x00;
 	while (currentNbBytes < nbBytes)
 	{
-		bin.prepend( QChar::fromAscii(0) );
+		ba.prepend( car );
 		currentNbBytes++;
     }
-	return bin;
+	return ba;
 }
 
 QString QWsServer::composeOpeningHandshakeResponseV0( QString accept, QString origin, QString hostAddress, QString hostPort, QString resourceName, QString protocol )
