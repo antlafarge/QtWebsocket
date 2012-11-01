@@ -13,24 +13,24 @@ The client has been recently added in the project and is still a beta implementa
 
 ## Installation
 
-You have two possibilities described below.
+You have two possibilities described below.  
 Don't hesitate to look at the examples.
 
 **Modular and clean method - Static lib**  
-- Open the project with QtCreator _(qtwebsocket.pro)_ or Visual Studio _(qtwebsocket.sln)_.  
-- Compile the QtWebsocket project, this will result in a static lib.  
-- Add the header files _(.h)_ from the _QtWebsocket_ directory in your project.  
+- Open the main project with QtCreator _(QtWebsocket.pro)_ or Visual Studio _(QtWebsocket.sln)_.  
+- Compile the project, this will result in a static lib (_*.lib_ or _*.a_ file).  
+- Add the _header_ files _(.h)_ from the _QtWebsocket_ directory in your project.  
 - Link the generated static lib to your project.  
 - Compile your project !
 
 **Easy and hard method - Add the sources to your project**  
-- Copy the _QtWebsocket_ directory in your project  
-- Add the _header_ and _cpp_ files in your project  
+- Copy the _QtWebsocket_ directory in your project.  
+- Add the _header_ and _cpp_ files in your project.  
 - Compile your project !
 
-## DOC
+## Documentation
 
-No doc for the moment, the best way is to look at the examples.
+No doc for the moment, the best way is to look at the examples.  
 I created it to show how you can use properly the lib.
 
 ## Development
