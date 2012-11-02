@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 
 	Log::display();
 
-    Log::display( "main thread : 0x" + QString::number((unsigned int)QThread::currentThreadId(), 16) );
+    Log::display( "main thread : 0x" + QString::number(reinterpret_cast<intptr_t>(QThread::currentThreadId()), 16) );
 
 	ServerThreaded myThreadedServer;
 
