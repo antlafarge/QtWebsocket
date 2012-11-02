@@ -22,7 +22,7 @@ SocketThread::~SocketThread()
 
 void SocketThread::run()
 {
-    Log::display( "connect done in thread : 0x" + QString::number((unsigned int)QThread::currentThreadId(), 16) );
+    Log::display( "connect done in thread : 0x" + QString::number(reinterpret_cast<intptr_t>(QThread::currentThreadId()), 16) );
 
 	// Connecting the socket signals here to exec the slots in the new thread
 	connect( socket, SIGNAL(frameReceived(QString)), this, SLOT(processMessage(QString)) );
@@ -37,7 +37,7 @@ void SocketThread::processMessage( QString message )
 {
     // ANY PROCESS OF THE FRAME IS DONE IN THE SOCKET THREAD !
 
-    Log::display( "thread 0x" + QString::number((unsigned int)QThread::currentThreadId(), 16) + " | " + message );
+    Log::display( "thread 0x" + QString::number(reinterpret_cast<intptr_t>(QThread::currentThreadId()), 16) + " | " + message );
 }
 
 void SocketThread::sendMessage( QString message )
