@@ -7,6 +7,9 @@
 QT       += core
 QT       += gui
 QT       += network
+contains(QT_VERSION, ^5\\..*) {
+QT       += widgets
+}
 
 TARGET = Client
 CONFIG   -= console
