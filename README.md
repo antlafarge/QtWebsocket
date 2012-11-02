@@ -18,7 +18,7 @@ Don't hesitate to look at the examples.
 
 **Modular and clean method - Static lib**  
 - Open the main project with QtCreator _(QtWebsocket.pro)_ or Visual Studio _(QtWebsocket.sln)_.  
-- Compile the project, this will result in a static lib (_*.lib_ or _*.a_ file).  
+- Compile the project, this will result in a static lib _(*.lib or *.a file)_.  
 - Add the _header_ files _(.h)_ from the _QtWebsocket_ directory in your project.  
 - Link the generated static lib to your project.  
 - Compile your project !
