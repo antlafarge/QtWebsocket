@@ -3,6 +3,7 @@
 
 #include <QtCore>
 #include <QtGui>
+#include <QTextEdit>
 
 class Log : public QTextEdit
 {
@@ -24,7 +25,7 @@ public slots:
 
 signals:
 	// On utilise un signal pour changer de thread
-	// (QtGui est dans le "main thread", Le slot appendToLog sera donc éxecutée par le bon thread)
+	// (QtGui est dans le "main thread", Le slot appendToLog sera donc ï¿½xecutï¿½e par le bon thread)
 	void newMessage(QString str);
 
 protected:
