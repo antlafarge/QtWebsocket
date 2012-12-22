@@ -2,6 +2,7 @@
 #define QWSSOCKET_H
 
 #include <QTcpSocket>
+#include <QSslSocket>
 #include <QHostAddress>
 #include <QTime>
 
@@ -63,7 +64,10 @@ public:
 
 public:
 	// ctor
-    QWsSocket( QObject * parent = 0, QTcpSocket * socket = 0, EWebsocketVersion ws_v = WS_V13 );
+    QWsSocket( QObject * parent = 0,
+               QAbstractSocket * socket = 0,
+               bool encrypted = false,
+               EWebsocketVersion ws_v = WS_V13 );
 	// dtor
 	virtual ~QWsSocket();
 
@@ -111,6 +115,8 @@ protected slots:
     void processHandshake();
 	void processTcpStateChanged( QAbstractSocket::SocketState socketState );
 
+    void onEncrypted();
+
 private:
 	enum EReadingState
     {
@@ -123,7 +129,8 @@ private:
 	};
 
 	// private vars
-	QTcpSocket * tcpSocket;
+    QAbstractSocket * tcpSocket;
+    bool _encryped;
 	QByteArray currentFrame;
 	QTime pingTimer;
 

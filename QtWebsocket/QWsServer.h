@@ -1,8 +1,7 @@
 #ifndef QWSSERVER_H
 #define QWSSERVER_H
 
-#include <QTcpServer>
-#include <QTcpSocket>
+#include "QWsTCPServer.h"
 #include <QNetworkProxy>
 #include <QString>
 #include <QStringList>
@@ -17,7 +16,7 @@ class QWsServer : public QObject
 
 public:
 	// ctor
-	QWsServer(QObject * parent = 0);
+    QWsServer(QObject * parent = 0, bool encrypted = false);
 	// dtor
 	virtual ~QWsServer();
 
@@ -55,9 +54,11 @@ private slots:
 
 private:
 	// private attributes
-	QTcpServer * tcpServer;
+    QWsTcpServer * tcpServer;
 	QQueue<QWsSocket*> pendingConnections;
-	QMap<const QTcpSocket*, QStringList> headerBuffer;
+    QMap<const QAbstractSocket*, QStringList> headerBuffer;
+
+    bool _encrypted;
 
 public:
 	// public static functions

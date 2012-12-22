@@ -11,7 +11,7 @@ class QWsTcpServer : public QTcpServer
 {
     Q_OBJECT
 public:
-    explicit QWsTcpServer( bool encryped = false, QObject *parent = 0 );
+    explicit QWsTcpServer( QObject *parent = 0, bool encryped = false );
     void setCertificate( const QSslCertificate &certificate, const QSslKey &key );
     QAbstractSocket *nextPendingSocketConnection();
 

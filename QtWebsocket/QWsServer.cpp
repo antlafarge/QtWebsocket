@@ -1,5 +1,6 @@
 #include "QWsServer.h"
 
+#include <QTcpSocket>
 #include <QRegExp>
 #include <QStringList>
 #include <QByteArray>
@@ -18,10 +19,11 @@ const QString QWsServer::regExpOrigin2Str( QLatin1String("\r\nOrigin:\\s(.+)\r\n
 const QString QWsServer::regExpProtocolStr( QLatin1String("\r\nSec-WebSocket-Protocol:\\s(.+)\r\n") );
 const QString QWsServer::regExpExtensionsStr( QLatin1String("\r\nSec-WebSocket-Extensions:\\s(.+)\r\n") );
 
-QWsServer::QWsServer(QObject * parent)
-	: QObject(parent)
+QWsServer::QWsServer(QObject * parent, bool encrypted)
+    : QObject(parent),
+      _encrypted(encrypted)
 {
-	tcpServer = new QTcpServer(this);
+    tcpServer = new QWsTcpServer( this, encrypted );
 	connect( tcpServer, SIGNAL(newConnection()), this, SLOT(newTcpConnection()) );
 	qsrand( QDateTime::currentMSecsSinceEpoch() );
 }
@@ -53,14 +55,14 @@ QString QWsServer::errorString()
 
 void QWsServer::newTcpConnection()
 {
-	QTcpSocket * tcpSocket = tcpServer->nextPendingConnection();
+    QAbstractSocket * tcpSocket = tcpServer->nextPendingSocketConnection();
 	connect( tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()) );
 	headerBuffer.insert( tcpSocket, QStringList() );
 }
 
 void QWsServer::closeTcpConnection()
 {
-	QTcpSocket * tcpSocket = qobject_cast<QTcpSocket*>( sender() );
+    QAbstractSocket * tcpSocket = qobject_cast<QAbstractSocket*>( sender() );
 	if (tcpSocket == 0)
 		return;
 
@@ -69,7 +71,7 @@ void QWsServer::closeTcpConnection()
 
 void QWsServer::dataReceived()
 {
-	QTcpSocket * tcpSocket = qobject_cast<QTcpSocket*>( sender() );
+    QAbstractSocket * tcpSocket = qobject_cast<QAbstractSocket*>( sender() );
 	if (tcpSocket == 0)
 		return;
 
@@ -250,6 +252,7 @@ void QWsServer::incomingConnection( int socketDescriptor )
 	emit newConnection();
 }
 
+// FIXME: close and delete not added connections or don't allow tcp connection
 void QWsServer::addPendingConnection( QWsSocket * socket )
 {
 	if ( pendingConnections.size() < maxPendingConnections() )

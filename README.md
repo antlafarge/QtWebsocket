@@ -44,8 +44,10 @@ I created it to show how you can use properly the lib.
 - Multi-thread support  
 - Client implementation _(beta)_
 
+**In progress**
+- WSS protocol (SSL)
+
 **Todo**
 - Websocket extensions
-- WSS protocol (SSL)
 
 _Thanks for your interest._

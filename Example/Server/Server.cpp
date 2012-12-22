@@ -5,7 +5,9 @@
 Server::Server()
 {
 	int port = 1337;
-    server = new QWsServer(this);
+    //server = new QWsServer(this);
+    // NOTE: testing encrypted webserver
+    server = new QWsServer(this, true);
 	if ( ! server->listen(QHostAddress::Any, port) )
 	{
 		Log::display( tr("Error: Can't launch server") );

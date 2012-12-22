@@ -33,7 +33,7 @@ static const char * const DefaultSslPKey = "-----BEGIN RSA PRIVATE KEY-----\n"\
 "paEF4rRfV+iTn6Cxnik2XbCsLMgmmaBk7mKYGXt97mRz\n"\
 "-----END RSA PRIVATE KEY-----";
 
-QWsTcpServer::QWsTcpServer(bool encryped, QObject *parent) :
+QWsTcpServer::QWsTcpServer(QObject *parent, bool encryped) :
     QTcpServer(parent),
     _encrypted(encryped)
 {

@@ -10,9 +10,13 @@ const QString QWsSocket::regExpAcceptStr(QLatin1String("Sec-WebSocket-Accept:\\s
 const QString QWsSocket::regExpUpgradeStr(QLatin1String("Upgrade:\\s(.+)\r\n"));
 const QString QWsSocket::regExpConnectionStr(QLatin1String("Connection:\\s(.+)\r\n"));
 
-QWsSocket::QWsSocket( QObject * parent, QTcpSocket * socket, EWebsocketVersion ws_v ) :
+QWsSocket::QWsSocket(QObject * parent,
+                     QAbstractSocket * socket,
+                     bool encrypted,
+                     EWebsocketVersion ws_v ) :
 	QAbstractSocket( QAbstractSocket::UnknownSocketType, parent ),
-    tcpSocket( socket ? socket : new QTcpSocket(this) ),
+    tcpSocket( socket ? socket : (encrypted ? new QSslSocket(this) : new QTcpSocket(this)) ),
+    _encryped(false),
 	_version( ws_v ),
 	_hostPort( -1 ),
 	closingHandshakeSent( false ),
@@ -39,6 +43,12 @@ QWsSocket::QWsSocket( QObject * parent, QTcpSocket * socket, EWebsocketVersion w
 	connect( tcpSocket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(processTcpStateChanged(QAbstractSocket::SocketState)) );
 	connect( tcpSocket, SIGNAL(readChannelFinished()), this, SIGNAL(readChannelFinished()) );
 	connect( tcpSocket, SIGNAL(hostFound()), this, SIGNAL(hostFound()) );
+
+    if (_encryped)
+    {
+        QSslSocket *sslSocket = qobject_cast<QSslSocket*>(tcpSocket);
+        connect (sslSocket, SIGNAL(encrypted()), this, SLOT(onEncrypted()) );
+    }
 }
 
 QWsSocket::~QWsSocket()
@@ -66,7 +76,15 @@ void QWsSocket::connectToHost( const QHostAddress &address, quint16 port, OpenMo
     setPeerAddress( address );
     setPeerPort( port );
 	setOpenMode( mode );
-    tcpSocket->connectToHost( address, port, mode );
+    if (_encryped)
+    {
+        QSslSocket *sslSocket = qobject_cast<QSslSocket *>( tcpSocket );
+        sslSocket->connectToHostEncrypted( address.toString(), port, mode );
+    }
+    else
+    {
+        tcpSocket->connectToHost( address, port, mode );
+    }
 }
 
 void QWsSocket::disconnectFromHost()
@@ -123,7 +141,8 @@ void QWsSocket::close( ECloseStatusCode closeStatusCode, QString reason )
 					{
 						if ( ! serverSideSocket )
 						{
-							reason = QWsSocket::mask( reason.toUtf8(), maskingKey );
+                            QByteArray data = reason.toUtf8();
+                            reason = QWsSocket::mask( data , maskingKey );
 						}
 						body.append( reason );
 					}
@@ -513,11 +532,14 @@ void QWsSocket::processTcpStateChanged( QAbstractSocket::SocketState tcpSocketSt
         }
         case QAbstractSocket::ConnectedState:
         {
-            if ( wsSocketState == QAbstractSocket::ConnectingState )
+            if (!_encryped)
             {
-                key = QWsServer::generateNonce();
-				QString handshake = composeOpeningHandShake( QLatin1String("/"), QLatin1String("example.com"), QString(), QString(), key );
-                tcpSocket->write( handshake.toUtf8() );
+                if ( wsSocketState == QAbstractSocket::ConnectingState )
+                {
+                    key = QWsServer::generateNonce();
+                    QString handshake = composeOpeningHandShake( QLatin1String("/"), QLatin1String("example.com"), QString(), QString(), key );
+                    tcpSocket->write( handshake.toUtf8() );
+                }
             }
             break;
         }
@@ -548,7 +570,14 @@ void QWsSocket::processTcpStateChanged( QAbstractSocket::SocketState tcpSocketSt
 		}
 		default:
 			break;
-	}
+    }
+}
+
+void QWsSocket::onEncrypted()
+{
+    key = QWsServer::generateNonce();
+    QString handshake = composeOpeningHandShake( QLatin1String("/"), QLatin1String("example.com"), QString(), QString(), key );
+    tcpSocket->write( handshake.toUtf8() );
 }
 
 QByteArray QWsSocket::generateMaskingKey()
