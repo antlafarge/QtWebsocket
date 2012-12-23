@@ -5,7 +5,7 @@
 ServerThreaded::ServerThreaded()
 {
 	int port = 1337;
-    server = new QWsServer( this );
+    server = new QWsServer( this, true );
 	if ( ! server->listen( QHostAddress::Any, port ) )
 	{
 		Log::display( "Error: Can't launch server" );
@@ -27,7 +27,7 @@ void ServerThreaded::processNewConnection()
 	Log::display("Client connected");
 
 	// Get the connecting socket
-	QWsSocket * socket = server->nextPendingConnection();
+    QWsSocket * socket = server->nextPendingWsConnection();
 
 	// Create a new thread and giving to him the socket
 	SocketThread * thread = new SocketThread( socket );

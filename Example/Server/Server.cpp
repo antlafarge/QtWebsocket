@@ -26,7 +26,7 @@ Server::~Server()
 
 void Server::processNewConnection()
 {
-	QWsSocket * clientSocket = server->nextPendingConnection();
+    QWsSocket * clientSocket = server->nextPendingWsConnection();
 
 	connect( clientSocket, SIGNAL(frameReceived(QString)), this, SLOT(processMessage(QString)) );
 	connect( clientSocket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()) );
