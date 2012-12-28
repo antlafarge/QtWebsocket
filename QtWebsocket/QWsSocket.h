@@ -5,6 +5,7 @@
 #include <QSslSocket>
 #include <QHostAddress>
 #include <QTime>
+#include <QQueue>
 
 enum EWebsocketVersion
 {
@@ -16,6 +17,12 @@ enum EWebsocketVersion
 	WS_V7 = 7,
 	WS_V8 = 8,
 	WS_V13 = 13
+};
+
+struct QWsSocketFrame
+{
+    bool binary;
+    QByteArray data;
 };
 
 class QWsSocket : public QAbstractSocket
@@ -72,25 +79,29 @@ public:
 	virtual ~QWsSocket();
 
 	// Public methods
-	EWebsocketVersion version();
-	QString resourceName();
-	QString host();
-	QString hostAddress();
-	int hostPort();
-	QString origin();
-	QString protocol();
-	QString extensions();
+    EWebsocketVersion version() const;
+    QString resourceName() const;
+    QString host() const;
+    QString hostAddress() const;
+    int hostPort() const;
+    QString origin() const;
+    QString protocol() const;
+    QString extensions() const;
 
-	void setResourceName( QString rn );
-	void setHost( QString h );
-	void setHostAddress( QString ha );
+    void setResourceName( const QString & rn );
+    void setHost( const QString & h );
+    void setHostAddress(const QString & ha );
 	void setHostPort( int hp );
-	void setOrigin( QString o );
-	void setProtocol( QString p );
-	void setExtensions( QString e );
+    void setOrigin( const QString & o );
+    void setProtocol( const QString & p );
+    void setExtensions( const QString & e );
+
+    QWsSocketFrame readFrame();
 
 	qint64 write( const QString & string ); // write data as text
 	qint64 write( const QByteArray & byteArray ); // write data as binary
+
+    int framesAvailable() const;
 
 public slots:
 	void connectToHost( const QString & hostName, quint16 port, OpenMode mode = ReadWrite );
@@ -100,8 +111,7 @@ public slots:
 	void ping();
 
 signals:
-	void frameReceived(QString frame);
-	void frameReceived(QByteArray frame);
+    void readyRead();
 	void pong(quint64 elapsedTime);
 
 protected:
@@ -131,7 +141,8 @@ private:
 	// private vars
     QAbstractSocket * tcpSocket;
     bool _encryped;
-	QByteArray currentFrame;
+    QByteArray currentFrame;
+    QQueue<QWsSocketFrame> frameBuffer;
 	QTime pingTimer;
 
 	EWebsocketVersion _version;

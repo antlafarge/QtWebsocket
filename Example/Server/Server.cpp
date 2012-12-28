@@ -5,9 +5,7 @@
 Server::Server()
 {
 	int port = 1337;
-    //server = new QWsServer(this);
-    // NOTE: testing encrypted webserver
-    server = new QWsServer(this, true);
+    server = new QWsServer(this);
 	if ( ! server->listen(QHostAddress::Any, port) )
 	{
 		Log::display( tr("Error: Can't launch server") );
@@ -28,7 +26,7 @@ void Server::processNewConnection()
 {
     QWsSocket * clientSocket = server->nextPendingWsConnection();
 
-	connect( clientSocket, SIGNAL(frameReceived(QString)), this, SLOT(processMessage(QString)) );
+    connect( clientSocket, SIGNAL(readyRead()), this, SLOT(processMessage()) );
 	connect( clientSocket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()) );
 	connect( clientSocket, SIGNAL(pong(quint64)), this, SLOT(processPong(quint64)) );
 
@@ -37,18 +35,24 @@ void Server::processNewConnection()
 	Log::display(tr("Client connected"));
 }
 
-void Server::processMessage( QString frame )
+void Server::processMessage()
 {
 	QWsSocket * socket = qobject_cast<QWsSocket*>( sender() );
 	if (socket == 0)
 		return;
 
-	Log::display( frame );
+    QWsSocketFrame frame = socket->readFrame();
+    if (frame.data.isEmpty() || frame.binary)
+        return;
+
+    QString message = QString::fromUtf8(frame.data);
+
+    Log::display( message );
 	
 	QWsSocket * client;
 	foreach ( client, clients )
 	{
-		client->write( frame );
+        client->write( message );
 	}
 }
 

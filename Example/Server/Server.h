@@ -16,8 +16,8 @@ public:
 	~Server();
 
 public slots:
-	void processNewConnection();
-	void processMessage( QString message );
+    void processNewConnection();
+    void processMessage();
 	void processPong( quint64 elapsedTime );
 	void socketDisconnected();
 
