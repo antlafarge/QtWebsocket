@@ -630,7 +630,7 @@ QByteArray QWsSocket::generateMaskingKey()
 	return key;
 }
 
-QByteArray QWsSocket::generateMaskingKeyV4( QString key, QString nonce )
+QByteArray QWsSocket::generateMaskingKeyV4(const QString &key, const QString &nonce )
 {
 	QString concat = key + nonce + QLatin1String("61AC5F19-FBBA-4540-B96F-6561F1AB40A8");
 	QByteArray hash = QCryptographicHash::hash ( concat.toUtf8(), QCryptographicHash::Sha1 );
@@ -801,6 +801,8 @@ void QWsSocket::setExtensions( const QString &e )
 
 QWsSocketFrame QWsSocket::readFrame()
 {
+    if (frameBuffer.isEmpty())
+        return QWsSocketFrame();
     return frameBuffer.dequeue();
 }
 
@@ -844,7 +846,11 @@ QString QWsSocket::extensions() const
 	return _extensions;
 }
 
-QString QWsSocket::composeOpeningHandShake( QString resourceName, QString host, QString origin, QString extensions, QString key )
+QString QWsSocket::composeOpeningHandShake(const QString &resourceName,
+                                           const QString &host,
+                                           const QString &origin,
+                                           const QString &extensions,
+                                           const QString &key )
 {
 	QString hs;
 	hs.append(QLatin1String("GET ") + resourceName + QLatin1String(" HTTP/1.1\r\n"));

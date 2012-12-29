@@ -1,4 +1,5 @@
 #include "Log.h"
+#include <unistd.h>
 
 Log * Log::sLog = 0;
 
@@ -23,7 +24,17 @@ Log::Log() : QTextEdit()
 	setReadOnly(true);
 	setFixedSize(400, 800);
 
-	connect( this, SIGNAL(newMessage(QString)), this, SLOT(appendToLog(QString)) );
+    connect( this, SIGNAL(newMessage(QString)), this, SLOT(appendToLog(QString)), Qt::QueuedConnection );
+
+    QShortcut *s = new QShortcut(QKeySequence(tr("Ctrl+B", "Block app")), this);
+    connect(s , SIGNAL(activated()),  this, SLOT(blockApp()));
+}
+
+// NOTE: kill application to stop me
+void Log::blockApp()
+{
+    forever
+        sleep(1);
 }
 
 Log::~Log()

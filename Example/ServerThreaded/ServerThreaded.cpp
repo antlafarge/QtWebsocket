@@ -5,7 +5,7 @@
 ServerThreaded::ServerThreaded()
 {
 	int port = 1337;
-    server = new QWsServer( this, true );
+    server = new QWsServer( this );
 	if ( ! server->listen( QHostAddress::Any, port ) )
 	{
 		Log::display( "Error: Can't launch server" );
@@ -30,21 +30,34 @@ void ServerThreaded::processNewConnection()
     QWsSocket * socket = server->nextPendingWsConnection();
 
 	// Create a new thread and giving to him the socket
-	SocketThread * thread = new SocketThread( socket );
-	
-	// connect for message broadcast
-	connect( socket, SIGNAL(frameReceived(QString)), this, SIGNAL(broadcastMessage(QString)) );
-	connect( this, SIGNAL(broadcastMessage(QString)), thread, SLOT(sendMessage(QString)) );
+    SocketThread *newClient = new SocketThread( socket );
 
-	// connect for message display in log
-	connect( socket, SIGNAL(frameReceived(QString)), this, SLOT(displayMessage(QString)) );
+    foreach (SocketThread *oldClients, socketThreads)
+    {
+        connect(oldClients, SIGNAL(messageReceived(QString)), newClient, SIGNAL(broadcastMessage(QString)));
+        connect(newClient, SIGNAL(messageReceived(QString)), oldClients, SIGNAL(broadcastMessage(QString)));
+    }
 
-	// Starting the thread
-	thread->start();
+    connect(newClient, SIGNAL(messageReceived(QString)), this, SLOT(displayMessage(QString)));
+
+    connect(newClient, SIGNAL(finished()), this, SLOT(deleteThread()));
+
+    socketThreads << newClient;
+
+    newClient->start();
 }
 
-void ServerThreaded::displayMessage( QString message )
+void ServerThreaded::displayMessage(QString message)
 {
-	// Just display in log the message received by a socket
-	Log::display( message );
-}	
+    Log::display("New message: " + message);
+}
+
+void ServerThreaded::deleteThread()
+{
+    SocketThread *thread = qobject_cast<SocketThread*>(sender());
+    if (thread == 0)
+        return;
+    socketThreads.removeOne(thread);
+    thread->deleteLater();
+    Log::display( "Client disconnected" );
+}
