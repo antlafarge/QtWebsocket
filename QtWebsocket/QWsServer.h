@@ -2,7 +2,7 @@
 #define QWSSERVER_H
 
 #include <QTcpServer>
-#include <QTcpSocket>
+#include <QSslKey>
 #include <QNetworkProxy>
 #include <QString>
 #include <QStringList>
@@ -11,33 +11,20 @@
 
 #include "QWsSocket.h"
 
-class QWsServer : public QObject
+class QWsServer : public QTcpServer
 {
 	Q_OBJECT
 
 public:
 	// ctor
-	QWsServer(QObject * parent = 0);
+    QWsServer(QObject * parent = 0, bool encrypted = false);
 	// dtor
 	virtual ~QWsServer();
 
-	// public functions
-	void close();
-	QString errorString();
-	bool hasPendingConnections();
-	bool isListening();
-	bool listen(const QHostAddress & address = QHostAddress::Any, quint16 port = 0);
-	int maxPendingConnections();
-	virtual QWsSocket * nextPendingConnection();
-	QNetworkProxy proxy();
-	QHostAddress serverAddress();
-	QAbstractSocket::SocketError serverError();
-	quint16 serverPort();
-	void setMaxPendingConnections( int numConnections );
-	void setProxy( const QNetworkProxy & networkProxy );
-	bool setSocketDescriptor( int socketDescriptor );
-	int socketDescriptor();
-	bool waitForNewConnection( int msec = 0, bool * timedOut = 0 );
+    // public functions
+    void setCertificate( const QSslCertificate &certificate, const QSslKey &key );
+    bool hasPendingConnections();
+    virtual QWsSocket * nextPendingWsConnection();
 
 signals:
 	void newConnection();
@@ -47,17 +34,25 @@ protected:
 	void addPendingConnection( QWsSocket * socket );
 	virtual void incomingConnection( int socketDescriptor );
 
+
 private slots:
 	// private slots
-	void newTcpConnection();
+    void onTcpConnectionReady();
+    void onTcpConnectionReady(QAbstractSocket *socket);
 	void closeTcpConnection();
-	void dataReceived();
+    void dataReceived();
 
 private:
+    // blocking some functions
+    virtual QTcpSocket *nextPendingConnection() { return 0; }
+
 	// private attributes
-	QTcpServer * tcpServer;
 	QQueue<QWsSocket*> pendingConnections;
-	QMap<const QTcpSocket*, QStringList> headerBuffer;
+    QMap<const QAbstractSocket*, QStringList> headerBuffer;
+
+    bool _encrypted;
+    QSslKey sslKey;
+    QSslCertificate sslCertificate;
 
 public:
 	// public static functions

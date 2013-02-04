@@ -41,11 +41,11 @@ I created it to show how you can use properly the lib.
 - Mask sent frames, receive masked frames  
 - Control frames (close, ping, pong)  
 - Multi-frames (send and receive)  
-- Multi-thread support  
+- Multi-thread support (with example how to work with socket in another thread)
 - Client implementation _(beta)_
+- WSS protocol (SSL) (experemental, alpha)
 
 **Todo**
 - Websocket extensions
-- WSS protocol (SSL)
 
 _Thanks for your interest._

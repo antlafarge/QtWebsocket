@@ -32,7 +32,7 @@ void myMessageHandler( QtMsgType type, const char *msg )
 
 int main(int argc, char *argv[])
 {
-	qInstallMsgHandler(myMessageHandler);
+    //qInstallMsgHandler(myMessageHandler);
 
 	QApplication app(argc, argv);
 

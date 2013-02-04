@@ -2,8 +2,10 @@
 #define QWSSOCKET_H
 
 #include <QTcpSocket>
+#include <QSslSocket>
 #include <QHostAddress>
 #include <QTime>
+#include <QQueue>
 
 enum EWebsocketVersion
 {
@@ -15,6 +17,12 @@ enum EWebsocketVersion
 	WS_V7 = 7,
 	WS_V8 = 8,
 	WS_V13 = 13
+};
+
+struct QWsSocketFrame
+{
+    bool binary;
+    QByteArray data;
 };
 
 class QWsSocket : public QAbstractSocket
@@ -63,30 +71,37 @@ public:
 
 public:
 	// ctor
-    QWsSocket( QObject * parent = 0, QTcpSocket * socket = 0, EWebsocketVersion ws_v = WS_V13 );
+    QWsSocket( QObject * parent = 0,
+               QAbstractSocket * socket = 0,
+               bool encrypted = false,
+               EWebsocketVersion ws_v = WS_V13 );
 	// dtor
 	virtual ~QWsSocket();
 
 	// Public methods
-	EWebsocketVersion version();
-	QString resourceName();
-	QString host();
-	QString hostAddress();
-	int hostPort();
-	QString origin();
-	QString protocol();
-	QString extensions();
+    EWebsocketVersion version() const;
+    QString resourceName() const;
+    QString host() const;
+    QString hostAddress() const;
+    int hostPort() const;
+    QString origin() const;
+    QString protocol() const;
+    QString extensions() const;
 
-	void setResourceName( QString rn );
-	void setHost( QString h );
-	void setHostAddress( QString ha );
+    void setResourceName( const QString & rn );
+    void setHost( const QString & h );
+    void setHostAddress(const QString & ha );
 	void setHostPort( int hp );
-	void setOrigin( QString o );
-	void setProtocol( QString p );
-	void setExtensions( QString e );
+    void setOrigin( const QString & o );
+    void setProtocol( const QString & p );
+    void setExtensions( const QString & e );
+
+    QWsSocketFrame readFrame();
 
 	qint64 write( const QString & string ); // write data as text
 	qint64 write( const QByteArray & byteArray ); // write data as binary
+
+    int framesAvailable() const;
 
 public slots:
 	void connectToHost( const QString & hostName, quint16 port, OpenMode mode = ReadWrite );
@@ -96,8 +111,7 @@ public slots:
 	void ping();
 
 signals:
-	void frameReceived(QString frame);
-	void frameReceived(QByteArray frame);
+    void readyRead();
 	void pong(quint64 elapsedTime);
 
 protected:
@@ -111,6 +125,8 @@ protected slots:
     void processHandshake();
 	void processTcpStateChanged( QAbstractSocket::SocketState socketState );
 
+    void onEncrypted();
+
 private:
 	enum EReadingState
     {
@@ -123,8 +139,10 @@ private:
 	};
 
 	// private vars
-	QTcpSocket * tcpSocket;
-	QByteArray currentFrame;
+    QAbstractSocket * tcpSocket;
+    bool _encryped;
+    QByteArray currentFrame;
+    QQueue<QWsSocketFrame> frameBuffer;
 	QTime pingTimer;
 
 	EWebsocketVersion _version;
@@ -157,11 +175,15 @@ private:
 public:
 	// Static functions
 	static QByteArray generateMaskingKey();
-	static QByteArray generateMaskingKeyV4( QString key, QString nonce );
+    static QByteArray generateMaskingKeyV4( const QString &key, const QString &nonce );
 	static QByteArray mask( QByteArray & data, QByteArray & maskingKey );
 	static QList<QByteArray> composeFrames( QByteArray byteArray, bool asBinary = false, int maxFrameBytes = 0 );
 	static QByteArray composeHeader( bool end, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray() );
-	static QString composeOpeningHandShake( QString resourceName, QString host, QString origin, QString extensions, QString key );
+    static QString composeOpeningHandShake( const QString &resourceName,
+                                            const QString &host,
+                                            const QString &origin,
+                                            const QString &extensions,
+                                            const QString &key );
 
 	// static vars
 	static int maxBytesPerFrame;

@@ -17,14 +17,18 @@ public:
 	~ServerThreaded();
 
 public slots:
-	void processNewConnection();
-	void displayMessage( QString message );
+    void displayMessage( QString message );
+
+private slots:
+    void processNewConnection();
+    void deleteThread();
 
 signals:
 	void broadcastMessage( QString message );
 
 private:
 	QWsServer * server;
+    QList<SocketThread*> socketThreads;
 };
 
 #endif // SERVERTHREADED_H

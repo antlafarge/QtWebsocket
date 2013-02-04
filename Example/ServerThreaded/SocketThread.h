@@ -5,27 +5,45 @@
 
 #include "QWsSocket.h"
 
+class SocketWorker : public QObject
+{
+    Q_OBJECT
+
+public:
+    SocketWorker( QWsSocket *wsSocket );
+
+public slots:
+    void processMessage();
+    void socketDisconnected();
+
+    void broadcastMessage( QString message );
+
+signals:
+    void messageReceived( QString message );
+
+    void disconnected();
+
+private:
+    QWsSocket * socket;
+
+};
+
 class SocketThread : public QThread
 {
 	Q_OBJECT
 
 public:
-	SocketThread( QWsSocket * wsSocket );
-	~SocketThread();
+    SocketThread( QWsSocket * wsSocket );
+    ~SocketThread();
 
-	QWsSocket * socket;
 	void run();
 
-private slots:
-	void processMessage( QString message );
-	void sendMessage( QString message );
-	void processPong( quint64 elapsedTime );
-	void socketDisconnected();
-
 signals:
-	void messageReceived( QString frame );
+    void messageReceived( QString message );
+    void broadcastMessage( QString message );
 
 private:
+    SocketWorker * worker;
 	
 };
 

@@ -1,10 +1,42 @@
 #include "QWsServer.h"
 
+#include <QTcpSocket>
 #include <QRegExp>
 #include <QStringList>
 #include <QByteArray>
 #include <QCryptographicHash>
 #include <QDateTime>
+
+// Default ssl certificate and key
+static const char * const DefaultSslCertificate = "-----BEGIN CERTIFICATE-----\n"\
+"MIICATCCAWoCCQD9mS1dgx48vTANBgkqhkiG9w0BAQUFADBFMQswCQYDVQQGEwJB\n"\
+"VTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50ZXJuZXQgV2lkZ2l0\n"\
+"cyBQdHkgTHRkMB4XDTEyMTIyMjE5NDAwMloXDTEzMTIyMjE5NDAwMlowRTELMAkG\n"\
+"A1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoMGEludGVybmV0\n"\
+"IFdpZGdpdHMgUHR5IEx0ZDCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA014S\n"\
+"ABK8zoX8RBk1WErHdtdJFL3wIk6DeZ0szgplb0gDuPq4f6hHcK2+UauEs/Mb6IFX\n"\
+"9qgG48XZtReqJqePbE7S42AErKTXNcufmVZ8FURv/1eG4fWGgXQ5t2VVQRAfZT1S\n"\
+"fMiztbvQAyWemjmbMjYSEoTkxB2T3TvJPETJgpUCAwEAATANBgkqhkiG9w0BAQUF\n"\
+"AAOBgQAXRctYUW9Lz1LIVRTYWazPghViPu+jSn5/8qJxevP7x+jgAR4FrmyrTfD+\n"\
+"UKWSsVMeLG++ob8CZF3O6O11wrxwhSEFv6dgOBoITPbhObz9btLQx4rnj0PWi8Te\n"\
+"HBf94I53kDSFqDARH6S05T4RnVuhadCc/o27XhtZ4lSU7+tbLQ==\n"\
+"-----END CERTIFICATE-----";
+
+static const char * const DefaultSslPKey = "-----BEGIN RSA PRIVATE KEY-----\n"\
+"MIICXQIBAAKBgQDTXhIAErzOhfxEGTVYSsd210kUvfAiToN5nSzOCmVvSAO4+rh/\n"\
+"qEdwrb5Rq4Sz8xvogVf2qAbjxdm1F6omp49sTtLjYASspNc1y5+ZVnwVRG//V4bh\n"\
+"9YaBdDm3ZVVBEB9lPVJ8yLO1u9ADJZ6aOZsyNhIShOTEHZPdO8k8RMmClQIDAQAB\n"\
+"AoGBAJ3bBpR5afrPhAyTywxKpNczh4fvJpVoj7ZW1Sx4BTNr1CPlU787PUeA6r9x\n"\
+"2mTOboxhdQFokeSwUZx2tQOzZl+Atk7tInhZzqlHcA9FVMsHzHR2nwnWRYTQ7Bmb\n"\
+"/B9IUFJntUzMlBYoEyWTjSTjwPIBs5ENvlYy9kjI7ATsSbBhAkEA6UkbuWn7/kjm\n"\
+"q9hlHA9jNym+CQpSzclfuQ4uDuC4AtJwfH8GO/V2/GEHoX3k8qhy/c+bBpn8wjE+\n"\
+"mXBwDE5pSQJBAOfyoSyH4mUmcbJAq5KST3TanOfOhZOqWV06XfOQ8f3bgCRl37j2\n"\
+"EfRCMlz+5DsKIL813OXfQ4TZWE4/uWUbuu0CQAhAS7i9JOqTjYUafEkHykyTL2OG\n"\
+"d/NLYhVbiQmBrUB8TPo6S/Am+HRowipWF5j1mEud4i/TlnsP3tTygyQMSfECQG3l\n"\
+"NF4P58E7DMWDBIeGkOTxq0PdQsarAHo+bEM5mp5HgJg+OFi/JdSQBKKxFduvOcK+\n"\
+"t3Gmbawk+kTgxmtUTyUCQQCcp5uYWryG9ovR9WVBDDGc/79pcZOghmvseoAfWwWu\n"\
+"paEF4rRfV+iTn6Cxnik2XbCsLMgmmaBk7mKYGXt97mRz\n"\
+"-----END RSA PRIVATE KEY-----";
 
 const QString QWsServer::regExpResourceNameStr( QLatin1String("^GET\\s(.*)\\sHTTP/1.1\r\n") );
 const QString QWsServer::regExpHostStr( QLatin1String("\r\nHost:\\s(.+(:\\d+)?)\r\n") );
@@ -18,49 +50,53 @@ const QString QWsServer::regExpOrigin2Str( QLatin1String("\r\nOrigin:\\s(.+)\r\n
 const QString QWsServer::regExpProtocolStr( QLatin1String("\r\nSec-WebSocket-Protocol:\\s(.+)\r\n") );
 const QString QWsServer::regExpExtensionsStr( QLatin1String("\r\nSec-WebSocket-Extensions:\\s(.+)\r\n") );
 
-QWsServer::QWsServer(QObject * parent)
-	: QObject(parent)
+QWsServer::QWsServer(QObject * parent, bool encrypted)
+    : QTcpServer(parent),
+      _encrypted(encrypted)
 {
-	tcpServer = new QTcpServer(this);
-	connect( tcpServer, SIGNAL(newConnection()), this, SLOT(newTcpConnection()) );
+    //tcpServer = new QWsTcpServer( this, encrypted );
+    //connect( tcpServer, SIGNAL(newConnection()), this, SLOT(newTcpConnection()) );
 	qsrand( QDateTime::currentMSecsSinceEpoch() );
+
+    qDebug() << "Started QWsServer; encryption=" << _encrypted;
+    if (_encrypted)
+    {
+        sslCertificate = QSslCertificate(DefaultSslCertificate);
+        sslKey = QSslKey(DefaultSslPKey, QSsl::Rsa);
+    }
 }
 
 QWsServer::~QWsServer()
 {
-	tcpServer->deleteLater();
 }
 
-bool QWsServer::listen(const QHostAddress & address, quint16 port)
+void QWsServer::setCertificate(const QSslCertificate &certificate, const QSslKey &key)
 {
-	return tcpServer->listen(address, port);
+    if (_encrypted)
+    {
+        sslCertificate = certificate;
+        sslKey = key;
+    }
 }
 
-void QWsServer::close()
+void QWsServer::onTcpConnectionReady()
 {
-	tcpServer->close();
+    qDebug() << "Ecrypted";
+    QAbstractSocket *socket = qobject_cast<QAbstractSocket*>(sender());
+    onTcpConnectionReady(socket);
 }
 
-QAbstractSocket::SocketError QWsServer::serverError()
+void QWsServer::onTcpConnectionReady(QAbstractSocket *socket)
 {
-	return tcpServer->serverError();
-}
-
-QString QWsServer::errorString()
-{
-	return tcpServer->errorString();
-}
-
-void QWsServer::newTcpConnection()
-{
-	QTcpSocket * tcpSocket = tcpServer->nextPendingConnection();
-	connect( tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()) );
-	headerBuffer.insert( tcpSocket, QStringList() );
+    if (socket == 0)
+        return;
+    connect( socket, SIGNAL(readyRead()), this, SLOT(dataReceived()) );
+    headerBuffer.insert( socket, QStringList() );
 }
 
 void QWsServer::closeTcpConnection()
 {
-	QTcpSocket * tcpSocket = qobject_cast<QTcpSocket*>( sender() );
+    QAbstractSocket * tcpSocket = qobject_cast<QAbstractSocket*>( sender() );
 	if (tcpSocket == 0)
 		return;
 
@@ -69,7 +105,7 @@ void QWsServer::closeTcpConnection()
 
 void QWsServer::dataReceived()
 {
-	QTcpSocket * tcpSocket = qobject_cast<QTcpSocket*>( sender() );
+    QAbstractSocket * tcpSocket = qobject_cast<QAbstractSocket*>( sender() );
 	if (tcpSocket == 0)
 		return;
 
@@ -242,21 +278,50 @@ void QWsServer::dataReceived()
 
 void QWsServer::incomingConnection( int socketDescriptor )
 {
-	QTcpSocket * tcpSocket = new QTcpSocket( tcpServer );
+    /*QTcpSocket * tcpSocket = new QTcpSocket( tcpServer );
 	tcpSocket->setSocketDescriptor( socketDescriptor, QAbstractSocket::ConnectedState );
 	QWsSocket * wsSocket = new QWsSocket( this, tcpSocket );
 
 	addPendingConnection( wsSocket );
-	emit newConnection();
+    emit newConnection();*/
+
+
+    qDebug() << "New tcp connection";
+    if (_encrypted)
+    {
+        QSslSocket *sslSocket = new QSslSocket(this);
+        sslSocket->setLocalCertificate(sslCertificate);
+        sslSocket->setPrivateKey(sslKey);
+        if (sslSocket->setSocketDescriptor(socketDescriptor))
+        {
+            qDebug() << "Trying to start encryption";
+            connect(sslSocket, SIGNAL(encrypted()), this, SLOT(onTcpConnectionReady()));
+            connect(sslSocket, SIGNAL(disconnected()), sslSocket, SLOT(deleteLater()));
+            sslSocket->startServerEncryption();
+        }
+        else
+        {
+            delete sslSocket;
+        }
+    }
+    else
+    {
+        QTcpSocket *tcpSocket = new QTcpSocket(this);
+        if (tcpSocket->setSocketDescriptor(socketDescriptor))
+            onTcpConnectionReady(tcpSocket);
+        else
+            delete tcpSocket;
+    }
 }
 
+// FIXME: close and delete not added connections or don't allow tcp connection
 void QWsServer::addPendingConnection( QWsSocket * socket )
 {
 	if ( pendingConnections.size() < maxPendingConnections() )
 		pendingConnections.enqueue( socket );
 }
 
-QWsSocket * QWsServer::nextPendingConnection()
+QWsSocket * QWsServer::nextPendingWsConnection()
 {
 	return pendingConnections.dequeue();
 }
@@ -266,56 +331,6 @@ bool QWsServer::hasPendingConnections()
 	if ( pendingConnections.size() > 0 )
 		return true;
 	return false;
-}
-
-int QWsServer::maxPendingConnections()
-{
-	return tcpServer->maxPendingConnections();
-}
-
-bool QWsServer::isListening()
-{
-	return tcpServer->isListening();
-}
-
-QNetworkProxy QWsServer::proxy()
-{
-	return tcpServer->proxy();
-}
-
-QHostAddress QWsServer::serverAddress()
-{
-	return tcpServer->serverAddress();
-}
-
-quint16 QWsServer::serverPort()
-{
-	return tcpServer->serverPort();
-}
-
-void QWsServer::setMaxPendingConnections( int numConnections )
-{
-	tcpServer->setMaxPendingConnections( numConnections );
-}
-
-void QWsServer::setProxy( const QNetworkProxy & networkProxy )
-{
-	tcpServer->setProxy( networkProxy );
-}
-
-bool QWsServer::setSocketDescriptor( int socketDescriptor )
-{
-	return tcpServer->setSocketDescriptor( socketDescriptor );
-}
-
-int QWsServer::socketDescriptor()
-{
-	return tcpServer->socketDescriptor();
-}
-
-bool QWsServer::waitForNewConnection( int msec, bool * timedOut )
-{
-	return tcpServer->waitForNewConnection( msec, timedOut );
 }
 
 QString QWsServer::computeAcceptV0( QString key1, QString key2, QString key3 )

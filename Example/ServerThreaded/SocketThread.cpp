@@ -3,60 +3,73 @@
 #include "Log.h"
 
 SocketThread::SocketThread( QWsSocket * wsSocket ) :
-	socket( wsSocket )
+    QThread()
 {
-	// Set this thread as parent of the socket
-	// This will push the socket in the good thread when using moveToThread on the parent
-	if ( socket )
-		socket->setParent( this );
+    worker = new SocketWorker(wsSocket);
 
 	// Move this thread object in the thread himsleft
 	// Thats necessary to exec the event loop in this thread
-	moveToThread( this );
+    worker->moveToThread( this );
+
+    // We need processEvent for finishing moveToThread procedure
+    //QCoreApplication::sendPostedEvents ( 0, QEvent::ThreadChange );
+    // OR
+    //qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 }
 
 SocketThread::~SocketThread()
 {
-
 }
 
 void SocketThread::run()
 {
-    Log::display( "connect done in thread : 0x" + QString::number((unsigned int)QThread::currentThreadId(), 16) );
-
-	// Connecting the socket signals here to exec the slots in the new thread
-	connect( socket, SIGNAL(frameReceived(QString)), this, SLOT(processMessage(QString)) );
-	connect( socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()) );
-	connect( socket, SIGNAL(pong(quint64)), this, SLOT(processPong(quint64)) );
+    connect(worker, SIGNAL(messageReceived(QString)), this, SIGNAL(messageReceived(QString)), Qt::QueuedConnection);
+    connect(worker, SIGNAL(disconnected()), this, SLOT(quit()), Qt::QueuedConnection);
+    connect(this, SIGNAL(broadcastMessage(QString)), worker, SLOT(broadcastMessage(QString)), Qt::QueuedConnection);
 
 	// Launch the event loop to exec the slots
 	exec();
+
+    delete worker;
 }
 
-void SocketThread::processMessage( QString message )
+SocketWorker::SocketWorker(QWsSocket *wsSocket)
+    : socket(wsSocket)
+{
+    socket->setParent(this);
+
+    // Connecting the socket signals here to exec the slots in the new thread
+    connect( socket, SIGNAL(readyRead()), this, SLOT(processMessage()) );
+    connect( socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()) );
+}
+
+void SocketWorker::processMessage()
 {
     // ANY PROCESS OF THE FRAME IS DONE IN THE SOCKET THREAD !
+    QWsSocket * socket = qobject_cast<QWsSocket*>(sender());
 
-    Log::display( "thread 0x" + QString::number((unsigned int)QThread::currentThreadId(), 16) + " | " + message );
+    if ( socket == 0 )
+        return;
+
+    QWsSocketFrame frame = socket->readFrame();
+    if (frame.binary || frame.data.isEmpty())
+        return;
+
+    QString message = QString::fromUtf8(frame.data);
+    broadcastMessage(message);
+
+    emit messageReceived(message);
 }
 
-void SocketThread::sendMessage( QString message )
+void SocketWorker::broadcastMessage(QString message)
 {
-	socket->write( message );
+    socket->write(message);
 }
 
-void SocketThread::processPong( quint64 elapsedTime )
+void SocketWorker::socketDisconnected()
 {
-	Log::display( "ping: " + QString::number(elapsedTime) + " ms" );
-}
-
-void SocketThread::socketDisconnected()
-{
-	Log::display("Client disconnected, thread finished");
-
 	// Prepare the socket to be deleted after last events processed
-	socket->deleteLater();
+    socket->deleteLater();
 
-	// finish the thread execution (that quit the event loop launched by exec)
-	quit();
+    emit disconnected();
 }
