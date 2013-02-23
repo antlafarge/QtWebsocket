@@ -61,7 +61,7 @@ private:
 
 public:
 	// public static functions
-	static QString serializeInt( quint32 number, quint8 nbBytes = 4 );
+	static QByteArray serializeInt( quint32 number, quint8 nbBytes = 4 );
 	static QString computeAcceptV0( QString key1, QString key2, QString thirdPart );
 	static QString computeAcceptV4( QString key );
 	static QString generateNonce();

@@ -21,6 +21,8 @@ class QWsSocket : public QAbstractSocket
 {
 	Q_OBJECT
 
+	friend class QWsServer;
+
 public:
 	enum EOpcode
 	{
@@ -43,6 +45,7 @@ public:
 	};
 	enum ECloseStatusCode
 	{
+		NoCloseStatusCode = 0,
 		CloseNormal = 1000,
 		CloseGoingAway = 1001,
 		CloseProtocolError = 1002,
@@ -102,7 +105,7 @@ protected:
 	qint64 writeFrame ( const QByteArray & byteArray );
 
 protected slots:
-	virtual void close( ECloseStatusCode closeStatusCode = CloseNormal, QString reason = QString() );
+	virtual void close( ECloseStatusCode closeStatusCode = NoCloseStatusCode, QString reason = QString() );
 	void processDataV0();
 	void processDataV4();
     void processHandshake();
@@ -132,6 +135,7 @@ private:
 	QString _origin;
 	QString _protocol;
 	QString _extensions;
+	bool serverSideSocket;
 
 	bool closingHandshakeSent;
 	bool closingHandshakeReceived;
@@ -142,6 +146,7 @@ private:
 	bool hasMask;
 	quint64 payloadLength;
 	QByteArray maskingKey;
+	ECloseStatusCode closeStatusCode;
 
     static const QString regExpAcceptStr;
     static const QString regExpUpgradeStr;
