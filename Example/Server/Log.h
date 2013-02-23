@@ -3,6 +3,8 @@
 
 #include <QtCore>
 #include <QtGui>
+#include <QWidget>
+#include <QTextEdit>
 
 class Log : public QTextEdit
 {

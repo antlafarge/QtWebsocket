@@ -372,8 +372,7 @@ void QWsSocket::processDataV4()
 		{
 			uchar bytes[2];
 			tcpSocket->read(reinterpret_cast<char *>(bytes), 2);
-			quint16 closeStatus = qFromBigEndian<quint16>(reinterpret_cast<const uchar *>(bytes));
-			int a=0;
+            quint16 closeStatus = qFromBigEndian<quint16>(reinterpret_cast<const uchar *>(bytes));
 		}
 		if ( tcpSocket->bytesAvailable() )
 		{

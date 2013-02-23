@@ -1,19 +1,25 @@
-QT       += core
-QT       += gui
-QT       += network
+#-------------------------------------------------
+#
+# Project created by QtCreator 2013-02-23T08:36:29
+#
+#-------------------------------------------------
+
+QT       += core gui network
+
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = ServerThreaded
-CONFIG   -= console
-CONFIG   -= app_bundle
-
 TEMPLATE = app
 
-SOURCES += Log.cpp \
+INCLUDEPATH += ../../QtWebsocket
+DEPENDPATH += ../../QtWebsocket
+
+SOURCES += main.cpp \
+    Log.cpp \
     ServerThreaded.cpp \
-    main.cpp \
     SocketThread.cpp
 
-HEADERS += Log.h \
+HEADERS  += Log.h \
     QWsServer.h \
     QWsSocket.h \
     ServerThreaded.h \
@@ -23,9 +29,6 @@ win32:CONFIG(release, debug|release): LIBS += -L../../QtWebsocket/release/ -lQtW
 else:win32:CONFIG(debug, debug|release): LIBS += -L../../QtWebsocket/debug/ -lQtWebsocket
 else:unix:!symbian: LIBS += -L../../QtWebsocket/ -lQtWebsocket
 
-INCLUDEPATH += ../../QtWebsocket
-DEPENDPATH += ../../QtWebsocket
-
-win32:CONFIG(release, debug|release): PRE_TARGETDEPS += ../../QtWebsocket/release/QtWebsocket.lib
-else:win32:CONFIG(debug, debug|release): PRE_TARGETDEPS += ../../QtWebsocket/debug/QtWebsocket.lib
+win32:CONFIG(release, debug|release): PRE_TARGETDEPS += ../../QtWebsocket/release/libQtWebsocket.a
+else:win32:CONFIG(debug, debug|release): PRE_TARGETDEPS += ../../QtWebsocket/debug/libQtWebsocket.a
 else:unix:!symbian: PRE_TARGETDEPS += ../../QtWebsocket/libQtWebsocket.a

@@ -43,8 +43,8 @@ void ServerThreaded::processNewConnection()
 	thread->start();
 }
 
+// Display the message received by a socket
 void ServerThreaded::displayMessage( QString message )
 {
-	// Just display in log the message received by a socket
 	Log::display( message );
 }	

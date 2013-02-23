@@ -8,7 +8,9 @@ SocketThread::SocketThread( QWsSocket * wsSocket ) :
 	// Set this thread as parent of the socket
 	// This will push the socket in the good thread when using moveToThread on the parent
 	if ( socket )
+    {
 		socket->setParent( this );
+    }
 
 	// Move this thread object in the thread himsleft
 	// Thats necessary to exec the event loop in this thread
@@ -35,7 +37,7 @@ void SocketThread::run()
 
 void SocketThread::processMessage( QString message )
 {
-    // ANY PROCESS OF THE FRAME IS DONE IN THE SOCKET THREAD !
+    // ANY PROCESS HERE IS DONE IN THE SOCKET THREAD !
 
     Log::display( "thread 0x" + QString::number((unsigned int)QThread::currentThreadId(), 16) + " | " + message );
 }
