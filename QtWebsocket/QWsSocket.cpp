@@ -121,11 +121,12 @@ void QWsSocket::close( ECloseStatusCode closeStatusCode, QString reason )
 					// Reason (optional)
 					if ( reason.size() )
 					{
+                        QByteArray reason_ba = reason.toUtf8();
 						if ( ! serverSideSocket )
                         {
-                            reason = QWsSocket::mask( reason, maskingKey );
-						}
-						body.append( reason );
+                            reason_ba = QWsSocket::mask( reason_ba, maskingKey );
+                        }
+                        body.append( reason_ba );
 					}
 
 					BA.append( body );
@@ -478,6 +479,9 @@ void QWsSocket::processDataV4()
 
 		currentFrame.clear();
 	}; break;
+    case CloseDataPending:
+    default:
+        break;
     } /* while (true) switch */
 }
 

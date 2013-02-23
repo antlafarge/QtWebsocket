@@ -33,7 +33,7 @@ Log::~Log()
 	close();
 }
 
-void Log::closeEvent( QCloseEvent * e )
+void Log::closeEvent( /*QCloseEvent * e*/ )
 {
 	QFile file(tr("Log.txt"));
 	if ( !file.open( QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text ) )
