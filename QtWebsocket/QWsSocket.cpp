@@ -123,7 +123,8 @@ void QWsSocket::close( ECloseStatusCode closeStatusCode, QString reason )
 					{
 						if ( ! serverSideSocket )
 						{
-							reason = QWsSocket::mask( reason.toUtf8(), maskingKey );
+							QByteArray data = reason.toUtf8();							
+							reason = QWsSocket::mask( data, maskingKey );
 						}
 						body.append( reason );
 					}
