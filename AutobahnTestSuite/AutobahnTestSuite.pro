@@ -9,18 +9,18 @@ TEMPLATE = app
 
 SOURCES += \
     main.cpp \
-    ../QtWebSocket/QWsSocket.cpp \
-    ../QtWebSocket/QWsServer.cpp \
+    ../QtWebsocket/QWsSocket.cpp \
+    ../QtWebsocket/QWsServer.cpp \
     TestServer.cpp
 
 HEADERS += \
-    QWsServer.h \
-    QWsSocket.h \
+    ../QtWebsocket/QWsServer.h \
+    ../QtWebsocket/QWsSocket.h \
     TestServer.h
 
 
-INCLUDEPATH += $$PWD/../QtWebSocket
-DEPENDPATH += $$PWD/../QtWebSocket
+INCLUDEPATH += $$PWD/../QtWebsocket
+DEPENDPATH += $$PWD/../QtWebsocket
 
 test.commands = doxygen Doxyfile; \
     test -d doxydoc/html/images || mkdir doxydoc/html/images; \
