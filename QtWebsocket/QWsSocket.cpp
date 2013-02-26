@@ -608,11 +608,8 @@ QList<QByteArray> QWsSocket::composeFrames( QByteArray applicationData, EOpcode 
 
 QByteArray QWsSocket::composeFrame( QByteArray applicationData, EOpcode opcode, bool final )
 {
-	// TODO implement
-	QByteArray maskingKey; // = generateMaskingKey();
-	int frameSize = applicationData.size();
-	QByteArray frame = QWsSocket::composeHeader( final, opcode, frameSize, maskingKey );
-	frame.append( mask(applicationData, maskingKey) );
+	QByteArray frame = QWsSocket::composeHeader( final, opcode, applicationData.size() );
+	frame.append( applicationData );
 	return frame;
 }
 

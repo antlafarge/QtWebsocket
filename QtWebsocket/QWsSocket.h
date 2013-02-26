@@ -166,8 +166,8 @@ public:
 	/*!
 	 * Encapsulates `applicationData` in a single Frame.
 	 *
-	 * The data is masked with a random masking key. The frame size is deduced
-	 * from `applicationData.size()`; there are no checks being performed.
+	 * The frame size is deduced from `applicationData.size()` and there are no
+	 * checks performed on it.
 	 */
 	static QByteArray composeFrame( QByteArray applicationData, EOpcode opcode, bool final = true );
 
