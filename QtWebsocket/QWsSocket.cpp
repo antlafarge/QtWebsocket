@@ -773,5 +773,8 @@ QString QWsSocket::composeOpeningHandShake( QString resourceName, QString host, 
 
 void QWsSocket::handlePing( QByteArray applicationData )
 {
+	if (applicationData.size() > 125)
+		return close( CloseProtocolError );
+
 	writeFrames( QWsSocket::composeFrames(applicationData, OpPong) );
 }
