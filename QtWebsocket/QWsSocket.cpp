@@ -461,7 +461,7 @@ void QWsSocket::processDataV4()
 				emit frameReceived( QString::fromUtf8(currentFrame) );
 				break;
 			case OpPing:
-				write( QWsSocket::composeHeader( true, OpPong, 0 ) );
+				writeFrame( QWsSocket::composeHeader( true, OpPong, 0 ) );
 				break;
 			case OpPong:
 				emit pong( pingTimer.elapsed() );
