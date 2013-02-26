@@ -160,6 +160,17 @@ public:
 	static QByteArray generateMaskingKeyV4( QString key, QString nonce );
 	static QByteArray mask( QByteArray & data, QByteArray & maskingKey );
 	static QList<QByteArray> composeFrames( QByteArray byteArray, bool asBinary = false, int maxFrameBytes = 0 );
+	static QList<QByteArray> composeFrames( QByteArray byteArray, EOpcode opcode, int maxFrameBytes = 0 );
+
+
+	/*!
+	 * Encapsulates `applicationData` in a single Frame.
+	 *
+	 * The data is masked with a random masking key. The frame size is deduced
+	 * from `applicationData.size()`; there are no checks being performed.
+	 */
+	static QByteArray composeFrame( QByteArray applicationData, EOpcode opcode, bool final = true );
+
 	static QByteArray composeHeader( bool end, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray() );
 	static QString composeOpeningHandShake( QString resourceName, QString host, QString origin, QString extensions, QString key );
 

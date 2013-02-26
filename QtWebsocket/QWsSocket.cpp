@@ -572,51 +572,50 @@ QByteArray QWsSocket::mask( QByteArray & data, QByteArray & maskingKey )
 
 QList<QByteArray> QWsSocket::composeFrames( QByteArray byteArray, bool asBinary, int maxFrameBytes )
 {
-	if ( maxFrameBytes == 0 )
-		maxFrameBytes = maxBytesPerFrame;
+	if (asBinary)
+		return composeFrames( byteArray, OpBinary, maxFrameBytes );
+	else
+		return composeFrames( byteArray, OpText, maxFrameBytes );
+}
 
-	QList<QByteArray> framesList;
 
-	QByteArray maskingKey;
+QList<QByteArray> QWsSocket::composeFrames( QByteArray applicationData, EOpcode opcode, int frameSize )
+{
+	if ( frameSize == 0 )
+		frameSize = maxBytesPerFrame;
 
-	int nbFrames = byteArray.size() / maxFrameBytes + 1;
+	QList<QByteArray> frames;
+	int nbFrames = applicationData.size() / frameSize + 1;
 
 	for ( int i=0 ; i<nbFrames ; i++ )
 	{
-		QByteArray BA;
+		bool final = false;
 
-		// end, size
-		bool end = false;
-		quint64 size = maxFrameBytes;
-		EOpcode opcode = OpContinue;
-		if ( i == nbFrames-1 ) // for multi-frames
+		if ( i > 0 ) // Continuation
+			opcode = OpContinue;
+		if ( i == nbFrames-1 )
 		{
-			end = true;
-			size = byteArray.size();
-		}
-		if ( i == 0 )
-		{
-			if ( asBinary )
-				opcode = OpBinary;
-			else
-				opcode = OpText;
+			final = true;
+			frameSize = applicationData.size();
 		}
 		
-		// Header
-		BA.append( QWsSocket::composeHeader( end, opcode, size, maskingKey ) );
-		
-		// Application Data
-		QByteArray dataForThisFrame = byteArray.left( size );
-		byteArray.remove( 0, size );
-		
-		//dataForThisFrame = QWsSocket::mask( dataForThisFrame, maskingKey );
-		BA.append( dataForThisFrame );
-		
-		framesList << BA;
+		QByteArray frameData = applicationData.left( frameSize );
+		applicationData.remove( 0, frameSize );
+		frames << composeFrame( frameData, opcode, final );
 	}
-
-	return framesList;
+	return frames;
 }
+
+QByteArray QWsSocket::composeFrame( QByteArray applicationData, EOpcode opcode, bool final )
+{
+	// TODO implement
+	QByteArray maskingKey; // = generateMaskingKey();
+	int frameSize = applicationData.size();
+	QByteArray frame = QWsSocket::composeHeader( final, opcode, frameSize, maskingKey );
+	frame.append( mask(applicationData, maskingKey) );
+	return frame;
+}
+
 
 QByteArray QWsSocket::composeHeader( bool end, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey )
 {
