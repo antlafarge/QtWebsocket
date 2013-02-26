@@ -15,8 +15,10 @@ CONFIG += staticlib
 #DEFINES += QTWEBSOCKET_LIBRARY
 
 SOURCES += QWsServer.cpp \
-    QWsSocket.cpp
+    QWsSocket.cpp \
+    QWsFrame.cpp
 
 HEADERS += QWsServer.h \
-    QWsSocket.h
+    QWsSocket.h \
+    QWsFrame.h
 

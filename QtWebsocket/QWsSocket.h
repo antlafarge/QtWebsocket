@@ -5,6 +5,8 @@
 #include <QHostAddress>
 #include <QTime>
 
+class QWsFrame;
+
 enum EWebsocketVersion
 {
 	WS_VUnknow = -1,
@@ -61,9 +63,18 @@ public:
 		CloseTLSHandshakeFailed = 1015
 	};
 
-public:
+	enum EReadingState
+	{
+		HeaderPending,
+		PayloadLengthPending,
+		BigPayloadLenghPending,
+		MaskPending,
+		PayloadBodyPending,
+		CloseDataPending
+	};
+
 	// ctor
-    QWsSocket( QObject * parent = 0, QTcpSocket * socket = 0, EWebsocketVersion ws_v = WS_V13 );
+	QWsSocket( QObject * parent = 0, QTcpSocket * socket = 0, EWebsocketVersion ws_v = WS_V13 );
 	// dtor
 	virtual ~QWsSocket();
 
@@ -88,11 +99,11 @@ public:
 	qint64 write( const QString & string ); // write data as text
 	qint64 write( const QByteArray & byteArray ); // write data as binary
 
-public slots:
-	void connectToHost( const QString & hostName, quint16 port, OpenMode mode = ReadWrite );
-    void connectToHost( const QHostAddress & address, quint16 port, OpenMode mode = ReadWrite );
-    void disconnectFromHost();
-    void abort( QString reason = QString() );
+	public slots:
+		void connectToHost( const QString & hostName, quint16 port, OpenMode mode = ReadWrite );
+	void connectToHost( const QHostAddress & address, quint16 port, OpenMode mode = ReadWrite );
+	void disconnectFromHost();
+	void abort( QString reason = QString() );
 	void ping();
 
 signals:
@@ -104,28 +115,21 @@ protected:
 	qint64 writeFrames ( const QList<QByteArray> & framesList );
 	qint64 writeFrame ( const QByteArray & byteArray );
 
-protected slots:
-	virtual void close( ECloseStatusCode closeStatusCode = NoCloseStatusCode, QString reason = QString() );
+	protected slots:
+		virtual void close( ECloseStatusCode closeStatusCode = NoCloseStatusCode, QString reason = QString() );
 	void processDataV0();
 	void processDataV4();
-    void processHandshake();
+	void processHandshake();
 	void processTcpStateChanged( QAbstractSocket::SocketState socketState );
 
 private:
-	enum EReadingState
-    {
-		HeaderPending,
-		PayloadLengthPending,
-		BigPayloadLenghPending,
-		MaskPending,
-		PayloadBodyPending,
-		CloseDataPending
-	};
 
 	// private vars
 	QTcpSocket * tcpSocket;
 	QByteArray currentFrame;
 	QTime pingTimer;
+
+	QWsFrame* _currentFrame;
 
 	EWebsocketVersion _version;
 	QString _resourceName;
@@ -140,24 +144,27 @@ private:
 	bool closingHandshakeSent;
 	bool closingHandshakeReceived;
 
-	EReadingState readingState;
-	EOpcode opcode;
-	bool isFinalFragment;
-	bool hasMask;
-	quint64 payloadLength;
+	EOpcode currentOpcode;
 	QByteArray maskingKey;
 	ECloseStatusCode closeStatusCode;
 
-    static const QString regExpAcceptStr;
-    static const QString regExpUpgradeStr;
-    static const QString regExpConnectionStr;
-    QString handshakeResponse;
-    QString key;
+	static const QString regExpAcceptStr;
+	static const QString regExpUpgradeStr;
+	static const QString regExpConnectionStr;
+	QString handshakeResponse;
+	QString key;
 
 	/*!
 	 * Sends pong response with `applicationData` appended.
 	 */
 	void handlePing( QByteArray applicationData = QByteArray() );
+
+	/*!
+	 * Processes the joined payload of the previous frames.
+	 *
+	 * Called if the final frame has been send and is valid.
+	 */
+	void handleData();
 
 public:
 	// Static functions

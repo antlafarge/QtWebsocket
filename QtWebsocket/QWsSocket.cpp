@@ -1,4 +1,5 @@
 #include "QWsSocket.h"
+#include "QWsFrame.h"
 
 #include <QCryptographicHash>
 #include <QtEndian>
@@ -17,12 +18,9 @@ QWsSocket::QWsSocket( QObject * parent, QTcpSocket * socket, EWebsocketVersion w
 	_hostPort( -1 ),
 	closingHandshakeSent( false ),
 	closingHandshakeReceived( false ),
-	readingState( HeaderPending ),
-	isFinalFragment( false ),
-	hasMask( false ),
-	payloadLength( 0 ),
 	maskingKey( 4, 0 ),
-	serverSideSocket( false )
+	serverSideSocket( false ),
+	_currentFrame( new QWsFrame )
 {
 	tcpSocket->setParent( this );
 
@@ -43,6 +41,8 @@ QWsSocket::QWsSocket( QObject * parent, QTcpSocket * socket, EWebsocketVersion w
 
 QWsSocket::~QWsSocket()
 {
+	delete _currentFrame;
+
 	QAbstractSocket::SocketState state = QAbstractSocket::state();
 	if ( state != QAbstractSocket::UnconnectedState )
 	{
@@ -355,7 +355,7 @@ void QWsSocket::processDataV4()
         processHandshake();
     else
     while (true)
-    switch ( readingState ) {
+    switch ( _currentFrame->readingState ) {
 	case HeaderPending: {
 		if (tcpSocket->bytesAvailable() < 2)
 			return;
@@ -363,24 +363,24 @@ void QWsSocket::processDataV4()
 		// END, RSV1-3, Opcode
 		char header[2];
 		tcpSocket->read(header, 2); // XXX: Handle return value
-		isFinalFragment = (header[0] & 0x80) != 0;
-		opcode = static_cast<EOpcode>(header[0] & 0x0F);
+		_currentFrame->final = (header[0] & 0x80) != 0;
+		_currentFrame->rsv = header[0] & 0x70;
+		_currentFrame->opcode = static_cast<EOpcode>(header[0] & 0x0F);
+		if (_currentFrame->opcode != OpContinue)
+			currentOpcode = _currentFrame->opcode;
+		_currentFrame->hasMask = (header[1] & 0x80) != 0;
 
-		// Mask, PayloadLength
-		hasMask = (header[1] & 0x80) != 0;
-		quint8 length = (header[1] & 0x7F);
-
-		switch (length)
+		_currentFrame->payloadLength = header[1] & 0x7F;
+		switch (_currentFrame->payloadLength)
 		{
 			case 126:
-				readingState = PayloadLengthPending;
+				_currentFrame->readingState = PayloadLengthPending;
 				break;
 			case 127:
-				readingState = BigPayloadLenghPending;
+				_currentFrame->readingState = BigPayloadLenghPending;
 				break;
 			default:
-				payloadLength = length;
-				readingState = MaskPending;
+				_currentFrame->readingState = MaskPending;
 				break;
 		}
 	}; break;
@@ -390,8 +390,8 @@ void QWsSocket::processDataV4()
 
 		uchar length[2];
 		tcpSocket->read(reinterpret_cast<char *>(length), 2); // XXX: Handle return value
-		payloadLength = qFromBigEndian<quint16>(reinterpret_cast<const uchar *>(length));
-		readingState = MaskPending;
+		_currentFrame->payloadLength = qFromBigEndian<quint16>(reinterpret_cast<const uchar *>(length));
+		_currentFrame->readingState = MaskPending;
 	}; break;
 	case BigPayloadLenghPending: {
 		if (tcpSocket->bytesAvailable() < 8)
@@ -401,71 +401,69 @@ void QWsSocket::processDataV4()
 		tcpSocket->read(reinterpret_cast<char *>(length), 8); // XXX: Handle return value
 		// Most significant bit must be set to 0 as per http://tools.ietf.org/html/rfc6455#section-5.2
 		// XXX: Check for that?
-		payloadLength = qFromBigEndian<quint64>(length) & ~(1LL << 63);
-		readingState = MaskPending;
+		_currentFrame->payloadLength = qFromBigEndian<quint64>(length) & ~(1LL << 63);
+		_currentFrame->readingState = MaskPending;
 	}; break;
 	case MaskPending: {
-		if (!hasMask) {
-			readingState = PayloadBodyPending;
+		if (!_currentFrame->hasMask) {
+			_currentFrame->readingState = PayloadBodyPending;
 			break;
 		}
 
 		if (tcpSocket->bytesAvailable() < 4)
 			return;
 
-		tcpSocket->read(maskingKey.data(), 4); // XXX: Handle return value
+		_currentFrame->maskingKey = tcpSocket->read(4); // XXX: Handle return value
 		
-		if ( opcode == OpClose )
+		if ( _currentFrame->opcode == OpClose )
 		{
-			readingState = CloseDataPending;
+			_currentFrame->readingState = CloseDataPending;
 		}
 		else
 		{
-			readingState = PayloadBodyPending;
+			_currentFrame->readingState = PayloadBodyPending;
 		}
 	}; /* Intentional fall-through */
 	case PayloadBodyPending: {
 		// TODO: Handle large payloads
-		if (tcpSocket->bytesAvailable() < static_cast<qint32>(payloadLength))
+		if (tcpSocket->bytesAvailable() < static_cast<qint32>(_currentFrame->payloadLength))
 			return;
 		
+		_currentFrame->payload = tcpSocket->read( _currentFrame->payloadLength );
+		currentFrame.append( _currentFrame->data() );
 
-		QByteArray ApplicationData = tcpSocket->read( payloadLength );
-		if ( hasMask )
-			ApplicationData = QWsSocket::mask( ApplicationData, maskingKey );
-		currentFrame.append( ApplicationData );
+		if (!_currentFrame->valid())
+			close( CloseProtocolError);
+		else if ( _currentFrame->final )
+			handleData();
 
-		readingState = HeaderPending;
-
-		if ( !isFinalFragment )
-			break;
-
-		switch ( opcode )
-		{
-			case OpBinary:
-				emit frameReceived( currentFrame );
-				break;
-			case OpText:
-				emit frameReceived( QString::fromUtf8(currentFrame) );
-				break;
-			case OpPing:
-				handlePing( currentFrame );
-				break;
-			case OpPong:
-				emit pong( pingTimer.elapsed() );
-				break;
-			case OpClose:
-				closingHandshakeReceived = true;
-				close( NoCloseStatusCode );
-				break;
-			default:
-				// DO NOTHING
-				break;
-		}
-
+		_currentFrame->clear();
 		currentFrame.clear();
 	}; break;
     } /* while (true) switch */
+}
+
+void QWsSocket::handleData()
+{
+	switch ( currentOpcode )
+	{
+		case OpBinary:
+			emit frameReceived( currentFrame );
+			break;
+		case OpText:
+			emit frameReceived( QString::fromUtf8(currentFrame) );
+			break;
+		case OpPing:
+			handlePing( currentFrame );
+			break;
+		case OpPong:
+			emit pong( pingTimer.elapsed() );
+			break;
+		case OpClose:
+			closingHandshakeReceived = true;
+			close( NoCloseStatusCode );
+			break;
+	}
 }
 
 qint64 QWsSocket::writeFrame ( const QByteArray & byteArray )
