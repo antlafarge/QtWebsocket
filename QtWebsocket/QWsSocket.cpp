@@ -445,6 +445,14 @@ void QWsSocket::processDataV4()
 
 void QWsSocket::handleData()
 {
+	if (currentOpcode == OpClose) {
+		closingHandshakeReceived = true;
+		close( NoCloseStatusCode );
+	}
+
+	if (state() == ClosingState)
+		return;
+
 	switch ( currentOpcode )
 	{
 		case OpBinary:
@@ -458,10 +466,6 @@ void QWsSocket::handleData()
 			break;
 		case OpPong:
 			emit pong( pingTimer.elapsed() );
-			break;
-		case OpClose:
-			closingHandshakeReceived = true;
-			close( NoCloseStatusCode );
 			break;
 	}
 }
