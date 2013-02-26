@@ -154,6 +154,11 @@ private:
     QString handshakeResponse;
     QString key;
 
+	/*!
+	 * Sends pong response with `applicationData` appended.
+	 */
+	void handlePing( QByteArray applicationData = QByteArray() );
+
 public:
 	// Static functions
 	static QByteArray generateMaskingKey();

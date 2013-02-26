@@ -449,7 +449,7 @@ void QWsSocket::processDataV4()
 				emit frameReceived( QString::fromUtf8(currentFrame) );
 				break;
 			case OpPing:
-				writeFrame( QWsSocket::composeHeader( true, OpPong, 0 ) );
+				handlePing( currentFrame );
 				break;
 			case OpPong:
 				emit pong( pingTimer.elapsed() );
@@ -768,4 +768,10 @@ QString QWsSocket::composeOpeningHandShake( QString resourceName, QString host, 
 	hs.append(QLatin1String("Sec-WebSocket-Version: 13\r\n"));
 	hs.append(QLatin1String("\r\n"));
 	return hs;
+}
+
+
+void QWsSocket::handlePing( QByteArray applicationData )
+{
+	writeFrames( QWsSocket::composeFrames(applicationData, OpPong) );
 }
