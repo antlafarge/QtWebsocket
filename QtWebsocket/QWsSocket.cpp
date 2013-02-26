@@ -166,6 +166,7 @@ void QWsSocket::close( ECloseStatusCode closeStatusCode, QString reason )
 		QAbstractSocket::setSocketState( QAbstractSocket::UnconnectedState );
 		emit stateChanged( QAbstractSocket::UnconnectedState );
 		emit disconnected();
+		tcpSocket->flush();
 		tcpSocket->disconnectFromHost();
 	}
 }
@@ -428,19 +429,6 @@ void QWsSocket::processDataV4()
 		if (tcpSocket->bytesAvailable() < static_cast<qint32>(payloadLength))
 			return;
 		
-		if ( opcode == OpClose )
-		{
-			if ( payloadLength >= 2 && tcpSocket->bytesAvailable() >= 2 )
-			{
-				uchar bytes[2];
-				tcpSocket->read( reinterpret_cast<char *>(bytes), 2 );
-				closeStatusCode = (ECloseStatusCode)qFromBigEndian<quint16>( reinterpret_cast<const uchar *>(bytes) );
-			}
-			else
-			{
-				closeStatusCode = NoCloseStatusCode;
-			}
-		}
 
 		QByteArray ApplicationData = tcpSocket->read( payloadLength );
 		if ( hasMask )
@@ -468,7 +456,7 @@ void QWsSocket::processDataV4()
 				break;
 			case OpClose:
 				closingHandshakeReceived = true;
-				close( closeStatusCode );
+				close( NoCloseStatusCode );
 				break;
 			default:
 				// DO NOTHING
