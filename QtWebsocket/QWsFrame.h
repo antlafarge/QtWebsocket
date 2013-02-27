@@ -13,8 +13,10 @@ public:
   QWsFrame();
   void clear();
   QByteArray data() const; // TODO make const
-  bool valid();
+  bool valid() const;
   QByteArray unmask() const;
+  bool controlFrame() const;
+
 
   bool final;
   quint8 rsv;

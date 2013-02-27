@@ -29,9 +29,13 @@ QByteArray QWsFrame::data() const
 		return payload;
 }
 
+bool QWsFrame::controlFrame() const
+{
+	return opcode >= 0x8;
+}
 
 // TODO implement, finished flag;
-bool QWsFrame::valid()
+bool QWsFrame::valid() const
 {
 	if ( payloadLength >> 63 ) // Most significant bit must be 0
 		return false;
@@ -41,7 +45,9 @@ bool QWsFrame::valid()
 		return false;
 	if ( opcode >= 0xB && opcode <= 0xF ) // Reserved control opcode
 		return false;
-	if ( opcode >= 0x3 && !final )
+	if ( controlFrame() && !final ) // Control frames must not be fragmented
+		return false;
+	if ( controlFrame() && payloadLength > 125 ) // Control frames must have small payload
 		return false;
 
 	return true;

@@ -365,9 +365,12 @@ void QWsSocket::processDataV4()
 		tcpSocket->read(header, 2); // XXX: Handle return value
 		_currentFrame->final = (header[0] & 0x80) != 0;
 		_currentFrame->rsv = header[0] & 0x70;
+
 		_currentFrame->opcode = static_cast<EOpcode>(header[0] & 0x0F);
-		if (_currentFrame->opcode != OpContinue)
-			currentOpcode = _currentFrame->opcode;
+		if ( !_currentFrame->controlFrame() && _currentFrame->opcode != OpContinue)
+			currentDataOpcode = _currentFrame->opcode;
+		currentOpcode = _currentFrame->opcode;
+
 		_currentFrame->hasMask = (header[1] & 0x80) != 0;
 
 		_currentFrame->payloadLength = header[1] & 0x7F;
@@ -429,43 +432,47 @@ void QWsSocket::processDataV4()
 		
 		_currentFrame->payload = tcpSocket->read( _currentFrame->payloadLength );
 		currentFrame.append( _currentFrame->data() );
+		if ( !_currentFrame->controlFrame() )
+			currentData.append( _currentFrame->data() );
 
-		if (!_currentFrame->valid())
-			close( CloseProtocolError);
+		if (!_currentFrame->valid()) {
+			_currentFrame->clear();
+			return close( CloseProtocolError);
+		}
+
+		if ( _currentFrame->controlFrame() )
+			handleControlFrame();
 		else if ( _currentFrame->final )
 			handleData();
 
 		_currentFrame->clear();
-		currentFrame.clear();
 	}; break;
     } /* while (true) switch */
 }
 
 void QWsSocket::handleData()
 {
-	if (currentOpcode == OpClose) {
+	if (state() == ClosingState)
+		return;
+	if ( currentDataOpcode == OpBinary )
+		emit frameReceived( currentData );
+	if ( currentDataOpcode == OpText )
+		emit frameReceived( QString::fromUtf8(currentData) );
+	currentData.clear();
+}
+
+void QWsSocket::handleControlFrame()
+{
+	if ( currentOpcode == OpClose ) {
 		closingHandshakeReceived = true;
 		close( NoCloseStatusCode );
 	}
-
 	if (state() == ClosingState)
 		return;
-
-	switch ( currentOpcode )
-	{
-		case OpBinary:
-			emit frameReceived( currentFrame );
-			break;
-		case OpText:
-			emit frameReceived( QString::fromUtf8(currentFrame) );
-			break;
-		case OpPing:
-			handlePing( currentFrame );
-			break;
-		case OpPong:
-			emit pong( pingTimer.elapsed() );
-			break;
-	}
+	if ( currentOpcode == OpPing )
+		handlePing( _currentFrame->data() );
+	if ( currentOpcode == OpPong )
+		emit pong( pingTimer.elapsed() );
 }
 
 qint64 QWsSocket::writeFrame ( const QByteArray & byteArray )

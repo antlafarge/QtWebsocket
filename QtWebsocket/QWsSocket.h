@@ -130,6 +130,8 @@ private:
 	QTime pingTimer;
 
 	QWsFrame* _currentFrame;
+	QByteArray currentData;
+	EOpcode currentDataOpcode;
 
 	EWebsocketVersion _version;
 	QString _resourceName;
@@ -162,9 +164,18 @@ private:
 	/*!
 	 * Processes the joined payload of the previous frames.
 	 *
-	 * Called if the final frame has been send and is valid.
+	 * Called if the final and valid non-control frame has been received.
 	 */
 	void handleData();
+
+	/*!
+	 * Processes the current control frame.
+	 *
+	 * Responds to ping and pong or closes connection according to
+	 * `currentOpcode`. Called if a complete and valid control frame has been
+	 * received.
+	 */
+	void handleControlFrame();
 
 public:
 	// Static functions
