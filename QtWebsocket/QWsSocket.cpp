@@ -388,20 +388,18 @@ void QWsSocket::processDataV4()
 		if (tcpSocket->bytesAvailable() < 2)
 			return;
 
-		uchar length[2];
-		tcpSocket->read(reinterpret_cast<char *>(length), 2); // XXX: Handle return value
-		_currentFrame->payloadLength = qFromBigEndian<quint16>(reinterpret_cast<const uchar *>(length));
+		char length[2];
+		tcpSocket->read( length, 2 ); // XXX: Handle return value
+		_currentFrame->payloadLength = qFromBigEndian<quint16>( *(quint16*)length );
 		_currentFrame->readingState = MaskPending;
 	}; break;
 	case BigPayloadLenghPending: {
 		if (tcpSocket->bytesAvailable() < 8)
 			return;
 
-		uchar length[8];
-		tcpSocket->read(reinterpret_cast<char *>(length), 8); // XXX: Handle return value
-		// Most significant bit must be set to 0 as per http://tools.ietf.org/html/rfc6455#section-5.2
-		// XXX: Check for that?
-		_currentFrame->payloadLength = qFromBigEndian<quint64>(length) & ~(1LL << 63);
+		char length[8];
+		tcpSocket->read( length, 8 ); // XXX: Handle return value
+		_currentFrame->payloadLength = qFromBigEndian<quint64>( *(quint64*)length );
 		_currentFrame->readingState = MaskPending;
 	}; break;
 	case MaskPending: {
@@ -426,7 +424,7 @@ void QWsSocket::processDataV4()
 	}; /* Intentional fall-through */
 	case PayloadBodyPending: {
 		// TODO: Handle large payloads
-		if (tcpSocket->bytesAvailable() < static_cast<qint32>(_currentFrame->payloadLength))
+		if ( tcpSocket->bytesAvailable() < _currentFrame->payloadLength )
 			return;
 		
 		_currentFrame->payload = tcpSocket->read( _currentFrame->payloadLength );

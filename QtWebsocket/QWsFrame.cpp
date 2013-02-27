@@ -33,6 +33,8 @@ QByteArray QWsFrame::data() const
 // TODO implement, finished flag;
 bool QWsFrame::valid()
 {
+	if ( payloadLength >> 63 ) // Most significant bit must be 0
+		return false;
 	if ( rsv & 0x70 )
 		return false;
 	if ( opcode >= 0x3 && opcode <= 0x7 ) // Reserved opcode
