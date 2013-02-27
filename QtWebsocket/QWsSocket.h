@@ -115,8 +115,8 @@ protected:
 	qint64 writeFrames ( const QList<QByteArray> & framesList );
 	qint64 writeFrame ( const QByteArray & byteArray );
 
-	protected slots:
-		virtual void close( ECloseStatusCode closeStatusCode = NoCloseStatusCode, QString reason = QString() );
+protected slots:
+	virtual void close( ECloseStatusCode closeStatusCode = NoCloseStatusCode, QString reason = QString() );
 	void processDataV0();
 	void processDataV4();
 	void processHandshake();
@@ -132,6 +132,11 @@ private:
 	QWsFrame* _currentFrame;
 	QByteArray currentData;
 	EOpcode currentDataOpcode;
+
+	/*!
+	 * True if we are waiting for a final data fragment.
+	 */
+	bool continuation;
 
 	EWebsocketVersion _version;
 	QString _resourceName;

@@ -20,7 +20,8 @@ QWsSocket::QWsSocket( QObject * parent, QTcpSocket * socket, EWebsocketVersion w
 	closingHandshakeReceived( false ),
 	maskingKey( 4, 0 ),
 	serverSideSocket( false ),
-	_currentFrame( new QWsFrame )
+	_currentFrame( new QWsFrame ),
+	continuation( false )
 {
 	tcpSocket->setParent( this );
 
@@ -351,26 +352,20 @@ void QWsSocket::processDataV0()
 
 void QWsSocket::processDataV4()
 {
-    if( state() == QAbstractSocket::ConnectingState )
-        processHandshake();
-    else
-    while (true)
+    if ( state() == ConnectingState )
+        return processHandshake();
+
+	while ( tcpSocket->bytesAvailable() )
     switch ( _currentFrame->readingState ) {
 	case HeaderPending: {
 		if (tcpSocket->bytesAvailable() < 2)
 			return;
 
-		// END, RSV1-3, Opcode
 		char header[2];
 		tcpSocket->read(header, 2); // XXX: Handle return value
 		_currentFrame->final = (header[0] & 0x80) != 0;
 		_currentFrame->rsv = header[0] & 0x70;
-
 		_currentFrame->opcode = static_cast<EOpcode>(header[0] & 0x0F);
-		if ( !_currentFrame->controlFrame() && _currentFrame->opcode != OpContinue)
-			currentDataOpcode = _currentFrame->opcode;
-		currentOpcode = _currentFrame->opcode;
-
 		_currentFrame->hasMask = (header[1] & 0x80) != 0;
 
 		_currentFrame->payloadLength = header[1] & 0x7F;
@@ -417,13 +412,9 @@ void QWsSocket::processDataV4()
 		_currentFrame->maskingKey = tcpSocket->read(4); // XXX: Handle return value
 		
 		if ( _currentFrame->opcode == OpClose )
-		{
 			_currentFrame->readingState = CloseDataPending;
-		}
 		else
-		{
 			_currentFrame->readingState = PayloadBodyPending;
-		}
 	}; /* Intentional fall-through */
 	case PayloadBodyPending: {
 		// TODO: Handle large payloads
@@ -432,12 +423,27 @@ void QWsSocket::processDataV4()
 		
 		_currentFrame->payload = tcpSocket->read( _currentFrame->payloadLength );
 		currentFrame.append( _currentFrame->data() );
-		if ( !_currentFrame->controlFrame() )
-			currentData.append( _currentFrame->data() );
 
+		currentOpcode = _currentFrame->opcode;
 		if (!_currentFrame->valid()) {
 			_currentFrame->clear();
-			return close( CloseProtocolError);
+			close( CloseProtocolError);
+			continue;
+		}
+
+		if ( !_currentFrame->controlFrame() ) {
+			if ( currentOpcode != OpContinue )
+				currentDataOpcode = _currentFrame->opcode;
+
+			if ( (currentOpcode == OpContinue && !continuation) || 
+					(currentOpcode != OpContinue && continuation) ) {
+				_currentFrame->clear();
+				close( CloseProtocolError);
+				continue;
+			}
+
+			continuation = !_currentFrame->final;
+			currentData.append( _currentFrame->data() );
 		}
 
 		if ( _currentFrame->controlFrame() )
@@ -447,8 +453,9 @@ void QWsSocket::processDataV4()
 
 		_currentFrame->clear();
 	}; break;
-    } /* while (true) switch */
+    }
 }
+
 
 void QWsSocket::handleData()
 {
@@ -460,6 +467,7 @@ void QWsSocket::handleData()
 		emit frameReceived( QString::fromUtf8(currentData) );
 	currentData.clear();
 }
+
 
 void QWsSocket::handleControlFrame()
 {
