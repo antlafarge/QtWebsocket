@@ -113,3 +113,6 @@ Log.txt
 # Vim backup and swap files:
 *~
 *.swp
+
+# Generated documentation
+doc/
