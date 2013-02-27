@@ -427,6 +427,8 @@ void QWsSocket::processDataV4()
 		currentOpcode = _currentFrame->opcode;
 		if (!_currentFrame->valid()) {
 			_currentFrame->clear();
+			if ( currentOpcode == OpClose )
+				closingHandshakeReceived = true;
 			close( CloseProtocolError);
 			continue;
 		}
