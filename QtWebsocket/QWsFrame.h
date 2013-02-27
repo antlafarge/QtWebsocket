@@ -12,7 +12,7 @@ public:
 
   QWsFrame();
   void clear();
-  QByteArray data() const; // TODO make const
+  QByteArray data() const;
   bool valid() const;
   QByteArray unmask() const;
   bool controlFrame() const;
@@ -24,7 +24,7 @@ public:
   bool hasMask;
   QWsSocket::EOpcode opcode;
   qint64 payloadLength;
-  char maskingKey[4]; // TODO convert to quint8
+  char maskingKey[4];
   QByteArray payload;
 };
 
