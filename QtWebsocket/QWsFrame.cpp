@@ -33,8 +33,14 @@ QByteArray QWsFrame::data() const
 // TODO implement, finished flag;
 bool QWsFrame::valid()
 {
-	if ( rsv & 0x70 ) {
+	if ( rsv & 0x70 )
 		return false;
-	}
+	if ( opcode >= 0x3 && opcode <= 0x7 ) // Reserved opcode
+		return false;
+	if ( opcode >= 0xB && opcode <= 0xF ) // Reserved control opcode
+		return false;
+	if ( opcode >= 0x3 && !final )
+		return false;
+
 	return true;
 }
