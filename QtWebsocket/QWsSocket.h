@@ -70,7 +70,6 @@ public:
 		BigPayloadLenghPending,
 		MaskPending,
 		PayloadBodyPending,
-		CloseDataPending
 	};
 
 	// ctor
@@ -152,7 +151,6 @@ private:
 	bool closingHandshakeReceived;
 
 	EOpcode currentOpcode;
-	QByteArray maskingKey;
 	ECloseStatusCode closeStatusCode;
 
 	static const QString regExpAcceptStr;

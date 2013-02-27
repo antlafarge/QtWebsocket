@@ -2,10 +2,10 @@
 
 QWsFrame::QWsFrame() :
 	readingState( QWsSocket::HeaderPending ),
-	hasMask( false ),
 	final( false ),
-	payloadLength( 0 ),
-	rsv( 0 )
+	rsv( 0 ),
+	hasMask( false ),
+	payloadLength( 0 )
 {}
 
 

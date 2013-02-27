@@ -14,14 +14,13 @@ const QString QWsSocket::regExpConnectionStr(QLatin1String("Connection:\\s(.+)\r
 QWsSocket::QWsSocket( QObject * parent, QTcpSocket * socket, EWebsocketVersion ws_v ) :
 	QAbstractSocket( QAbstractSocket::UnknownSocketType, parent ),
     tcpSocket( socket ? socket : new QTcpSocket(this) ),
+	_currentFrame( new QWsFrame ),
+	continuation( false ),
 	_version( ws_v ),
 	_hostPort( -1 ),
-	closingHandshakeSent( false ),
-	closingHandshakeReceived( false ),
-	maskingKey( 4, 0 ),
 	serverSideSocket( false ),
-	_currentFrame( new QWsFrame ),
-	continuation( false )
+	closingHandshakeSent( false ),
+	closingHandshakeReceived( false )
 {
 	tcpSocket->setParent( this );
 
@@ -386,18 +385,19 @@ void QWsSocket::processDataV4()
 		if (tcpSocket->bytesAvailable() < 2)
 			return;
 
-		char length[2];
-		tcpSocket->read( length, 2 ); // XXX: Handle return value
-		_currentFrame->payloadLength = qFromBigEndian<quint16>( *(quint16*)length );
+		quint16 length;
+		tcpSocket->read( (char*) &length, 2 ); // XXX: Handle return value
+
+		_currentFrame->payloadLength = qFromBigEndian( length );
 		_currentFrame->readingState = MaskPending;
 	}; break;
 	case BigPayloadLenghPending: {
 		if (tcpSocket->bytesAvailable() < 8)
 			return;
 
-		char length[8];
-		tcpSocket->read( length, 8 ); // XXX: Handle return value
-		_currentFrame->payloadLength = qFromBigEndian<quint64>( *(quint64*)length );
+		quint64 length;
+		tcpSocket->read( (char*) &length, 8 ); // XXX: Handle return value
+		_currentFrame->payloadLength = qFromBigEndian( length );
 		_currentFrame->readingState = MaskPending;
 	}; break;
 	case MaskPending: {
@@ -409,12 +409,8 @@ void QWsSocket::processDataV4()
 		if (tcpSocket->bytesAvailable() < 4)
 			return;
 
-		_currentFrame->maskingKey = tcpSocket->read(4); // XXX: Handle return value
-		
-		if ( _currentFrame->opcode == OpClose )
-			_currentFrame->readingState = CloseDataPending;
-		else
-			_currentFrame->readingState = PayloadBodyPending;
+		tcpSocket->read(_currentFrame->maskingKey, 4); // XXX: Handle return value
+		_currentFrame->readingState = PayloadBodyPending;
 	}; /* Intentional fall-through */
 	case PayloadBodyPending: {
 		// TODO: Handle large payloads

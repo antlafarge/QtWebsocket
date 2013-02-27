@@ -17,15 +17,15 @@ public:
   QByteArray unmask() const;
   bool controlFrame() const;
 
+  QWsSocket::EReadingState readingState;
 
   bool final;
   quint8 rsv;
   bool hasMask;
   QWsSocket::EOpcode opcode;
-  quint64 payloadLength;
-  QByteArray maskingKey; // TODO convert to quint8
+  qint64 payloadLength;
+  char maskingKey[4]; // TODO convert to quint8
   QByteArray payload;
-  QWsSocket::EReadingState readingState;
 };
 
 #endif
