@@ -31,7 +31,7 @@ public:
   /*!
    * Returns the unmaksed payload
    */
-  QByteArray unmask() const;
+  QByteArray data() const;
 
 
   /*!
