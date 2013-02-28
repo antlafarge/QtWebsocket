@@ -5,7 +5,7 @@
 ServerThreaded::ServerThreaded()
 {
 	int port = 1337;
-    server = new QWsServer( this );
+	server = new QWsServer( this );
 	if ( ! server->listen( QHostAddress::Any, port ) )
 	{
 		Log::display( "Error: Can't launch server" );

@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network
+QT += core gui network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -14,14 +14,16 @@ TEMPLATE = app
 INCLUDEPATH += ../../QtWebsocket
 DEPENDPATH += ../../QtWebsocket
 
-SOURCES += main.cpp\
+SOURCES += \
+				main.cpp\
     Client.cpp
 
-HEADERS  += Client.h\
+HEADERS += \
+				Client.h\
     QWsSocket.h\
     QWsServer.h
 
-FORMS    += Client.ui
+FORMS += Client.ui
 
 win32:CONFIG(release, debug|release): LIBS += -L../../QtWebsocket/release/ -lQtWebsocket
 else:win32:CONFIG(debug, debug|release): LIBS += -L../../QtWebsocket/debug/ -lQtWebsocket

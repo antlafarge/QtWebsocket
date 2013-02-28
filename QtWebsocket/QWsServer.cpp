@@ -91,7 +91,7 @@ void QWsServer::dataReceived()
 	}
 
 	if (!allHeadersFetched)
-	    return;
+		return;
 
 	QString request( headerBuffer[ tcpSocket ].join("") );
 
@@ -131,7 +131,7 @@ void QWsServer::dataReceived()
 	QString hostAddress = hostTmp[0];
 	QString hostPort;
 	if ( hostTmp.size() > 1 )
-        hostPort = hostTmp.last(); // fix for IPv6
+		hostPort = hostTmp.last(); // fix for IPv6
 	
 	// Key
 	QString key, key1, key2, key3;
@@ -216,7 +216,7 @@ void QWsServer::dataReceived()
 
 	// Send opening handshake response
 	if ( version == WS_V0 )
-        tcpSocket->write( response.toLatin1() );
+		tcpSocket->write( response.toLatin1() );
 	else
 		tcpSocket->write( response.toUtf8() );
 	tcpSocket->flush();
@@ -332,7 +332,7 @@ QString QWsServer::computeAcceptV0( QString key1, QString key2, QString key3 )
 	}
 	for ( int i=0 ; i<key2.size() ; i++ )
 	{
-	    carac = key2[ i ];
+		carac = key2[ i ];
 		if ( carac.isDigit() )
 			numStr2.append( carac );
 	}
@@ -348,8 +348,8 @@ QString QWsServer::computeAcceptV0( QString key1, QString key2, QString key3 )
 
 	QString concat = serializeInt( num1 ) + serializeInt( num2 ) + key3;
 
-    QByteArray md5 = QCryptographicHash::hash( concat.toLatin1(), QCryptographicHash::Md5 );
-  
+	QByteArray md5 = QCryptographicHash::hash( concat.toLatin1(), QCryptographicHash::Md5 );
+
 	return QString( md5 );
 }
 
@@ -380,18 +380,18 @@ QByteArray QWsServer::serializeInt( quint32 number, quint8 nbBytes )
 	QByteArray ba;
 	quint8 currentNbBytes = 0;
 	while (number > 0 && currentNbBytes < nbBytes)
-    {
+	{
 		char car = static_cast<char>(number & 0xFF);
-        ba.prepend( car );
+		ba.prepend( car );
 		number = number >> 8;
 		currentNbBytes++;
 	}
 	char car = 0x00;
 	while (currentNbBytes < nbBytes)
-    {
-        ba.prepend( car );
+	{
+		ba.prepend( car );
 		currentNbBytes++;
-    }
+	}
 	return ba;
 }
 

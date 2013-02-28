@@ -4,9 +4,9 @@
 #
 #-------------------------------------------------
 
-QT       += network
+QT += network
 
-QT       -= gui
+QT -= gui
 
 TARGET = QtWebsocket
 TEMPLATE = lib

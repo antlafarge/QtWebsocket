@@ -4,18 +4,19 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network
+QT += core gui network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = Server
 TEMPLATE = app
 
-SOURCES += main.cpp\
+SOURCES += \
+				main.cpp \
     Server.cpp \
     Log.cpp
 
-HEADERS  += \
+HEADERS += \
     QWsSocket.h \
     QWsServer.h \
     Server.h \

@@ -63,7 +63,7 @@ public:
 
 public:
 	// ctor
-    QWsSocket( QObject * parent = 0, QTcpSocket * socket = 0, EWebsocketVersion ws_v = WS_V13 );
+	QWsSocket( QObject * parent = 0, QTcpSocket * socket = 0, EWebsocketVersion ws_v = WS_V13 );
 	// dtor
 	virtual ~QWsSocket();
 
@@ -90,9 +90,9 @@ public:
 
 public slots:
 	void connectToHost( const QString & hostName, quint16 port, OpenMode mode = ReadWrite );
-    void connectToHost( const QHostAddress & address, quint16 port, OpenMode mode = ReadWrite );
-    void disconnectFromHost();
-    void abort( QString reason = QString() );
+	void connectToHost( const QHostAddress & address, quint16 port, OpenMode mode = ReadWrite );
+	void disconnectFromHost();
+	void abort( QString reason = QString() );
 	void ping();
 
 signals:
@@ -108,12 +108,12 @@ protected slots:
 	virtual void close( ECloseStatusCode closeStatusCode = NoCloseStatusCode, QString reason = QString() );
 	void processDataV0();
 	void processDataV4();
-    void processHandshake();
+	void processHandshake();
 	void processTcpStateChanged( QAbstractSocket::SocketState socketState );
 
 private:
 	enum EReadingState
-    {
+	{
 		HeaderPending,
 		PayloadLengthPending,
 		BigPayloadLenghPending,
@@ -148,11 +148,11 @@ private:
 	QByteArray maskingKey;
 	ECloseStatusCode closeStatusCode;
 
-    static const QString regExpAcceptStr;
-    static const QString regExpUpgradeStr;
-    static const QString regExpConnectionStr;
-    QString handshakeResponse;
-    QString key;
+	static const QString regExpAcceptStr;
+	static const QString regExpUpgradeStr;
+	static const QString regExpConnectionStr;
+	QString handshakeResponse;
+	QString key;
 
 public:
 	// Static functions

@@ -14,12 +14,14 @@ TEMPLATE = app
 INCLUDEPATH += ../../QtWebsocket
 DEPENDPATH += ../../QtWebsocket
 
-SOURCES += main.cpp \
+SOURCES += \
+				main.cpp \
     Log.cpp \
     ServerThreaded.cpp \
     SocketThread.cpp
 
-HEADERS  += Log.h \
+HEADERS += \
+				Log.h \
     QWsServer.h \
     QWsSocket.h \
     ServerThreaded.h \

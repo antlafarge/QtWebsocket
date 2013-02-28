@@ -19,7 +19,7 @@ public:
 	static void display(int val);
 	static void display(float val);
 
-    void closeEvent( /*QCloseEvent * event*/ );
+	void closeEvent( /*QCloseEvent * event*/ );
 
 public slots:
 	void appendToLog(QString str);
