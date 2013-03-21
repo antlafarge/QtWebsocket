@@ -98,3 +98,6 @@ Log.txt
 
 #Vim backup files: 
 *~
+
+#others
+AutobahnTestSuite/*
