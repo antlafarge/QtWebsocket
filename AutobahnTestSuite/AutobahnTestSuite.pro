@@ -11,11 +11,13 @@ SOURCES += \
     main.cpp \
     ../QtWebsocket/QWsSocket.cpp \
     ../QtWebsocket/QWsServer.cpp \
+    ../QtWebsocket/QWsFrame.cpp \
     TestServer.cpp
 
 HEADERS += \
     ../QtWebsocket/QWsServer.h \
     ../QtWebsocket/QWsSocket.h \
+    ../QtWebsocket/QWsFrame.h \
     TestServer.h
 
 

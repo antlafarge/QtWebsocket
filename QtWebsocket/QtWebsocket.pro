@@ -4,21 +4,20 @@
 #
 #-------------------------------------------------
 
-QT       += network
+QT += network
 
-QT       -= gui
+QT -= gui
 
 TARGET = QtWebsocket
 TEMPLATE = lib
 CONFIG += staticlib
 
-#DEFINES += QTWEBSOCKET_LIBRARY
-
-SOURCES += QWsServer.cpp \
+SOURCES += \
+    QWsServer.cpp \
     QWsSocket.cpp \
     QWsFrame.cpp
 
-HEADERS += QWsServer.h \
+HEADERS += \
+    QWsServer.h \
     QWsSocket.h \
     QWsFrame.h
-

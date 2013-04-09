@@ -11,26 +11,26 @@ class Client;
 
 class Client : public QWidget
 {
-    Q_OBJECT
-    
+	Q_OBJECT
+
 public:
-    explicit Client(QWidget *parent = 0);
-    ~Client();
+	explicit Client(QWidget *parent = 0);
+	~Client();
 
 protected slots:
 	void socketConnected();
 	void socketDisconnected();
-    void sendMessage();
-    void connectSocket();
-    void disconnectSocket();
-    void displayMessage(QString message);
-    void socketStateChanged(QAbstractSocket::SocketState socketState);
+	void sendMessage();
+	void connectSocket();
+	void disconnectSocket();
+	void displayMessage(QString message);
+	void socketStateChanged(QAbstractSocket::SocketState socketState);
 
 protected:
-    QWsSocket * wsSocket;
-    
+	QWsSocket * wsSocket;
+
 private:
-    Ui::Client *ui;
+	Ui::Client *ui;
 };
 
 #endif // CLIENT_H

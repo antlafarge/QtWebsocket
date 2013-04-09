@@ -5,7 +5,7 @@
 ServerThreaded::ServerThreaded()
 {
 	int port = 1337;
-    server = new QWsServer( this );
+	server = new QWsServer( this );
 	if ( ! server->listen( QHostAddress::Any, port ) )
 	{
 		Log::display( "Error: Can't launch server" );
@@ -43,8 +43,8 @@ void ServerThreaded::processNewConnection()
 	thread->start();
 }
 
+// Display the message received by a socket
 void ServerThreaded::displayMessage( QString message )
 {
-	// Just display in log the message received by a socket
 	Log::display( message );
 }	

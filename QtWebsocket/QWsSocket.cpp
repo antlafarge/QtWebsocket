@@ -13,7 +13,7 @@ const QString QWsSocket::regExpConnectionStr(QLatin1String("Connection:\\s(.+)\r
 
 QWsSocket::QWsSocket( QObject * parent, QTcpSocket * socket, EWebsocketVersion ws_v ) :
 	QAbstractSocket( QAbstractSocket::UnknownSocketType, parent ),
-    tcpSocket( socket ? socket : new QTcpSocket(this) ),
+	tcpSocket( socket ? socket : new QTcpSocket(this) ),
 	_currentFrame( new QWsFrame ),
 	continuation( false ),
 	_version( ws_v ),
@@ -25,8 +25,8 @@ QWsSocket::QWsSocket( QObject * parent, QTcpSocket * socket, EWebsocketVersion w
 	tcpSocket->setParent( this );
 
 	QAbstractSocket::setSocketState( tcpSocket->state() );
-    QAbstractSocket::setPeerAddress( tcpSocket->peerAddress() );
-    QAbstractSocket::setPeerPort( tcpSocket->peerPort() );
+	QAbstractSocket::setPeerAddress( tcpSocket->peerAddress() );
+	QAbstractSocket::setPeerPort( tcpSocket->peerPort() );
 
 	if ( _version == WS_V0 )
 		connect( tcpSocket, SIGNAL(readyRead()), this, SLOT(processDataV0()) );
@@ -62,11 +62,11 @@ void QWsSocket::connectToHost( const QString & hostName, quint16 port, OpenMode 
 
 void QWsSocket::connectToHost( const QHostAddress &address, quint16 port, OpenMode mode )
 {
-    handshakeResponse.clear();
-    setPeerAddress( address );
-    setPeerPort( port );
+	handshakeResponse.clear();
+	setPeerAddress( address );
+	setPeerPort( port );
 	setOpenMode( mode );
-    tcpSocket->connectToHost( address, port, mode );
+	tcpSocket->connectToHost( address, port, mode );
 }
 
 void QWsSocket::disconnectFromHost()
@@ -123,7 +123,7 @@ void QWsSocket::close( ECloseStatusCode closeStatusCode, QString reason )
 					{
 						if ( ! serverSideSocket )
 						{
-							QByteArray data = reason.toUtf8();							
+							QByteArray data = reason.toUtf8();
 							reason = QWsSocket::mask( data, maskingKey );
 						}
 						body.append( reason );
@@ -146,10 +146,8 @@ void QWsSocket::close( ECloseStatusCode closeStatusCode, QString reason )
 				break;
 			}
 			default:
-			{
 				break;
-			}
-		}		
+		}
 
 		closingHandshakeSent = true;
 	}
@@ -178,7 +176,7 @@ qint64 QWsSocket::write( const QString & string )
 		return QWsSocket::write( string.toUtf8() );
 	}
 
-    const QList<QByteArray>& framesList = QWsSocket::composeFrames( string.toUtf8(), false, maxBytesPerFrame );
+	const QList<QByteArray>& framesList = QWsSocket::composeFrames( string.toUtf8(), false, maxBytesPerFrame );
 	return writeFrames( framesList );
 }
 
@@ -193,7 +191,7 @@ qint64 QWsSocket::write( const QByteArray & byteArray )
 		return writeFrame( BA );
 	}
 
-    const QList<QByteArray>& framesList = QWsSocket::composeFrames( byteArray, true, maxBytesPerFrame );
+	const QList<QByteArray>& framesList = QWsSocket::composeFrames( byteArray, true, maxBytesPerFrame );
 
 	qint64 nbBytesWritten = writeFrames( framesList );
 	emit bytesWritten( nbBytesWritten );
@@ -203,92 +201,92 @@ qint64 QWsSocket::write( const QByteArray & byteArray )
 
 void QWsSocket::processHandshake()
 {
-    //copy from QWsServer::dataReceived();
-    QTcpSocket * tcpSocket = qobject_cast<QTcpSocket*>( sender() );
-    if (tcpSocket == 0)
-        return;
+	//copy from QWsServer::dataReceived();
+	QTcpSocket * tcpSocket = qobject_cast<QTcpSocket*>( sender() );
+	if (tcpSocket == 0)
+		return;
 
-    bool allHeadersFetched = false;
+	bool allHeadersFetched = false;
 
-    const QLatin1String emptyLine("\r\n");
+	const QLatin1String emptyLine("\r\n");
 
-    while ( tcpSocket->canReadLine() )
-    {
-        QString line = tcpSocket->readLine();
+	while ( tcpSocket->canReadLine() )
+	{
+		QString line = tcpSocket->readLine();
 
-        if (line == emptyLine)
-        {
-            allHeadersFetched = true;
-            break;
-        }
+		if (line == emptyLine)
+		{
+			allHeadersFetched = true;
+			break;
+		}
 
-        handshakeResponse.append(line);
-    }
+		handshakeResponse.append(line);
+	}
 
-    if (!allHeadersFetched)
-        return;
+	if (!allHeadersFetched)
+		return;
 
-    QRegExp regExp;
-    regExp.setMinimal( true );
+	QRegExp regExp;
+	regExp.setMinimal( true );
 
-    // check accept field
-    regExp.setPattern(regExpAcceptStr);
-    regExp.indexIn(handshakeResponse);
-    QString acceptFromServer = regExp.cap(1);
+	// check accept field
+	regExp.setPattern(regExpAcceptStr);
+	regExp.indexIn(handshakeResponse);
+	QString acceptFromServer = regExp.cap(1);
 
-    // check upgrade field
-    regExp.setPattern(regExpUpgradeStr);
-    regExp.indexIn(handshakeResponse);
-    QString upgrade = regExp.cap(1);
+	// check upgrade field
+	regExp.setPattern(regExpUpgradeStr);
+	regExp.indexIn(handshakeResponse);
+	QString upgrade = regExp.cap(1);
 
-    // check connection field
-    regExp.setPattern(regExpConnectionStr);
-    regExp.indexIn(handshakeResponse);
-    QString connection = regExp.cap(1);
+	// check connection field
+	regExp.setPattern(regExpConnectionStr);
+	regExp.indexIn(handshakeResponse);
+	QString connection = regExp.cap(1);
 
-    // check extensions field
-    regExp.setPattern(QWsServer::regExpExtensionsStr);
-    regExp.indexIn(handshakeResponse);
-    QString extensions = regExp.cap(1);
+	// check extensions field
+	regExp.setPattern(QWsServer::regExpExtensionsStr);
+	regExp.indexIn(handshakeResponse);
+	QString extensions = regExp.cap(1);
 
-    //TODO: check extensions field
-    // If the mandatory params are not setted, we abord the connection to the Websocket server
-    if((acceptFromServer.isEmpty()) || (!upgrade.contains(QLatin1String("websocket"), Qt::CaseInsensitive)) ||
-            (!connection.contains(QLatin1String("Upgrade"), Qt::CaseInsensitive)))
-    {
-        emit error(QAbstractSocket::ConnectionRefusedError);
-        return;
-    }
+	//TODO: check extensions field
+	// If the mandatory params are not setted, we abord the connection to the Websocket server
+	if((acceptFromServer.isEmpty()) || (!upgrade.contains(QLatin1String("websocket"), Qt::CaseInsensitive)) ||
+			(!connection.contains(QLatin1String("Upgrade"), Qt::CaseInsensitive)))
+	{
+		emit error(QAbstractSocket::ConnectionRefusedError);
+		return;
+	}
 
-    //TODO: check HTTP code
+	//TODO: check HTTP code
 
-    //TODO: check protocol field
+	//TODO: check protocol field
 
-    QString accept = QWsServer::computeAcceptV4(key);
-    if(accept != acceptFromServer)
-    {
-        emit error(QAbstractSocket::ConnectionRefusedError);
-        return;
-    }
+	QString accept = QWsServer::computeAcceptV4(key);
+	if(accept != acceptFromServer)
+	{
+		emit error(QAbstractSocket::ConnectionRefusedError);
+		return;
+	}
 
-    // handshake procedure succeeded
+	// handshake procedure succeeded
 	QAbstractSocket::setSocketState( QAbstractSocket::ConnectedState );
-    emit QAbstractSocket::stateChanged( QAbstractSocket::ConnectedState );
-    emit QAbstractSocket::connected();
+	emit QAbstractSocket::stateChanged( QAbstractSocket::ConnectedState );
+	emit QAbstractSocket::connected();
 }
 
 void QWsSocket::processDataV0()
 {
-    if( state() == QAbstractSocket::ConnectingState )
-    {
-        processHandshake();
-        return;
-    }
+	if( state() == QAbstractSocket::ConnectingState )
+	{
+		processHandshake();
+		return;
+	}
 
 	QByteArray BA, buffer;
 	quint8 type, b = 0x00;
 
-    BA = tcpSocket->read(1); //TODO: refactor like processDataV4
+	BA = tcpSocket->read(1); //TODO: refactor like processDataV4
 	type = BA[0];
 
 	if ( ( type & 0x80 ) == 0x00 ) // MSB of type not set
@@ -346,112 +344,112 @@ void QWsSocket::processDataV0()
 	}
 
 	if ( tcpSocket->bytesAvailable() )
-        processDataV0();
+		processDataV0();
 }
 
 void QWsSocket::processDataV4()
 {
-    if ( state() == ConnectingState )
-        return processHandshake();
+	if ( state() == ConnectingState )
+		return processHandshake();
 
 	while ( tcpSocket->bytesAvailable() )
-    switch ( _currentFrame->readingState ) {
-	case HeaderPending: {
-		if (tcpSocket->bytesAvailable() < 2)
-			return;
+		switch ( _currentFrame->readingState ) {
+			case HeaderPending: {
+				if (tcpSocket->bytesAvailable() < 2)
+					return;
 
-		char header[2];
-		tcpSocket->read(header, 2); // XXX: Handle return value
-		_currentFrame->final = (header[0] & 0x80) != 0;
-		_currentFrame->rsv = header[0] & 0x70;
-		_currentFrame->opcode = static_cast<EOpcode>(header[0] & 0x0F);
-		_currentFrame->hasMask = (header[1] & 0x80) != 0;
+				char header[2];
+				tcpSocket->read(header, 2); // XXX: Handle return value
+				_currentFrame->final = (header[0] & 0x80) != 0;
+				_currentFrame->rsv = header[0] & 0x70;
+				_currentFrame->opcode = static_cast<EOpcode>(header[0] & 0x0F);
+				_currentFrame->hasMask = (header[1] & 0x80) != 0;
 
-		_currentFrame->payloadLength = header[1] & 0x7F;
-		switch (_currentFrame->payloadLength)
-		{
-			case 126:
-				_currentFrame->readingState = PayloadLengthPending;
-				break;
-			case 127:
-				_currentFrame->readingState = BigPayloadLenghPending;
-				break;
-			default:
+				_currentFrame->payloadLength = header[1] & 0x7F;
+				switch (_currentFrame->payloadLength)
+				{
+					case 126:
+						_currentFrame->readingState = PayloadLengthPending;
+						break;
+					case 127:
+						_currentFrame->readingState = BigPayloadLenghPending;
+						break;
+					default:
+						_currentFrame->readingState = MaskPending;
+						break;
+				}
+			}; break;
+			case PayloadLengthPending: {
+				if (tcpSocket->bytesAvailable() < 2)
+					return;
+
+				quint16 length;
+				tcpSocket->read( (char*) &length, 2 ); // XXX: Handle return value
+
+				_currentFrame->payloadLength = qFromBigEndian( length );
 				_currentFrame->readingState = MaskPending;
-				break;
-		}
-	}; break;
-	case PayloadLengthPending: {
-		if (tcpSocket->bytesAvailable() < 2)
-			return;
+			}; break;
+			case BigPayloadLenghPending: {
+				if (tcpSocket->bytesAvailable() < 8)
+					return;
 
-		quint16 length;
-		tcpSocket->read( (char*) &length, 2 ); // XXX: Handle return value
+				quint64 length;
+				tcpSocket->read( (char*) &length, 8 ); // XXX: Handle return value
+				_currentFrame->payloadLength = qFromBigEndian( length );
+				_currentFrame->readingState = MaskPending;
+			}; break;
+			case MaskPending: {
+				if (!_currentFrame->hasMask) {
+					_currentFrame->readingState = PayloadBodyPending;
+					break;
+				}
 
-		_currentFrame->payloadLength = qFromBigEndian( length );
-		_currentFrame->readingState = MaskPending;
-	}; break;
-	case BigPayloadLenghPending: {
-		if (tcpSocket->bytesAvailable() < 8)
-			return;
+				if (tcpSocket->bytesAvailable() < 4)
+					return;
 
-		quint64 length;
-		tcpSocket->read( (char*) &length, 8 ); // XXX: Handle return value
-		_currentFrame->payloadLength = qFromBigEndian( length );
-		_currentFrame->readingState = MaskPending;
-	}; break;
-	case MaskPending: {
-		if (!_currentFrame->hasMask) {
-			_currentFrame->readingState = PayloadBodyPending;
-			break;
-		}
+				tcpSocket->read(_currentFrame->maskingKey, 4); // XXX: Handle return value
+				_currentFrame->readingState = PayloadBodyPending;
+			}; /* Intentional fall-through */
+			case PayloadBodyPending: {
+				// TODO: Handle large payloads
+				if ( tcpSocket->bytesAvailable() < _currentFrame->payloadLength )
+					return;
 
-		if (tcpSocket->bytesAvailable() < 4)
-			return;
+				_currentFrame->payload = tcpSocket->read( _currentFrame->payloadLength );
+				currentFrame.append( _currentFrame->data() );
 
-		tcpSocket->read(_currentFrame->maskingKey, 4); // XXX: Handle return value
-		_currentFrame->readingState = PayloadBodyPending;
-	}; /* Intentional fall-through */
-	case PayloadBodyPending: {
-		// TODO: Handle large payloads
-		if ( tcpSocket->bytesAvailable() < _currentFrame->payloadLength )
-			return;
-		
-		_currentFrame->payload = tcpSocket->read( _currentFrame->payloadLength );
-		currentFrame.append( _currentFrame->data() );
+				currentOpcode = _currentFrame->opcode;
+				if (!_currentFrame->valid()) {
+					_currentFrame->clear();
+					if ( currentOpcode == OpClose )
+						closingHandshakeReceived = true;
+					close( CloseProtocolError);
+					continue;
+				}
 
-		currentOpcode = _currentFrame->opcode;
-		if (!_currentFrame->valid()) {
-			_currentFrame->clear();
-			if ( currentOpcode == OpClose )
-				closingHandshakeReceived = true;
-			close( CloseProtocolError);
-			continue;
-		}
+				if ( !_currentFrame->controlFrame() ) {
+					if ( currentOpcode != OpContinue )
+						currentDataOpcode = _currentFrame->opcode;
 
-		if ( !_currentFrame->controlFrame() ) {
-			if ( currentOpcode != OpContinue )
-				currentDataOpcode = _currentFrame->opcode;
+					if ( (currentOpcode == OpContinue && !continuation) ||
+							(currentOpcode != OpContinue && continuation) ) {
+						_currentFrame->clear();
+						close( CloseProtocolError);
+						continue;
+					}
 
-			if ( (currentOpcode == OpContinue && !continuation) || 
-					(currentOpcode != OpContinue && continuation) ) {
+					continuation = !_currentFrame->final;
+					currentData.append( _currentFrame->data() );
+				}
+
+				if ( _currentFrame->controlFrame() )
+					handleControlFrame();
+				else if ( _currentFrame->final )
+					handleData();
+
 				_currentFrame->clear();
-				close( CloseProtocolError);
-				continue;
-			}
-
-			continuation = !_currentFrame->final;
-			currentData.append( _currentFrame->data() );
+			}; break;
 		}
-
-		if ( _currentFrame->controlFrame() )
-			handleControlFrame();
-		else if ( _currentFrame->final )
-			handleData();
-
-		_currentFrame->clear();
-	}; break;
-    }
 }
 
 
@@ -502,29 +500,22 @@ void QWsSocket::processTcpStateChanged( QAbstractSocket::SocketState tcpSocketSt
 	switch ( tcpSocketState )
 	{
 		case QAbstractSocket::HostLookupState:
-        {
 			QAbstractSocket::setSocketState( QAbstractSocket::HostLookupState );
 			emit QAbstractSocket::stateChanged( QAbstractSocket::HostLookupState );
-            break;
-        }
+			break;
 		case QAbstractSocket::ConnectingState:
-        {
 			QAbstractSocket::setSocketState( QAbstractSocket::ConnectingState );
 			emit QAbstractSocket::stateChanged( QAbstractSocket::ConnectingState );
-            break;
-        }
-        case QAbstractSocket::ConnectedState:
-        {
-            if ( wsSocketState == QAbstractSocket::ConnectingState )
-            {
-                key = QWsServer::generateNonce();
+			break;
+		case QAbstractSocket::ConnectedState:
+			if ( wsSocketState == QAbstractSocket::ConnectingState )
+			{
+				key = QWsServer::generateNonce();
 				QString handshake = composeOpeningHandShake( QLatin1String("/"), QLatin1String("example.com"), QString(), QString(), key );
-                tcpSocket->write( handshake.toUtf8() );
-            }
-            break;
-        }
+				tcpSocket->write( handshake.toUtf8() );
+			}
+			break;
 		case QAbstractSocket::ClosingState:
-		{
 			if ( wsSocketState == QAbstractSocket::ConnectedState )
 			{
 				QWsSocket::close( CloseGoingAway );
@@ -533,9 +524,7 @@ void QWsSocket::processTcpStateChanged( QAbstractSocket::SocketState tcpSocketSt
 				emit QAbstractSocket::aboutToClose();
 			}
 			break;
-		}
 		case QAbstractSocket::UnconnectedState:
-		{
 			if ( wsSocketState != QAbstractSocket::UnconnectedState )
 			{
 				QAbstractSocket::setSocketError( QAbstractSocket::NetworkError );
@@ -547,7 +536,6 @@ void QWsSocket::processTcpStateChanged( QAbstractSocket::SocketState tcpSocketSt
 			closingHandshakeSent = false;
 			closingHandshakeReceived = false;
 			break;
-		}
 		default:
 			break;
 	}
@@ -755,7 +743,7 @@ int QWsSocket::hostPort()
 
 QString QWsSocket::origin()
 {
-    return _origin;
+	return _origin;
 }
 
 QString QWsSocket::protocol()

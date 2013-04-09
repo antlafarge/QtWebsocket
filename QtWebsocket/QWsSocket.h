@@ -98,8 +98,8 @@ public:
 	qint64 write( const QString & string ); // write data as text
 	qint64 write( const QByteArray & byteArray ); // write data as binary
 
-	public slots:
-		void connectToHost( const QString & hostName, quint16 port, OpenMode mode = ReadWrite );
+public slots:
+	void connectToHost( const QString & hostName, quint16 port, OpenMode mode = ReadWrite );
 	void connectToHost( const QHostAddress & address, quint16 port, OpenMode mode = ReadWrite );
 	void disconnectFromHost();
 	void abort( QString reason = QString() );
