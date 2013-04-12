@@ -5,6 +5,8 @@
 #include <QHostAddress>
 #include <QTime>
 
+class QWsFrame;
+
 enum EWebsocketVersion
 {
 	WS_VUnknow = -1,
@@ -61,7 +63,15 @@ public:
 		CloseTLSHandshakeFailed = 1015
 	};
 
-public:
+	enum EReadingState
+	{
+		HeaderPending,
+		PayloadLengthPending,
+		BigPayloadLenghPending,
+		MaskPending,
+		PayloadBodyPending,
+	};
+
 	// ctor
 	QWsSocket( QObject * parent = 0, QTcpSocket * socket = 0, EWebsocketVersion ws_v = WS_V13 );
 	// dtor
@@ -112,20 +122,20 @@ protected slots:
 	void processTcpStateChanged( QAbstractSocket::SocketState socketState );
 
 private:
-	enum EReadingState
-	{
-		HeaderPending,
-		PayloadLengthPending,
-		BigPayloadLenghPending,
-		MaskPending,
-		PayloadBodyPending,
-		CloseDataPending
-	};
 
 	// private vars
 	QTcpSocket * tcpSocket;
 	QByteArray currentFrame;
 	QTime pingTimer;
+
+	QWsFrame* _currentFrame;
+	QByteArray currentData;
+	EOpcode currentDataOpcode;
+
+	/*!
+	 * True if we are waiting for a final data fragment.
+	 */
+	bool continuation;
 
 	EWebsocketVersion _version;
 	QString _resourceName;
@@ -140,12 +150,7 @@ private:
 	bool closingHandshakeSent;
 	bool closingHandshakeReceived;
 
-	EReadingState readingState;
-	EOpcode opcode;
-	bool isFinalFragment;
-	bool hasMask;
-	quint64 payloadLength;
-	QByteArray maskingKey;
+	EOpcode currentOpcode;
 	ECloseStatusCode closeStatusCode;
 
 	static const QString regExpAcceptStr;
@@ -154,12 +159,44 @@ private:
 	QString handshakeResponse;
 	QString key;
 
+	/*!
+	 * Sends pong response with `applicationData` appended.
+	 */
+	void handlePing( QByteArray applicationData = QByteArray() );
+
+	/*!
+	 * Processes the joined payload of the previous frames.
+	 *
+	 * Called if the final and valid non-control frame has been received.
+	 */
+	void handleData();
+
+	/*!
+	 * Processes the current control frame.
+	 *
+	 * Responds to ping and pong or closes connection according to
+	 * `currentOpcode`. Called if a complete and valid control frame has been
+	 * received.
+	 */
+	void handleControlFrame();
+
 public:
 	// Static functions
 	static QByteArray generateMaskingKey();
 	static QByteArray generateMaskingKeyV4( QString key, QString nonce );
 	static QByteArray mask( QByteArray & data, QByteArray & maskingKey );
 	static QList<QByteArray> composeFrames( QByteArray byteArray, bool asBinary = false, int maxFrameBytes = 0 );
+	static QList<QByteArray> composeFrames( QByteArray byteArray, EOpcode opcode, int maxFrameBytes = 0 );
+
+
+	/*!
+	 * Encapsulates `applicationData` in a single Frame.
+	 *
+	 * The frame size is deduced from `applicationData.size()` and there are no
+	 * checks performed on it.
+	 */
+	static QByteArray composeFrame( QByteArray applicationData, EOpcode opcode, bool final = true );
+
 	static QByteArray composeHeader( bool end, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray() );
 	static QString composeOpeningHandShake( QString resourceName, QString host, QString origin, QString extensions, QString key );
 

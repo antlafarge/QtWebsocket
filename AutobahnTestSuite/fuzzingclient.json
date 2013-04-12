@@ -6,6 +6,6 @@
 	"servers": [{"agent": "QtWebSocket", "url": "ws://localhost:1337", "options": {"version": 18}}],
 
    "cases": ["*"],
-   "exclude-cases": ["9.*", "10.*"],
+   "exclude-cases": ["6.*", "9.*", "10.*"],
    "exclude-agent-cases": {}
 }

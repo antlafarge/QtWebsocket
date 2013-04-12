@@ -3,25 +3,27 @@ QT       += network
 
 TARGET   = TestServer
 CONFIG   += console
-CONFIG   -= app_bundle
+#CONFIG   -= app_bundle
 
 TEMPLATE = app
 
+DEPENDPATH += "../QtWebsocket"
 SOURCES += \
     main.cpp \
-    ../QtWebSocket/QWsSocket.cpp \
-    ../QtWebSocket/QWsServer.cpp \
+    QWsSocket.cpp \
+    QWsServer.cpp \
+    QWsFrame.cpp \
     TestServer.cpp
 
+INCLUDEPATH += "../QtWebsocket"
 HEADERS += \
     QWsServer.h \
     QWsSocket.h \
+    QWsFrame.h \
     TestServer.h
 
+test.commands = ./autobahntest.sh
+test.target = test
+test.depends = TestServer
 
-INCLUDEPATH += $$PWD/../QtWebSocket
-DEPENDPATH += $$PWD/../QtWebSocket
-
-test.commands = doxygen Doxyfile; \
-    test -d doxydoc/html/images || mkdir doxydoc/html/images; \
-    cp documentation/images/* doxydoc/html/images
+QMAKE_EXTRA_TARGETS += test

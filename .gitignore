@@ -9,6 +9,9 @@
 #*.sln
 #*.vcproj
 
+# Is built by qmake
+Makefile
+
 # Build results
 [Dd]ebug*/
 [Rr]elease*/
@@ -17,7 +20,6 @@
 [Oo]bj/
 [Gg]enerated[Ff]iles/
 [Rr]esources/
-# ui_*.h
 *.exe
 *.dll
 *_i.c
@@ -40,9 +42,21 @@
 *.tmp
 *.vspscc
 *.vssscc
+*.o
+*.a
 .builds
 Ankh.NoLoad
 *.sln.cache
+
+# Qt build
+ui_*.h
+moc_*
+
+# Executables
+Example/Client/Client
+Example/Server/Server
+Example/ServerThreaded/ServerThreaded
+AutobahnTestSuite/TestServer
 
 # Test results
 Test/reports/
@@ -96,5 +110,9 @@ Log.txt
 *.pro.user
 
 
-#Vim backup files: 
+# Vim backup and swap files:
 *~
+*.swp
+
+# Generated documentation
+doc/
