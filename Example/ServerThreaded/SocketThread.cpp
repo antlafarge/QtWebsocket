@@ -30,9 +30,16 @@ void SocketThread::run()
 	connect( socket, SIGNAL(frameReceived(QString)), this, SLOT(processMessage(QString)) );
 	connect( socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()) );
 	connect( socket, SIGNAL(pong(quint64)), this, SLOT(processPong(quint64)) );
+	connect( this, SIGNAL(finished()), this, SLOT(finished()), Qt::DirectConnection);
 
 	// Launch the event loop to exec the slots
 	exec();
+}
+
+void SocketThread::finished()
+{
+	this->moveToThread(QCoreApplication::instance()->thread());
+	this->deleteLater();
 }
 
 void SocketThread::processMessage( QString message )
