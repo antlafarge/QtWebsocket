@@ -55,7 +55,15 @@ void QWsServer::newTcpConnection()
 {
 	QTcpSocket * tcpSocket = tcpServer->nextPendingConnection();
 	connect( tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()) );
+	connect( tcpSocket, SIGNAL(disconnected()), this, SLOT(disconnected()) );
 	headerBuffer.insert( tcpSocket, QStringList() );
+}
+
+void QWsServer::disconnected()
+{
+	QTcpSocket * tcpSocket = (QTcpSocket *)sender();
+	headerBuffer.remove(tcpSocket);
+	tcpSocket->deleteLater();
 }
 
 void QWsServer::closeTcpConnection()
@@ -67,6 +75,17 @@ void QWsServer::closeTcpConnection()
 	tcpSocket->close();
 }
 
+static void showErrorAndClose(QTcpSocket * tcpSocket)
+{
+	// Send bad request response
+	QString response = QWsServer::composeBadRequestResponse( QList<EWebsocketVersion>() << WS_V6 << WS_V7 << WS_V8 << WS_V13 );
+	tcpSocket->write( response.toUtf8() );
+	tcpSocket->flush();
+	tcpSocket->close();
+}
+
+static const QLatin1String emptyLine("\r\n");
+
 void QWsServer::dataReceived()
 {
 	QTcpSocket * tcpSocket = qobject_cast<QTcpSocket*>( sender() );
@@ -75,25 +94,30 @@ void QWsServer::dataReceived()
 
 	bool allHeadersFetched = false;
 
-	const QLatin1String emptyLine("\r\n");
-
+	QStringList *hdrs = &headerBuffer[ tcpSocket ];
 	while ( tcpSocket->canReadLine() )
 	{
 		QString line = tcpSocket->readLine();
-
 		if (line == emptyLine)
 		{
 			allHeadersFetched = true;
 			break;
 		}
-
-		headerBuffer[ tcpSocket ].append(line);
+		if (line.size()>1000) // incase of garbage input
+		{
+			showErrorAndClose(tcpSocket);
+			return;
+		}
+		hdrs->append(line);
+	}
+	if (!allHeadersFetched)
+	{
+		if (hdrs->size()>50) // incase of garbage input
+			showErrorAndClose(tcpSocket);
+		return;
 	}
 
-	if (!allHeadersFetched)
-		return;
-
-	QString request( headerBuffer[ tcpSocket ].join("") );
+	QString request( hdrs->join("") );
 
 	QRegExp regExp;
 	regExp.setMinimal( true );
@@ -159,15 +183,15 @@ void QWsServer::dataReceived()
 	// If the mandatory fields are not specified, we abord the connection to the Websocket server
 	if ( version == WS_VUnknow || resourceName.isEmpty() || hostAddress.isEmpty() || ( key.isEmpty() && ( key1.isEmpty() || key2.isEmpty() || key3.isEmpty() ) ) )
 	{
-		// Send bad request response
-		QString response = QWsServer::composeBadRequestResponse( QList<EWebsocketVersion>() << WS_V6 << WS_V7 << WS_V8 << WS_V13 );
-		tcpSocket->write( response.toUtf8() );
-		tcpSocket->flush();
+		showErrorAndClose(tcpSocket);
 		return;
 	}
 	
 	////////////////////////////////////////////////////////////////////
 	
+	disconnect( tcpSocket, SIGNAL(disconnected()), this, SLOT(disconnected()) );
+	headerBuffer.remove(tcpSocket);
+
 	// Extract optional datas
 
 	// Origin

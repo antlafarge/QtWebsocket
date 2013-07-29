@@ -52,6 +52,7 @@ private slots:
 	void newTcpConnection();
 	void closeTcpConnection();
 	void dataReceived();
+	void disconnected();
 
 private:
 	// private attributes

@@ -21,6 +21,7 @@ private slots:
 	void sendMessage( QString message );
 	void processPong( quint64 elapsedTime );
 	void socketDisconnected();
+	void finished();
 
 signals:
 	void messageReceived( QString frame );
