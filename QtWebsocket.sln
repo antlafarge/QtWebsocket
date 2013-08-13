@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QtWebsocket", "QtWebsocket\QtWebsocket.vcxproj", "{7E3A920C-4257-41A1-B9B9-BFA138C1C8A2}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Server", "Example\Server\Server.vcxproj", "{11ADF8AB-7848-464E-AC82-C30F32A46184}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ServerThreaded", "Example\ServerThreaded\ServerThreaded.vcxproj", "{04429A95-6334-4138-8162-4791D1298792}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Client", "Example\Client\Client.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Server", "Example\Server\Server.vcxproj", "{5C7FFE1F-B387-4A78-AEDF-41F84E9FAB45}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ServerThreaded", "Example\ServerThreaded\ServerThreaded.vcxproj", "{5B11012D-3641-4AD8-9B65-11EA72C458DD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,18 +19,18 @@ Global
 		{7E3A920C-4257-41A1-B9B9-BFA138C1C8A2}.Debug|Win32.Build.0 = Debug|Win32
 		{7E3A920C-4257-41A1-B9B9-BFA138C1C8A2}.Release|Win32.ActiveCfg = Release|Win32
 		{7E3A920C-4257-41A1-B9B9-BFA138C1C8A2}.Release|Win32.Build.0 = Release|Win32
-		{11ADF8AB-7848-464E-AC82-C30F32A46184}.Debug|Win32.ActiveCfg = Debug|Win32
-		{11ADF8AB-7848-464E-AC82-C30F32A46184}.Debug|Win32.Build.0 = Debug|Win32
-		{11ADF8AB-7848-464E-AC82-C30F32A46184}.Release|Win32.ActiveCfg = Release|Win32
-		{11ADF8AB-7848-464E-AC82-C30F32A46184}.Release|Win32.Build.0 = Release|Win32
-		{04429A95-6334-4138-8162-4791D1298792}.Debug|Win32.ActiveCfg = Debug|Win32
-		{04429A95-6334-4138-8162-4791D1298792}.Debug|Win32.Build.0 = Debug|Win32
-		{04429A95-6334-4138-8162-4791D1298792}.Release|Win32.ActiveCfg = Release|Win32
-		{04429A95-6334-4138-8162-4791D1298792}.Release|Win32.Build.0 = Release|Win32
 		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Win32.ActiveCfg = Debug|Win32
 		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Win32.Build.0 = Debug|Win32
 		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Win32.ActiveCfg = Release|Win32
 		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Win32.Build.0 = Release|Win32
+		{5C7FFE1F-B387-4A78-AEDF-41F84E9FAB45}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5C7FFE1F-B387-4A78-AEDF-41F84E9FAB45}.Debug|Win32.Build.0 = Debug|Win32
+		{5C7FFE1F-B387-4A78-AEDF-41F84E9FAB45}.Release|Win32.ActiveCfg = Release|Win32
+		{5C7FFE1F-B387-4A78-AEDF-41F84E9FAB45}.Release|Win32.Build.0 = Release|Win32
+		{5B11012D-3641-4AD8-9B65-11EA72C458DD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5B11012D-3641-4AD8-9B65-11EA72C458DD}.Debug|Win32.Build.0 = Debug|Win32
+		{5B11012D-3641-4AD8-9B65-11EA72C458DD}.Release|Win32.ActiveCfg = Release|Win32
+		{5B11012D-3641-4AD8-9B65-11EA72C458DD}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
