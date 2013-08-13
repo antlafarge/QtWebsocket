@@ -58,11 +58,10 @@ private:
 	// private attributes
 	QTcpServer* tcpServer;
 	QQueue<QWsSocket*> pendingConnections;
-	QMap<const QTcpSocket*, QStringList> headerBuffer;
+	QMap<const QTcpSocket*, QString*> headerBuffer;
 
 public:
 	// public static functions
-	static QByteArray serializeInt(quint32 number, quint8 nbBytes = 4);
 	static QString computeAcceptV0(QString key1, QString key2, QString thirdPart);
 	static QString computeAcceptV4(QString key);
 	static QString generateNonce();
@@ -77,7 +76,7 @@ public:
 	static const QString regExpKeyStr;
 	static const QString regExpKey1Str;
 	static const QString regExpKey2Str;
-	static const QString regExpKey3Str;
+	//static const QString regExpKey3Str;
 	static const QString regExpVersionStr;
 	static const QString regExpOriginStr;
 	static const QString regExpOrigin2Str;

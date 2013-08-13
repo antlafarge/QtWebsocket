@@ -11,7 +11,7 @@ const QString QWsServer::regExpHostStr(QLatin1String("\r\nHost:\\s(.+(:\\d+)?)\r
 const QString QWsServer::regExpKeyStr(QLatin1String("\r\nSec-WebSocket-Key:\\s(.{24})\r\n"));
 const QString QWsServer::regExpKey1Str(QLatin1String("\r\nSec-WebSocket-Key1:\\s(.+)\r\n"));
 const QString QWsServer::regExpKey2Str(QLatin1String("\r\nSec-WebSocket-Key2:\\s(.+)\r\n"));
-const QString QWsServer::regExpKey3Str(QLatin1String("\r\n(.{8})$"));
+//const QString QWsServer::regExpKey3Str(QLatin1String("\r\n(.{8})$"));
 const QString QWsServer::regExpVersionStr(QLatin1String("\r\nSec-WebSocket-Version:\\s(\\d+)\r\n"));
 const QString QWsServer::regExpOriginStr(QLatin1String("\r\nSec-WebSocket-Origin:\\s(.+)\r\n"));
 const QString QWsServer::regExpOrigin2Str(QLatin1String("\r\nOrigin:\\s(.+)\r\n"));
@@ -56,7 +56,7 @@ void QWsServer::newTcpConnection()
 	QTcpSocket* tcpSocket = tcpServer->nextPendingConnection();
 	connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 	connect(tcpSocket, SIGNAL(disconnected()), this, SLOT(disconnected()));
-	headerBuffer.insert(tcpSocket, QStringList());
+	headerBuffer.insert(tcpSocket, new QString());
 }
 
 void QWsServer::disconnected()
@@ -70,7 +70,9 @@ void QWsServer::closeTcpConnection()
 {
 	QTcpSocket* tcpSocket = qobject_cast<QTcpSocket*>(sender());
 	if (tcpSocket == 0)
+	{
 		return;
+	}
 
 	tcpSocket->close();
 }
@@ -90,14 +92,17 @@ void QWsServer::dataReceived()
 {
 	QTcpSocket* tcpSocket = qobject_cast<QTcpSocket*>(sender());
 	if (tcpSocket == 0)
+	{
 		return;
+	}
 
 	bool allHeadersFetched = false;
 
-	QStringList *hdrs = &headerBuffer[ tcpSocket ];
+	QString& request = *(headerBuffer[tcpSocket]);
 	while (tcpSocket->canReadLine())
 	{
 		QString line = tcpSocket->readLine();
+		request.append(line);
 		if (line == emptyLine)
 		{
 			allHeadersFetched = true;
@@ -108,26 +113,27 @@ void QWsServer::dataReceived()
 			showErrorAndClose(tcpSocket);
 			return;
 		}
-		hdrs->append(line);
 	}
 	if (!allHeadersFetched)
 	{
-		if (hdrs->size()>50) // incase of garbage input
+		if (request.size()>10000) // incase of garbage input
+		{
 			showErrorAndClose(tcpSocket);
+		}
 		return;
 	}
 
-	QString request(hdrs->join(""));
-
 	QRegExp regExp;
 	regExp.setMinimal(true);
-	
+
 	// Extract mandatory datas
 	// Version
 	regExp.setPattern(QWsServer::regExpVersionStr);
 	regExp.indexIn(request);
 	QString versionStr = regExp.cap(1);
+	QString key3;
 	EWebsocketVersion version;
+	int dzad = tcpSocket->bytesAvailable();
 	if (! versionStr.isEmpty())
 	{
 		version = (EWebsocketVersion)versionStr.toInt();
@@ -135,13 +141,14 @@ void QWsServer::dataReceived()
 	else if (tcpSocket->bytesAvailable() >= 8)
 	{
 		version = WS_V0;
-		request.append(tcpSocket->read(8));
+		key3 = tcpSocket->read(8);
+		request.append(key3);
 	}
 	else
 	{
 		version = WS_VUnknow;
 	}
-
+	
 	// Resource name
 	regExp.setPattern(QWsServer::regExpResourceNameStr);
 	regExp.indexIn(request);
@@ -155,10 +162,12 @@ void QWsServer::dataReceived()
 	QString hostAddress = hostTmp[0];
 	QString hostPort;
 	if (hostTmp.size() > 1)
+	{
 		hostPort = hostTmp.last(); // fix for IPv6
+	}
 	
 	// Key
-	QString key, key1, key2, key3;
+	QString key, key1, key2;
 	if (version >= WS_V4)
 	{
 		regExp.setPattern(QWsServer::regExpKeyStr);
@@ -173,9 +182,6 @@ void QWsServer::dataReceived()
 		regExp.setPattern(QWsServer::regExpKey2Str);
 		regExp.indexIn(request);
 		key2 = regExp.cap(1);
-		regExp.setPattern(QWsServer::regExpKey3Str);
-		regExp.indexIn(request);
-		key3 = regExp.cap(1);
 	}
 	
 	////////////////////////////////////////////////////////////////////
@@ -189,7 +195,7 @@ void QWsServer::dataReceived()
 	
 	////////////////////////////////////////////////////////////////////
 	
-	disconnect(tcpSocket, SIGNAL(disconnected()), this, SLOT(disconnected()));
+	QObject::disconnect(tcpSocket, SIGNAL(disconnected()), this, SLOT(disconnected()));
 	headerBuffer.remove(tcpSocket);
 
 	// Extract optional datas
@@ -231,18 +237,26 @@ void QWsServer::dataReceived()
 	}
 	else
 	{
+		//QString sdzad = computeAcceptV0("18x 6]8vM;54 *(5:  {   U1]8  z [  8", "1_ tx7X d  <  nw  334J702) 7]o}` 0", "Tm[K T2u");
+		//QString sdzad2 = computeAcceptV0("3e6b263  4 17 80", "17  9 G`ZD9   2 2b 7X 3 /r90", "WjN}|M(6");
+		//QString sdzad3 = computeAcceptV0("12998 5 Y3 1  .P00", "4 @1  46546xW%0l 1 5", "^n:ds[4U");
 		QString accept = computeAcceptV0(key1, key2, key3);
 		response = QWsServer::composeOpeningHandshakeResponseV0(accept, origin, hostAddress, hostPort, resourceName , protocol);
+		int a=0;
 	}
 	
 	// Handshake OK, disconnect readyRead
-	disconnect(tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
+	QObject::disconnect(tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 
 	// Send opening handshake response
 	if (version == WS_V0)
+	{
 		tcpSocket->write(response.toLatin1());
+	}
 	else
+	{
 		tcpSocket->write(response.toUtf8());
+	}
 	tcpSocket->flush();
 
 	QWsSocket* wsSocket = new QWsSocket(this, tcpSocket, version);
@@ -277,7 +291,9 @@ void QWsServer::incomingConnection(int socketDescriptor)
 void QWsServer::addPendingConnection(QWsSocket* socket)
 {
 	if (pendingConnections.size() < maxPendingConnections())
+	{
 		pendingConnections.enqueue(socket);
+	}
 }
 
 QWsSocket* QWsServer::nextPendingConnection()
@@ -288,7 +304,9 @@ QWsSocket* QWsServer::nextPendingConnection()
 bool QWsServer::hasPendingConnections()
 {
 	if (pendingConnections.size() > 0)
+	{
 		return true;
+	}
 	return false;
 }
 
@@ -344,35 +362,31 @@ bool QWsServer::waitForNewConnection(int msec, bool* timedOut)
 
 QString QWsServer::computeAcceptV0(QString key1, QString key2, QString key3)
 {
-	QString numStr1;
-	QString numStr2;
+	quint32 key_number_1 = QString(key1).remove(QRegExp("[^\\d]")).toUInt();
+	quint32 key_number_2 = QString(key2).remove(QRegExp("[^\\d]")).toUInt();
 
-	QChar carac;
-	for (int i=0 ; i<key1.size() ; i++)
-	{
-		carac = key1[ i ];
-		if (carac.isDigit())
-			numStr1.append(carac);
-	}
-	for (int i=0 ; i<key2.size() ; i++)
-	{
-		carac = key2[ i ];
-		if (carac.isDigit())
-			numStr2.append(carac);
-	}
+	int spaces_1 = key1.count(' ');
+	int spaces_2 = key2.count(' ');
 
-	quint32 num1 = numStr1.toUInt();
-	quint32 num2 = numStr2.toUInt();
+	quint32 part_1 = key_number_1 / spaces_1;
+	quint32 part_2 = key_number_2 / spaces_2;
 
-	int numSpaces1 = key1.count(' ');
-	int numSpaces2 = key2.count(' ');
+	QByteArray challenge;
+	QDataStream ds(&challenge, QIODevice::WriteOnly);
+	ds << part_1 << part_2;
+	challenge += key3;
 
-	num1 /= numSpaces1;
-	num2 /= numSpaces2;
+	uchar aa = challenge[0];
+	uchar ab = challenge[1];
+	uchar ac = challenge[2];
+	uchar ad = challenge[3];
 
-	QString concat = serializeInt(num1) + serializeInt(num2) + key3;
+	uchar ae = challenge[4];
+	uchar af = challenge[5];
+	uchar ag = challenge[6];
+	uchar ah = challenge[7];
 
-	QByteArray md5 = QCryptographicHash::hash(concat.toLatin1(), QCryptographicHash::Md5);
+	QByteArray md5 = QCryptographicHash::hash(challenge, QCryptographicHash::Md5);
 
 	return QString(md5);
 }
@@ -380,7 +394,7 @@ QString QWsServer::computeAcceptV0(QString key1, QString key2, QString key3)
 QString QWsServer::computeAcceptV4(QString key)
 {
 	key += QLatin1String("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
-	QByteArray hash = QCryptographicHash::hash (key.toUtf8(), QCryptographicHash::Sha1);
+	QByteArray hash = QCryptographicHash::hash(key.toUtf8(), QCryptographicHash::Sha1);
 	return hash.toBase64();
 }
 
@@ -399,26 +413,6 @@ QString QWsServer::generateNonce()
 	return QString(nonce.toBase64());
 }
 
-QByteArray QWsServer::serializeInt(quint32 number, quint8 nbBytes)
-{
-	QByteArray ba;
-	quint8 currentNbBytes = 0;
-	while (number > 0 && currentNbBytes < nbBytes)
-	{
-		char car = static_cast<char>(number & 0xFF);
-		ba.prepend(car);
-		number = number >> 8;
-		currentNbBytes++;
-	}
-	char car = 0x00;
-	while (currentNbBytes < nbBytes)
-	{
-		ba.prepend(car);
-		currentNbBytes++;
-	}
-	return ba;
-}
-
 QString QWsServer::composeOpeningHandshakeResponseV0(QString accept, QString origin, QString hostAddress, QString hostPort, QString resourceName, QString protocol)
 {
 	QString response;
@@ -429,10 +423,14 @@ QString QWsServer::composeOpeningHandshakeResponseV0(QString accept, QString ori
 	response.append(QLatin1String("Sec-WebSocket-Origin: ") + origin + QLatin1String("\r\n"));
 	response.append(QLatin1String("Sec-WebSocket-Location: ws://") + hostAddress);
 	if (!hostPort.isEmpty())
+	{
 		response.append(QLatin1String(":") + hostPort);
+	}
 	response.append(resourceName + QLatin1String("\r\n"));
 	if (! protocol.isEmpty())
+	{
 		response.append(QLatin1String("Sec-WebSocket-Protocol: ") + protocol + QLatin1String("\r\n"));
+	}
 	response.append(QLatin1String("\r\n"));
 	response.append(accept);
 
@@ -449,9 +447,13 @@ QString QWsServer::composeOpeningHandshakeResponseV4(QString accept, QString non
 	response.append(QLatin1String("Sec-WebSocket-Accept: ") + accept + QLatin1String("\r\n"));
 	response.append(QLatin1String("Sec-WebSocket-Nonce: ") + nonce + QLatin1String("\r\n"));
 	if (! protocol.isEmpty())
+	{
 		response.append(QLatin1String("Sec-WebSocket-Protocol: ") + protocol + QLatin1String("\r\n"));
+	}
 	if (! extensions.isEmpty())
+	{
 		response.append(QLatin1String("Sec-WebSocket-Extensions: ") + extensions + QLatin1String("\r\n"));
+	}
 	response.append(QLatin1String("\r\n"));
 
 	return response;
@@ -466,9 +468,13 @@ QString QWsServer::composeOpeningHandshakeResponseV6(QString accept, QString pro
 	response.append(QLatin1String("Connection: Upgrade\r\n"));
 	response.append(QLatin1String("Sec-WebSocket-Accept: ") + accept + QLatin1String("\r\n"));
 	if (! protocol.isEmpty())
+	{
 		response.append(QLatin1String("Sec-WebSocket-Protocol: ") + protocol + QLatin1String("\r\n"));
+	}
 	if (! extensions.isEmpty())
+	{
 		response.append(QLatin1String("Sec-WebSocket-Extensions: ") + extensions + QLatin1String("\r\n"));
+	}
 	response.append(QLatin1String("\r\n"));
 
 	return response;
