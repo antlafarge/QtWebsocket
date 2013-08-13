@@ -63,7 +63,7 @@ public:
 
 public:
 	// ctor
-	QWsSocket( QObject * parent = 0, QTcpSocket * socket = 0, EWebsocketVersion ws_v = WS_V13 );
+	QWsSocket(QObject* parent = 0, QTcpSocket* socket = 0, EWebsocketVersion ws_v = WS_V13);
 	// dtor
 	virtual ~QWsSocket();
 
@@ -77,22 +77,22 @@ public:
 	QString protocol();
 	QString extensions();
 
-	void setResourceName( QString rn );
-	void setHost( QString h );
-	void setHostAddress( QString ha );
-	void setHostPort( int hp );
-	void setOrigin( QString o );
-	void setProtocol( QString p );
-	void setExtensions( QString e );
+	void setResourceName(QString rn);
+	void setHost(QString h);
+	void setHostAddress(QString ha);
+	void setHostPort(int hp);
+	void setOrigin(QString o);
+	void setProtocol(QString p);
+	void setExtensions(QString e);
 
-	qint64 write( const QString & string ); // write data as text
-	qint64 write( const QByteArray & byteArray ); // write data as binary
+	qint64 write(const QString & string); // write data as text
+	qint64 write(const QByteArray & byteArray); // write data as binary
 
 public slots:
-	void connectToHost( const QString & hostName, quint16 port, OpenMode mode = ReadWrite );
-	void connectToHost( const QHostAddress & address, quint16 port, OpenMode mode = ReadWrite );
+	void connectToHost(const QString & hostName, quint16 port, OpenMode mode = ReadWrite);
+	void connectToHost(const QHostAddress & address, quint16 port, OpenMode mode = ReadWrite);
 	void disconnectFromHost();
-	void abort( QString reason = QString() );
+	void abort(QString reason = QString());
 	void ping();
 
 signals:
@@ -101,15 +101,15 @@ signals:
 	void pong(quint64 elapsedTime);
 
 protected:
-	qint64 writeFrames ( const QList<QByteArray> & framesList );
-	qint64 writeFrame ( const QByteArray & byteArray );
+	qint64 writeFrames (const QList<QByteArray> & framesList);
+	qint64 writeFrame (const QByteArray & byteArray);
 
 protected slots:
-	virtual void close( ECloseStatusCode closeStatusCode = NoCloseStatusCode, QString reason = QString() );
+	virtual void close(ECloseStatusCode closeStatusCode = NoCloseStatusCode, QString reason = QString());
 	void processDataV0();
 	void processDataV4();
 	void processHandshake();
-	void processTcpStateChanged( QAbstractSocket::SocketState socketState );
+	void processTcpStateChanged(QAbstractSocket::SocketState socketState);
 
 private:
 	enum EReadingState
@@ -123,7 +123,7 @@ private:
 	};
 
 	// private vars
-	QTcpSocket * tcpSocket;
+	QTcpSocket* tcpSocket;
 	QByteArray currentFrame;
 	QTime pingTimer;
 
@@ -157,11 +157,11 @@ private:
 public:
 	// Static functions
 	static QByteArray generateMaskingKey();
-	static QByteArray generateMaskingKeyV4( QString key, QString nonce );
-	static QByteArray mask( QByteArray & data, QByteArray & maskingKey );
-	static QList<QByteArray> composeFrames( QByteArray byteArray, bool asBinary = false, int maxFrameBytes = 0 );
-	static QByteArray composeHeader( bool end, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray() );
-	static QString composeOpeningHandShake( QString resourceName, QString host, QString origin, QString extensions, QString key );
+	static QByteArray generateMaskingKeyV4(QString key, QString nonce);
+	static QByteArray mask(QByteArray & data, QByteArray & maskingKey);
+	static QList<QByteArray> composeFrames(QByteArray byteArray, bool asBinary = false, int maxFrameBytes = 0);
+	static QByteArray composeHeader(bool end, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray());
+	static QString composeOpeningHandShake(QString resourceName, QString host, QString origin, QString extensions, QString key);
 
 	// static vars
 	static int maxBytesPerFrame;
