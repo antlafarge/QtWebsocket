@@ -17,12 +17,12 @@ public:
 
 public slots:
 	void processNewConnection();
-	void processMessage( QString message );
-	void processPong( quint64 elapsedTime );
+	void processMessage(QString message);
+	void processPong(quint64 elapsedTime);
 	void socketDisconnected();
 
 private:
-	QWsServer * server;
+	QWsServer* server;
 	QList<QWsSocket*> clients;
 };
 

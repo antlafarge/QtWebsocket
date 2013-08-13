@@ -2,7 +2,6 @@
 #define CLIENT_H
 
 #include <QWidget>
-
 #include "QWsSocket.h"
 
 namespace Ui {
@@ -14,7 +13,7 @@ class Client : public QWidget
 	Q_OBJECT
 
 public:
-	explicit Client(QWidget *parent = 0);
+	explicit Client(QWidget* parent = 0);
 	~Client();
 
 protected slots:
@@ -27,10 +26,10 @@ protected slots:
 	void socketStateChanged(QAbstractSocket::SocketState socketState);
 
 protected:
-	QWsSocket * wsSocket;
+	QWsSocket* wsSocket;
 
 private:
-	Ui::Client *ui;
+	Ui::Client* ui;
 };
 
 #endif // CLIENT_H

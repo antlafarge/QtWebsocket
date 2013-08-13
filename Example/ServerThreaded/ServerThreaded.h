@@ -18,13 +18,12 @@ public:
 
 public slots:
 	void processNewConnection();
-	void displayMessage( QString message );
 
 signals:
-	void broadcastMessage( QString message );
+	void broadcastMessage(QString message);
 
 private:
-	QWsServer * server;
+	QWsServer* server;
 };
 
 #endif // SERVERTHREADED_H

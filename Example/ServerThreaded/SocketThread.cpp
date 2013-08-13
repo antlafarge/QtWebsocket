@@ -1,36 +1,35 @@
 #include "SocketThread.h"
+#include <QtCore>
+#include <iostream>
 
-#include "Log.h"
-
-SocketThread::SocketThread( QWsSocket * wsSocket ) :
-	socket( wsSocket )
+SocketThread::SocketThread(QWsSocket* wsSocket) :
+	socket(wsSocket)
 {
 	// Set this thread as parent of the socket
 	// This will push the socket in the good thread when using moveToThread on the parent
-	if ( socket )
+	if (socket)
 	{
-		socket->setParent( this );
+		socket->setParent(this);
 	}
 
 	// Move this thread object in the thread himsleft
 	// Thats necessary to exec the event loop in this thread
-	moveToThread( this );
+	moveToThread(this);
 }
 
 SocketThread::~SocketThread()
 {
-
 }
 
 void SocketThread::run()
 {
-	Log::display( "connect done in thread : 0x" + QString::number((unsigned int)QThread::currentThreadId(), 16) );
+	std::cout << tr("connect done in thread : 0x%1").arg(QString::number((unsigned int)QThread::currentThreadId(), 16)).toStdString() << std::endl;
 
 	// Connecting the socket signals here to exec the slots in the new thread
-	connect( socket, SIGNAL(frameReceived(QString)), this, SLOT(processMessage(QString)) );
-	connect( socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()) );
-	connect( socket, SIGNAL(pong(quint64)), this, SLOT(processPong(quint64)) );
-	connect( this, SIGNAL(finished()), this, SLOT(finished()), Qt::DirectConnection);
+	QObject::connect(socket, SIGNAL(frameReceived(QString)), this, SLOT(processMessage(QString)));
+	QObject::connect(socket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
+	QObject::connect(socket, SIGNAL(pong(quint64)), this, SLOT(processPong(quint64)));
+	QObject::connect(this, SIGNAL(finished()), this, SLOT(finished()), Qt::DirectConnection);
 
 	// Launch the event loop to exec the slots
 	exec();
@@ -42,26 +41,26 @@ void SocketThread::finished()
 	this->deleteLater();
 }
 
-void SocketThread::processMessage( QString message )
+void SocketThread::processMessage(QString message)
 {
 	// ANY PROCESS HERE IS DONE IN THE SOCKET THREAD !
 
-	Log::display( "thread 0x" + QString::number((unsigned int)QThread::currentThreadId(), 16) + " | " + message );
+	std::cout << tr("thread 0x%1 | %2").arg(QString::number((unsigned int)QThread::currentThreadId(), 16)).arg(message).toStdString() << std::endl;
 }
 
-void SocketThread::sendMessage( QString message )
+void SocketThread::sendMessage(QString message)
 {
-	socket->write( message );
+	socket->write(message);
 }
 
-void SocketThread::processPong( quint64 elapsedTime )
+void SocketThread::processPong(quint64 elapsedTime)
 {
-	Log::display( "ping: " + QString::number(elapsedTime) + " ms" );
+	std::cout << tr("ping: %1 ms").arg(elapsedTime).toStdString() << std::endl;
 }
 
 void SocketThread::socketDisconnected()
 {
-	Log::display("Client disconnected, thread finished");
+	std::cout << tr("Client disconnected, thread finished").toStdString() << std::endl;
 
 	// Prepare the socket to be deleted after last events processed
 	socket->deleteLater();

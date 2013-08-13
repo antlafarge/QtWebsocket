@@ -4,24 +4,21 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network
-
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT += core network
 
 TARGET = ServerThreaded
+CONFIG += console
 TEMPLATE = app
 
 INCLUDEPATH += ../../QtWebsocket
 DEPENDPATH += ../../QtWebsocket
 
 SOURCES += \
-				main.cpp \
-    Log.cpp \
+    main.cpp \
     ServerThreaded.cpp \
     SocketThread.cpp
 
 HEADERS += \
-				Log.h \
     QWsServer.h \
     QWsSocket.h \
     ServerThreaded.h \
