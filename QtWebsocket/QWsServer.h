@@ -62,12 +62,12 @@ private:
 
 public:
 	// public static functions
-	static QString computeAcceptV0(QString key1, QString key2, QString thirdPart);
-	static QString computeAcceptV4(QString key);
-	static QString generateNonce();
-	static QString composeOpeningHandshakeResponseV0(QString accept, QString origin, QString hostAddress, QString hostPort, QString resourceName, QString protocol = "");
-	static QString composeOpeningHandshakeResponseV4(QString accept, QString nonce, QString protocol = "", QString extensions = "");
-	static QString composeOpeningHandshakeResponseV6(QString accept, QString protocol = "", QString extensions = "");
+	static QByteArray computeAcceptV0(QString key1, QString key2, QByteArray thirdPart);
+	static QByteArray computeAcceptV4(QString key);
+	static QByteArray generateNonce();
+	static QString composeOpeningHandshakeResponseV0(QByteArray accept, QString origin, QString hostAddress, QString hostPort, QString resourceName, QString protocol = "");
+	static QString composeOpeningHandshakeResponseV4(QByteArray accept, QByteArray nonce, QString protocol = "", QString extensions = "");
+	static QString composeOpeningHandshakeResponseV6(QByteArray accept, QString protocol = "", QString extensions = "");
 	static QString composeBadRequestResponse(QList<EWebsocketVersion> versions = QList<EWebsocketVersion>());
 
 	// public static vars

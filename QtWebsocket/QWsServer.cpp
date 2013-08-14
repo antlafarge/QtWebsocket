@@ -131,9 +131,8 @@ void QWsServer::dataReceived()
 	regExp.setPattern(QWsServer::regExpVersionStr);
 	regExp.indexIn(request);
 	QString versionStr = regExp.cap(1);
-	QString key3;
+	QByteArray key3;
 	EWebsocketVersion version;
-	int dzad = tcpSocket->bytesAvailable();
 	if (! versionStr.isEmpty())
 	{
 		version = (EWebsocketVersion)versionStr.toInt();
@@ -148,7 +147,7 @@ void QWsServer::dataReceived()
 	{
 		version = WS_VUnknow;
 	}
-	
+
 	// Resource name
 	regExp.setPattern(QWsServer::regExpResourceNameStr);
 	regExp.indexIn(request);
@@ -226,25 +225,21 @@ void QWsServer::dataReceived()
 
 	if (version >= WS_V6)
 	{
-		QString accept = computeAcceptV4(key);
+		QByteArray accept = computeAcceptV4(key);
 		response = QWsServer::composeOpeningHandshakeResponseV6(accept, protocol);
 	}
 	else if (version >= WS_V4)
 	{
-		QString accept = computeAcceptV4(key);
-		QString nonce = generateNonce();
+		QByteArray accept = computeAcceptV4(key);
+		QByteArray nonce = generateNonce();
 		response = QWsServer::composeOpeningHandshakeResponseV4(accept, nonce, protocol);
 	}
 	else
 	{
-		//QString sdzad = computeAcceptV0("18x 6]8vM;54 *(5:  {   U1]8  z [  8", "1_ tx7X d  <  nw  334J702) 7]o}` 0", "Tm[K T2u");
-		//QString sdzad2 = computeAcceptV0("3e6b263  4 17 80", "17  9 G`ZD9   2 2b 7X 3 /r90", "WjN}|M(6");
-		//QString sdzad3 = computeAcceptV0("12998 5 Y3 1  .P00", "4 @1  46546xW%0l 1 5", "^n:ds[4U");
-		QString accept = computeAcceptV0(key1, key2, key3);
+		QByteArray accept = computeAcceptV0(key1, key2, key3);
 		response = QWsServer::composeOpeningHandshakeResponseV0(accept, origin, hostAddress, hostPort, resourceName , protocol);
-		int a=0;
 	}
-	
+
 	// Handshake OK, disconnect readyRead
 	QObject::disconnect(tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 
@@ -360,7 +355,7 @@ bool QWsServer::waitForNewConnection(int msec, bool* timedOut)
 	return tcpServer->waitForNewConnection(msec, timedOut);
 }
 
-QString QWsServer::computeAcceptV0(QString key1, QString key2, QString key3)
+QByteArray QWsServer::computeAcceptV0(QString key1, QString key2, QByteArray key3)
 {
 	quint32 key_number_1 = QString(key1).remove(QRegExp("[^\\d]")).toUInt();
 	quint32 key_number_2 = QString(key2).remove(QRegExp("[^\\d]")).toUInt();
@@ -376,29 +371,19 @@ QString QWsServer::computeAcceptV0(QString key1, QString key2, QString key3)
 	ds << part_1 << part_2;
 	challenge += key3;
 
-	uchar aa = challenge[0];
-	uchar ab = challenge[1];
-	uchar ac = challenge[2];
-	uchar ad = challenge[3];
-
-	uchar ae = challenge[4];
-	uchar af = challenge[5];
-	uchar ag = challenge[6];
-	uchar ah = challenge[7];
-
 	QByteArray md5 = QCryptographicHash::hash(challenge, QCryptographicHash::Md5);
 
-	return QString(md5);
+	return md5;
 }
 
-QString QWsServer::computeAcceptV4(QString key)
+QByteArray QWsServer::computeAcceptV4(QString key)
 {
 	key += QLatin1String("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
 	QByteArray hash = QCryptographicHash::hash(key.toUtf8(), QCryptographicHash::Sha1);
 	return hash.toBase64();
 }
 
-QString QWsServer::generateNonce()
+QByteArray QWsServer::generateNonce()
 {
 	qsrand(QDateTime::currentDateTime().toTime_t());
 
@@ -410,10 +395,10 @@ QString QWsServer::generateNonce()
 		nonce.append(qrand() % 0x100);
 	}
 
-	return QString(nonce.toBase64());
+	return nonce.toBase64();
 }
 
-QString QWsServer::composeOpeningHandshakeResponseV0(QString accept, QString origin, QString hostAddress, QString hostPort, QString resourceName, QString protocol)
+QString QWsServer::composeOpeningHandshakeResponseV0(QByteArray accept, QString origin, QString hostAddress, QString hostPort, QString resourceName, QString protocol)
 {
 	QString response;
 	
@@ -432,20 +417,20 @@ QString QWsServer::composeOpeningHandshakeResponseV0(QString accept, QString ori
 		response.append(QLatin1String("Sec-WebSocket-Protocol: ") + protocol + QLatin1String("\r\n"));
 	}
 	response.append(QLatin1String("\r\n"));
-	response.append(accept);
+	response.append(QLatin1String(accept));
 
 	return response;
 }
 
-QString QWsServer::composeOpeningHandshakeResponseV4(QString accept, QString nonce, QString protocol, QString extensions)
+QString QWsServer::composeOpeningHandshakeResponseV4(QByteArray accept, QByteArray nonce, QString protocol, QString extensions)
 {
 	QString response;
 	
 	response.append(QLatin1String("HTTP/1.1 101 Switching Protocols\r\n"));
 	response.append(QLatin1String("Upgrade: websocket\r\n"));
 	response.append(QLatin1String("Connection: Upgrade\r\n"));
-	response.append(QLatin1String("Sec-WebSocket-Accept: ") + accept + QLatin1String("\r\n"));
-	response.append(QLatin1String("Sec-WebSocket-Nonce: ") + nonce + QLatin1String("\r\n"));
+	response.append(QLatin1String("Sec-WebSocket-Accept: ") + QLatin1String(accept) + QLatin1String("\r\n"));
+	response.append(QLatin1String("Sec-WebSocket-Nonce: ") + QLatin1String(nonce) + QLatin1String("\r\n"));
 	if (! protocol.isEmpty())
 	{
 		response.append(QLatin1String("Sec-WebSocket-Protocol: ") + protocol + QLatin1String("\r\n"));
@@ -459,14 +444,14 @@ QString QWsServer::composeOpeningHandshakeResponseV4(QString accept, QString non
 	return response;
 }
 
-QString QWsServer::composeOpeningHandshakeResponseV6(QString accept, QString protocol, QString extensions)
+QString QWsServer::composeOpeningHandshakeResponseV6(QByteArray accept, QString protocol, QString extensions)
 {
 	QString response;
 	
 	response.append(QLatin1String("HTTP/1.1 101 Switching Protocols\r\n"));
 	response.append(QLatin1String("Upgrade: websocket\r\n"));
 	response.append(QLatin1String("Connection: Upgrade\r\n"));
-	response.append(QLatin1String("Sec-WebSocket-Accept: ") + accept + QLatin1String("\r\n"));
+	response.append(QLatin1String("Sec-WebSocket-Accept: ") + QLatin1String(accept) + QLatin1String("\r\n"));
 	if (! protocol.isEmpty())
 	{
 		response.append(QLatin1String("Sec-WebSocket-Protocol: ") + protocol + QLatin1String("\r\n"));
