@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "Client.h"
 #include "ui_Client.h"
+#include <QInputDialog>
 
 Client::Client(QWidget *parent) :
 	QWidget(parent),
@@ -57,7 +58,15 @@ void Client::displayMessage(QString message)
 
 void Client::connectSocket()
 {
-	wsSocket->connectToHost(QLatin1String("127.0.0.1"), 1337);
+	bool ok;
+	QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "127.0.0.1:1337", &ok);
+	if (ok && !ipAddress.isEmpty() && ipAddress.count(':') == 1)
+	{
+		QStringList splitted = ipAddress.split(':');
+		QString ip = splitted[0];
+		quint16 port = splitted[1].toUInt();
+		wsSocket->connectToHost(ip.toLatin1(), port);
+	}
 }
 
 void Client::disconnectSocket()
