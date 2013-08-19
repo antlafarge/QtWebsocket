@@ -106,8 +106,8 @@ public:
 	qint64 write(const QByteArray & byteArray); // write data as binary
 
 public slots:
-	void connectToHost(const QString & hostName, quint16 port, OpenMode mode = ReadWrite);
-	void connectToHost(const QHostAddress & address, quint16 port, OpenMode mode = ReadWrite);
+	void connectToHost(const QString & hostName, quint16 port = 80, OpenMode mode = ReadWrite);
+	void connectToHost(const QHostAddress & address, quint16 port = 80, OpenMode mode = ReadWrite);
 	void disconnectFromHost();
 	void abort(QString reason = QString());
 	void ping();
@@ -165,6 +165,7 @@ private:
 	QByteArray maskingKey;
 	ECloseStatusCode closeStatusCode;
 
+	static const QString regExpIPv4;
 	static const QString regExpAcceptStr;
 	static const QString regExpUpgradeStr;
 	static const QString regExpConnectionStr;

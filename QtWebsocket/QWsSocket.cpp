@@ -19,17 +19,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <QCryptographicHash>
 #include <QtEndian>
+#include <QHostInfo>
 
 #include "QWsServer.h"
 
 int QWsSocket::maxBytesPerFrame = 1400;
+const QString QWsSocket::regExpIPv4(QLatin1String("^([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\.([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3}$"));
 const QString QWsSocket::regExpAcceptStr(QLatin1String("Sec-WebSocket-Accept:\\s(.{28})\r\n"));
 const QString QWsSocket::regExpUpgradeStr(QLatin1String("Upgrade:\\s(.+)\r\n"));
 const QString QWsSocket::regExpConnectionStr(QLatin1String("Connection:\\s(.+)\r\n"));
 
 QWsSocket::QWsSocket(QObject* parent, QTcpSocket* socket, EWebsocketVersion ws_v) :
 	QAbstractSocket(QAbstractSocket::UnknownSocketType, parent),
-	tcpSocket(socket ? socket : new QTcpSocket(this)),
+	tcpSocket(socket ? socket : new QTcpSocket),
 	_version(ws_v),
 	_hostPort(-1),
 	closingHandshakeSent(false),
@@ -76,12 +78,28 @@ QWsSocket::~QWsSocket()
 	}
 }
 
-void QWsSocket::connectToHost(const QString & hostName, quint16 port, OpenMode mode)
+void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mode)
 {
-	QWsSocket::connectToHost(QHostAddress(hostName), port, mode);
+	QString hostName2 = QString(hostName).remove("ws://", Qt::CaseInsensitive);
+	QHostAddress hostAddress;
+	if (hostName2.toLower() == QLatin1String("localhost"))
+	{
+		hostAddress = QHostAddress::LocalHost;
+	}
+	else if (hostName2.contains(QWsSocket::regExpIPv4))
+	{
+		hostAddress = QHostAddress(hostName2);
+	}
+	else
+	{
+		QHostInfo info = QHostInfo::fromName(hostName2);
+		QList<QHostAddress> hostAddresses = info.addresses();
+		QHostAddress hostName2 = hostAddresses[0];
+	}
+	QWsSocket::connectToHost(hostAddress, port, mode);
 }
 
-void QWsSocket::connectToHost(const QHostAddress &address, quint16 port, OpenMode mode)
+void QWsSocket::connectToHost(const QHostAddress& address, quint16 port, OpenMode mode)
 {
 	handshakeResponse.clear();
 	setPeerAddress(address);
@@ -242,14 +260,12 @@ void QWsSocket::processHandshake()
 	while (tcpSocket->canReadLine())
 	{
 		QString line = tcpSocket->readLine();
-
+		handshakeResponse.append(line);
 		if (line == emptyLine)
 		{
 			allHeadersFetched = true;
 			break;
 		}
-
-		handshakeResponse.append(line);
 	}
 
 	if (!allHeadersFetched)
@@ -282,8 +298,7 @@ void QWsSocket::processHandshake()
 
 	//TODO: check extensions field
 	// If the mandatory params are not setted, we abord the connection to the Websocket server
-	if((acceptFromServer.isEmpty()) || (!upgrade.contains(QLatin1String("websocket"), Qt::CaseInsensitive)) ||
-			(!connection.contains(QLatin1String("Upgrade"), Qt::CaseInsensitive)))
+	if((acceptFromServer.isEmpty()) || (!upgrade.contains(QLatin1String("websocket"), Qt::CaseInsensitive)) || (!connection.contains(QLatin1String("Upgrade"), Qt::CaseInsensitive)))
 	{
 		emit error(QAbstractSocket::ConnectionRefusedError);
 		return;
@@ -614,7 +629,7 @@ QByteArray QWsSocket::generateMaskingKeyV4(QString key, QString nonce)
 	return hash;
 }
 
-QByteArray QWsSocket::mask(QByteArray & data, QByteArray & maskingKey)
+QByteArray QWsSocket::mask(QByteArray& data, QByteArray& maskingKey)
 {
 	QByteArray result;
 	result.reserve(data.size());
@@ -742,6 +757,21 @@ QByteArray QWsSocket::composeHeader(bool end, EOpcode opcode, quint64 payloadLen
 	return BA;
 }
 
+QString QWsSocket::composeOpeningHandShake(QString resourceName, QString host, QString origin, QString extensions, QString key)
+{
+	QString hs;
+	hs.append(QLatin1String("GET ") + resourceName.toLatin1() + QLatin1String(" HTTP/1.1\r\n"));
+	hs.append(QLatin1String("Host: ") + host + "\r\n");
+	hs.append(QLatin1String("Upgrade: websocket\r\n"));
+	hs.append(QLatin1String("Connection: Upgrade\r\n"));
+	hs.append(QLatin1String("Sec-WebSocket-Key: ") + key.toLatin1() + QLatin1String("\r\n"));
+	hs.append(QLatin1String("Origin: ") + origin.toLatin1() + QLatin1String("\r\n"));
+	hs.append(QLatin1String("Sec-WebSocket-Extensions: ") + extensions.toLatin1() + QLatin1String("\r\n"));
+	hs.append(QLatin1String("Sec-WebSocket-Version: 13\r\n"));
+	hs.append(QLatin1String("\r\n"));
+	return hs;
+}
+
 void QWsSocket::ping()
 {
 	pingTimer.restart();
@@ -822,19 +852,4 @@ QString QWsSocket::protocol()
 QString QWsSocket::extensions()
 {
 	return _extensions;
-}
-
-QString QWsSocket::composeOpeningHandShake(QString resourceName, QString host, QString origin, QString extensions, QString key)
-{
-	QString hs;
-	hs.append(QLatin1String("GET ") + resourceName + QLatin1String(" HTTP/1.1\r\n"));
-	hs.append(QLatin1String("Host: ") + host + "\r\n");
-	hs.append(QLatin1String("Upgrade: websocket\r\n"));
-	hs.append(QLatin1String("Connection: Upgrade\r\n"));
-	hs.append(QLatin1String("Sec-WebSocket-Key: ") + key + QLatin1String("\r\n"));
-	hs.append(QLatin1String("Origin: ") + origin + QLatin1String("\r\n"));
-	hs.append(QLatin1String("Sec-WebSocket-Extensions: ") + extensions + QLatin1String("\r\n"));
-	hs.append(QLatin1String("Sec-WebSocket-Version: 13\r\n"));
-	hs.append(QLatin1String("\r\n"));
-	return hs;
 }

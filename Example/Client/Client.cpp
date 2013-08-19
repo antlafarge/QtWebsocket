@@ -59,12 +59,27 @@ void Client::displayMessage(QString message)
 void Client::connectSocket()
 {
 	bool ok;
-	QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "127.0.0.1:1337", &ok);
-	if (ok && !ipAddress.isEmpty() && ipAddress.count(':') == 1)
+	//QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "127.0.0.1:1337", &ok);
+	//QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://127.0.0.1:1337", &ok);
+	//QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "localhost:1337", &ok);
+	QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://localhost:1337", &ok);
+	//QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "echo.websocket.org:80", &ok);
+	//QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://echo.websocket.org:80", &ok);
+	if (ok && !ipAddress.isEmpty())
 	{
-		QStringList splitted = ipAddress.split(':');
-		QString ip = splitted[0];
-		quint16 port = splitted[1].toUInt();
+		QString ip;
+		quint16 port;
+		if (ipAddress.count(':') >= 1)
+		{
+			QStringList splitted = ipAddress.split(':');
+			port = splitted.takeLast().toUInt();
+			ip = splitted.join(':');
+		}
+		else
+		{
+			ip = ipAddress;
+			port = 80;
+		}
 		wsSocket->connectToHost(ip.toLatin1(), port);
 	}
 }
