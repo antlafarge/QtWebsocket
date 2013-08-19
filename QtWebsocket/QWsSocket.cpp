@@ -94,7 +94,7 @@ void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mo
 	{
 		QHostInfo info = QHostInfo::fromName(hostName2);
 		QList<QHostAddress> hostAddresses = info.addresses();
-		QHostAddress hostName2 = hostAddresses[0];
+		hostAddress = hostAddresses[0];
 	}
 	QWsSocket::connectToHost(hostAddress, port, mode);
 }
