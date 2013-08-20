@@ -187,17 +187,26 @@ void QWsServer::dataReceived()
 	if (version >= WS_V4)
 	{
 		regExpKey.setMinimal(true);
-		regExpKey.indexIn(request);
+		if (regExpKey.indexIn(request) == -1)
+		{
+			missingField = true;
+		}
 		key = regExpKey.cap(1).toUtf8();
 	}
 	else
 	{
 		regExpKey1.setMinimal(true);
-		regExpKey1.indexIn(request);
+		if (regExpKey1.indexIn(request) == -1)
+		{
+			missingField = true;
+		}
 		key1 = regExpKey1.cap(1).toLatin1();
 
 		regExpKey2.setMinimal(true);
-		regExpKey2.indexIn(request);
+		if (regExpKey2.indexIn(request) == -1)
+		{
+			missingField = true;
+		}
 		key2 = regExpKey2.cap(1).toLatin1();
 	}
 	
