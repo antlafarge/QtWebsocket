@@ -79,8 +79,8 @@ private:
 
 public:
 	// public static functions
-	static QByteArray computeAcceptV0(QString key1, QString key2, QByteArray thirdPart);
-	static QByteArray computeAcceptV4(QString key);
+	static QByteArray computeAcceptV0(QByteArray key1, QByteArray key2, QByteArray thirdPart);
+	static QByteArray computeAcceptV4(QByteArray key);
 	static QByteArray generateNonce();
 	static QString composeOpeningHandshakeResponseV0(QByteArray accept, QString origin, QString hostAddress, QString hostPort, QString resourceName, QString protocol = "");
 	static QString composeOpeningHandshakeResponseV4(QByteArray accept, QByteArray nonce, QString protocol = "", QString extensions = "");
@@ -88,17 +88,15 @@ public:
 	static QString composeBadRequestResponse(QList<EWebsocketVersion> versions = QList<EWebsocketVersion>());
 
 	// public static vars
-	static const QString regExpResourceNameStr;
-	static const QString regExpHostStr;
-	static const QString regExpKeyStr;
-	static const QString regExpKey1Str;
-	static const QString regExpKey2Str;
-	//static const QString regExpKey3Str;
-	static const QString regExpVersionStr;
-	static const QString regExpOriginStr;
-	static const QString regExpOrigin2Str;
-	static const QString regExpProtocolStr;
-	static const QString regExpExtensionsStr;
+	static QRegExp regExpHttpRequest;
+	static QRegExp regExpHost;
+	static QRegExp regExpKey;
+	static QRegExp regExpKey1;
+	static QRegExp regExpKey2;
+	static QRegExp regExpVersion;
+	static QRegExp regExpOrigin;
+	static QRegExp regExpProtocol;
+	static QRegExp regExpExtensions;
 };
 
 #endif // QWSSERVER_H

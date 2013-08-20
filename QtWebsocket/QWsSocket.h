@@ -88,7 +88,7 @@ public:
 	EWebsocketVersion version();
 	QString resourceName();
 	QString host();
-	QString hostAddress();
+	QHostAddress hostAddress();
 	int hostPort();
 	QString origin();
 	QString protocol();
@@ -147,8 +147,8 @@ private:
 	EWebsocketVersion _version;
 	QString _resourceName;
 	QString _host;
-	QString _hostAddress;
-	int _hostPort;
+	QHostAddress _hostAddress;
+	quint16 _hostPort;
 	QString _origin;
 	QString _protocol;
 	QString _extensions;
@@ -165,12 +165,13 @@ private:
 	QByteArray maskingKey;
 	ECloseStatusCode closeStatusCode;
 
-	static const QString regExpIPv4;
-	static const QString regExpAcceptStr;
-	static const QString regExpUpgradeStr;
-	static const QString regExpConnectionStr;
+	static QRegExp regExpHttpResponse;
+	static QRegExp regExpIPv4;
+	static QRegExp regExpAccept;
+	static QRegExp regExpUpgrade;
+	static QRegExp regExpConnection;
 	QString handshakeResponse;
-	QString key;
+	QByteArray key;
 
 public:
 	// Static functions
@@ -179,7 +180,7 @@ public:
 	static QByteArray mask(QByteArray & data, QByteArray & maskingKey);
 	static QList<QByteArray> composeFrames(QByteArray byteArray, bool asBinary = false, int maxFrameBytes = 0);
 	static QByteArray composeHeader(bool end, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray());
-	static QString composeOpeningHandShake(QString resourceName, QString host, QString origin, QString extensions, QString key);
+	static QString composeOpeningHandShake(QString resourceName, QString host, QString origin, QByteArray key, QString protocol = "", QString extensions = "");
 
 	// static vars
 	static int maxBytesPerFrame;

@@ -24,10 +24,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "QWsServer.h"
 
 int QWsSocket::maxBytesPerFrame = 1400;
-const QString QWsSocket::regExpIPv4(QLatin1String("^([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\.([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3}$"));
-const QString QWsSocket::regExpAcceptStr(QLatin1String("Sec-WebSocket-Accept:\\s(.{28})\r\n"));
-const QString QWsSocket::regExpUpgradeStr(QLatin1String("Upgrade:\\s(.+)\r\n"));
-const QString QWsSocket::regExpConnectionStr(QLatin1String("Connection:\\s(.+)\r\n"));
+QRegExp QWsSocket::regExpIPv4(QLatin1String("^([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\.([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3}$"));
+QRegExp QWsSocket::regExpHttpResponse(QLatin1String("^HTTP/1.1\\s(\\d{3})\\s(.+)\\r\\n"));
+QRegExp QWsSocket::regExpAccept(QLatin1String("\\r\\nSec-WebSocket-Accept:\\s(.{28})\\r\\n"));
+QRegExp QWsSocket::regExpUpgrade(QLatin1String("\\r\\nUpgrade:\\s(.+)\\r\\n"));
+QRegExp QWsSocket::regExpConnection(QLatin1String("\\r\\nConnection:\\s(.+)\\r\\n"));
 
 QWsSocket::QWsSocket(QObject* parent, QTcpSocket* socket, EWebsocketVersion ws_v) :
 	QAbstractSocket(QAbstractSocket::UnknownSocketType, parent),
@@ -80,23 +81,25 @@ QWsSocket::~QWsSocket()
 
 void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mode)
 {
+	_hostPort = port;
 	QString hostName2 = QString(hostName).remove("ws://", Qt::CaseInsensitive);
-	QHostAddress hostAddress;
-	if (hostName2.toLower() == QLatin1String("localhost"))
+	if (hostName2.contains(QRegExp(QLatin1String("^localhost$"), Qt::CaseInsensitive)))
 	{
-		hostAddress = QHostAddress::LocalHost;
+		_host = QLatin1String("localhost");
+		_hostAddress = QHostAddress::LocalHost;
 	}
-	else if (hostName2.contains(QWsSocket::regExpIPv4))
+	else if (hostName2.contains(QRegExp(QWsSocket::regExpIPv4)))
 	{
-		hostAddress = QHostAddress(hostName2);
+		_host = QLatin1String("localhost");
+		_hostAddress = QHostAddress(hostName2);
 	}
 	else
 	{
 		QHostInfo info = QHostInfo::fromName(hostName2);
 		QList<QHostAddress> hostAddresses = info.addresses();
-		hostAddress = hostAddresses[0];
+		_hostAddress = hostAddresses[0];
 	}
-	QWsSocket::connectToHost(hostAddress, port, mode);
+	QWsSocket::connectToHost(_hostAddress, _hostPort, mode);
 }
 
 void QWsSocket::connectToHost(const QHostAddress& address, quint16 port, OpenMode mode)
@@ -273,43 +276,48 @@ void QWsSocket::processHandshake()
 		return;
 	}
 
-	QRegExp regExp;
-	regExp.setMinimal(true);
+	// check HTTP code
+	regExpHttpResponse.setMinimal(true);
+	regExpHttpResponse.indexIn(handshakeResponse);
+	quint16 httpCode = regExpHttpResponse.cap(1).toUInt();
+	QString httpMessage = regExpHttpResponse.cap(2);
 
-	// check accept field
-	regExp.setPattern(regExpAcceptStr);
-	regExp.indexIn(handshakeResponse);
-	QString acceptFromServer = regExp.cap(1);
-
-	// check upgrade field
-	regExp.setPattern(regExpUpgradeStr);
-	regExp.indexIn(handshakeResponse);
-	QString upgrade = regExp.cap(1);
-
-	// check connection field
-	regExp.setPattern(regExpConnectionStr);
-	regExp.indexIn(handshakeResponse);
-	QString connection = regExp.cap(1);
-
-	// check extensions field
-	regExp.setPattern(QWsServer::regExpExtensionsStr);
-	regExp.indexIn(handshakeResponse);
-	QString extensions = regExp.cap(1);
-
-	//TODO: check extensions field
-	// If the mandatory params are not setted, we abord the connection to the Websocket server
-	if((acceptFromServer.isEmpty()) || (!upgrade.contains(QLatin1String("websocket"), Qt::CaseInsensitive)) || (!connection.contains(QLatin1String("Upgrade"), Qt::CaseInsensitive)))
+	if (httpCode != 101)
 	{
 		emit error(QAbstractSocket::ConnectionRefusedError);
 		return;
 	}
 
-	//TODO: check HTTP code
+	// check upgrade field
+	regExpUpgrade.setMinimal(true);
+	regExpUpgrade.indexIn(handshakeResponse);
+	QString upgrade = regExpUpgrade.cap(1);
 
-	//TODO: check protocol field
+	// check connection field
+	regExpConnection.setMinimal(true);
+	regExpConnection.indexIn(handshakeResponse);
+	QString connection = regExpConnection.cap(1);
+	
+	// check accept field
+	regExpAccept.setMinimal(true);
+	regExpAccept.indexIn(handshakeResponse);
+	QByteArray acceptFromServer = regExpAccept.cap(1).toLatin1();
 
-	QString accept = QWsServer::computeAcceptV4(key);
-	if(accept != acceptFromServer)
+	// check extensions field
+	QWsServer::regExpExtensions.setMinimal(true);
+	QWsServer::regExpExtensions.indexIn(handshakeResponse);
+	QString extensions = QWsServer::regExpExtensions.cap(1);
+	
+	// check protocol field
+	QWsServer::regExpProtocol.setMinimal(true);
+	QWsServer::regExpProtocol.indexIn(handshakeResponse);
+	QString protocol = QWsServer::regExpProtocol.cap(1);
+
+	// If the mandatory params are not setted, we abord the connection to the Websocket server
+	if ( (acceptFromServer.isEmpty())
+		|| (!upgrade.contains(QLatin1String("websocket"), Qt::CaseInsensitive))
+		|| (!connection.contains(QLatin1String("Upgrade"), Qt::CaseInsensitive))
+		|| (QWsServer::computeAcceptV4(key) != acceptFromServer) )
 	{
 		emit error(QAbstractSocket::ConnectionRefusedError);
 		return;
@@ -577,7 +585,7 @@ void QWsSocket::processTcpStateChanged(QAbstractSocket::SocketState tcpSocketSta
 			if (wsSocketState == QAbstractSocket::ConnectingState)
 			{
 				key = QWsServer::generateNonce();
-				QString handshake = composeOpeningHandShake(QLatin1String("/"), QLatin1String("example.com"), QString(), QString(), key);
+				QString handshake = composeOpeningHandShake(QLatin1String("/"), _host, QLatin1String("QtWebsocket application"), key);
 				tcpSocket->write(handshake.toUtf8());
 			}
 			break;
@@ -757,18 +765,25 @@ QByteArray QWsSocket::composeHeader(bool end, EOpcode opcode, quint64 payloadLen
 	return BA;
 }
 
-QString QWsSocket::composeOpeningHandShake(QString resourceName, QString host, QString origin, QString extensions, QString key)
+QString QWsSocket::composeOpeningHandShake(QString resourceName, QString host, QString origin, QByteArray key, QString protocol, QString extensions)
 {
 	QString hs;
-	hs.append(QLatin1String("GET ") + resourceName.toLatin1() + QLatin1String(" HTTP/1.1\r\n"));
-	hs.append(QLatin1String("Host: ") + host + "\r\n");
-	hs.append(QLatin1String("Upgrade: websocket\r\n"));
-	hs.append(QLatin1String("Connection: Upgrade\r\n"));
-	hs.append(QLatin1String("Sec-WebSocket-Key: ") + key.toLatin1() + QLatin1String("\r\n"));
-	hs.append(QLatin1String("Origin: ") + origin.toLatin1() + QLatin1String("\r\n"));
-	hs.append(QLatin1String("Sec-WebSocket-Extensions: ") + extensions.toLatin1() + QLatin1String("\r\n"));
-	hs.append(QLatin1String("Sec-WebSocket-Version: 13\r\n"));
-	hs.append(QLatin1String("\r\n"));
+	hs += QString("GET %1 HTTP/1.1\r\n").arg(resourceName);
+	hs += QString("Host: %1\r\n").arg(host);
+	hs += QLatin1String("Upgrade: websocket\r\n");
+	hs += QLatin1String("Connection: Upgrade\r\n");
+	hs += QString("Sec-WebSocket-Key: %1\r\n").arg(QLatin1String(key));
+	hs += QString("Origin: %1\r\n").arg(origin);
+	hs += QLatin1String("Sec-WebSocket-Version: 13\r\n");
+	if (!protocol.isEmpty())
+	{
+		hs += QString("Sec-WebSocket-Protocol: %1\r\n").arg(protocol);
+	}
+	if (!extensions.isEmpty())
+	{
+		hs += QString("Sec-WebSocket-Extensions: %1\r\n").arg(extensions);
+	}
+	hs += QLatin1String("\r\n");
 	return hs;
 }
 
@@ -829,7 +844,7 @@ QString QWsSocket::host()
 	return _host;
 }
 
-QString QWsSocket::hostAddress()
+QHostAddress QWsSocket::hostAddress()
 {
 	return _hostAddress;
 }
