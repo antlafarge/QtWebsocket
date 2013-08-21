@@ -15,13 +15,14 @@ INCLUDEPATH += ../../QtWebsocket
 DEPENDPATH += ../../QtWebsocket
 
 SOURCES += \
-				main.cpp\
+				main.cpp \
     Client.cpp
 
 HEADERS += \
-				Client.h\
-    QWsSocket.h\
-    QWsServer.h
+				QWsSocket.h \
+				QWsServer.h \
+				QWsHandshake.h \
+				Client.h
 
 FORMS += Client.ui
 

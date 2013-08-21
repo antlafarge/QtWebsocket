@@ -14,13 +14,14 @@ INCLUDEPATH += ../../QtWebsocket
 DEPENDPATH += ../../QtWebsocket
 
 SOURCES += \
-    main.cpp \
+				main.cpp \
     ServerThreaded.cpp \
-    SocketThread.cpp
+				SocketThread.cpp
 
 HEADERS += \
-    QWsServer.h \
-    QWsSocket.h \
+				QWsServer.h \
+				QWsSocket.h \
+				QWsHandshake.h \
     ServerThreaded.h \
     SocketThread.h
 

@@ -45,7 +45,7 @@ bool QWsHandshake::read(QTcpSocket* tcpSocket)
 	while (tcpSocket->canReadLine())
 	{
 		// read a line
-		QString& line = QString::fromLatin1(tcpSocket->readLine());
+		QString line = QString::fromLatin1(tcpSocket->readLine());
 		rawHandshake += line;
 		// check length of line
 		if (line.length() > 1000) // incase of garbage input

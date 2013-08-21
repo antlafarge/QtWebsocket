@@ -22,9 +22,6 @@ int main(int argc, char *argv[])
 {
 	QApplication app(argc, argv);
 
-	QString empty("\r\n");
-	bool bbbbb = empty.isEmpty();
-
 	Client w;
 	w.show();
 

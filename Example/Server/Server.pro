@@ -17,6 +17,7 @@ SOURCES += \
 HEADERS += \
     QWsSocket.h \
     QWsServer.h \
+				QWsHandshake.h \
     Server.h
 
 INCLUDEPATH += ../../QtWebsocket
