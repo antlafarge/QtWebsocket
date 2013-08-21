@@ -60,13 +60,14 @@ void QWsServer::newTcpConnection()
 	QTcpSocket* tcpSocket = tcpServer->nextPendingConnection();
 	connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 	connect(tcpSocket, SIGNAL(disconnected()), this, SLOT(disconnected()));
-	headerBuffer.insert(tcpSocket, new QHash<QString, QString>());
+	handshakeBuffer.insert(tcpSocket, new QWsHandshake(true));
 }
 
 void QWsServer::disconnected()
 {
 	QTcpSocket* tcpSocket = (QTcpSocket *)sender();
-	headerBuffer.remove(tcpSocket);
+	QWsHandshake* handshake = handshakeBuffer.take(tcpSocket);
+	delete handshake;
 	tcpSocket->deleteLater();
 }
 
@@ -97,8 +98,8 @@ void QWsServer::dataReceived()
 	{
 		return;
 	}
-
-	QWsHandshake handshake(true);
+	
+	QWsHandshake& handshake = *(handshakeBuffer.value(tcpSocket));
 
 	if (handshake.read(tcpSocket) == false)
 	{
@@ -127,7 +128,6 @@ void QWsServer::dataReceived()
 	// Handshake fully parsed
 	QObject::disconnect(tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 	QObject::disconnect(tcpSocket, SIGNAL(disconnected()), this, SLOT(disconnected()));
-	headerBuffer.remove(tcpSocket);
 
 	// Compose opening handshake response
 	QString response;
@@ -170,6 +170,9 @@ void QWsServer::dataReceived()
 	// CHANGED CODE FOR LINUX COMPATIBILITY
 	addPendingConnection(wsSocket);
 	emit newConnection();
+
+	QWsHandshake* hstmp = handshakeBuffer.take(tcpSocket);
+	delete hstmp;
 }
 
 void QWsServer::incomingConnection(int socketDescriptor)

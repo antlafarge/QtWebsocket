@@ -75,7 +75,7 @@ private:
 	// private attributes
 	QTcpServer* tcpServer;
 	QQueue<QWsSocket*> pendingConnections;
-	QHash<const QTcpSocket*, QHash<QString, QString>*> headerBuffer;
+	QHash<const QTcpSocket*, QWsHandshake*> handshakeBuffer;
 
 public:
 	// public static functions
