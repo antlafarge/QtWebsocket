@@ -495,12 +495,12 @@ void QWsSocket::processDataV4()
 			} /* while (true) switch */
 }
 
-qint64 QWsSocket::writeFrame (const QByteArray& byteArray)
+qint64 QWsSocket::writeFrame(const QByteArray& byteArray)
 {
 	return tcpSocket->write(byteArray);
 }
 
-qint64 QWsSocket::writeFrames (const QList<QByteArray>& framesList)
+qint64 QWsSocket::writeFrames(const QList<QByteArray>& framesList)
 {
 	qint64 nbBytesWritten = 0;
 	for (int i=0 ; i<framesList.size() ; i++)
