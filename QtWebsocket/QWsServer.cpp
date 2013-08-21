@@ -71,7 +71,7 @@ void QWsServer::newTcpConnection()
 	QTcpSocket* tcpSocket = tcpServer->nextPendingConnection();
 	connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 	connect(tcpSocket, SIGNAL(disconnected()), this, SLOT(disconnected()));
-	headerBuffer.insert(tcpSocket, new QString());
+	headerBuffer.insert(tcpSocket, new QHash<QString, QString>());
 }
 
 void QWsServer::disconnected()
@@ -113,111 +113,118 @@ void QWsServer::dataReceived()
 
 	bool allHeadersFetched = false;
 
-	QString& request = *(headerBuffer[tcpSocket]);
+	QRegExp regExp(QLatin1String("^(.+):\\s(.+)$"));
+	regExp.setMinimal(true);
+
+	//QString& request = *(headerBuffer[tcpSocket]);
+	QHash<QString, QString>* fields = headerBuffer[tcpSocket];
 	while (tcpSocket->canReadLine())
 	{
+		// read a line
 		QString line = tcpSocket->readLine();
-		request.append(line);
+		// check length of line
+		if (line.length() > 1000) // incase of garbage input
+		{
+			showErrorAndClose(tcpSocket);
+			return;
+		}
+		// start of handshake
+		if (fields->size() == 0)
+		{
+			// HTTP REQUEST and Resource name
+			regExpHttpRequest.setMinimal(true);
+			if (regExpHttpRequest.indexIn(line) == -1)
+			{
+				showErrorAndClose(tcpSocket);
+				return;
+			}
+			fields->insert(QString::fromLatin1("RessourceName"), regExpHttpRequest.cap(1));
+			continue;
+		}
+		// end of handshake
 		if (line == emptyLine)
 		{
 			allHeadersFetched = true;
 			break;
 		}
-		if (line.size()>1000) // incase of garbage input
+		// check field
+		if (regExp.indexIn(line) == -1)
 		{
-			showErrorAndClose(tcpSocket);
-			return;
+			// Bad http field
+			continue;
 		}
+		// Extract field
+		fields->insert(regExp.cap(1), regExp.cap(2));
 	}
 	if (!allHeadersFetched)
 	{
-		if (request.size()>10000) // incase of garbage input
+		if (fields->size() > 1000) // incase of garbage input
 		{
 			showErrorAndClose(tcpSocket);
 		}
 		return;
 	}
 
-	// Extract mandatory fields
+	// CHECK MANDATORY FIELDS
 	
-	bool missingField = false;
+	bool handshakeOK = true;
 	
-	// HTTP REQUEST and Resource name
-	regExpHttpRequest.setMinimal(true);
-	if (regExpHttpRequest.indexIn(request) == -1)
-	{
-		missingField = true;
-	}
-	QString resourceName = regExpHttpRequest.cap(1);
+	// RessourceName
+	QString resourceName = fields->value(QLatin1String("RessourceName"));
 	
 	// Host (address & port)
-	regExpHost.setMinimal(true);
-	if (regExpHost.indexIn(request) == -1)
+	QString host, hostAddress, hostPort;
+	if (fields->contains(QLatin1String("Host")))
 	{
-		missingField = true;
-	}
-	QString host = regExpHost.cap(1);
-	QString hostAddress = regExpHost.cap(2);
-	QString hostPort = regExpHost.cap(4);
-	
-	// Version
-	QByteArray key3;
-	EWebsocketVersion version;
-	regExpVersion.setMinimal(true);
-	if (regExpVersion.indexIn(request) == -1)
-	{
-		if (tcpSocket->bytesAvailable() == 8)
+		host = fields->value(QLatin1String("Host"));
+		if (host.count(QLatin1Char(':')) <= 1)
 		{
-			version = WS_V0;
-			key3 = tcpSocket->read(8);
-			request += key3;
+			QStringList splitted = host.split(QLatin1Char(':'));
+			hostAddress = splitted.first();
+			hostPort = splitted.last();
 		}
 		else
 		{
-			version = WS_VUnknow;
+			handshakeOK = false;
 		}
 	}
 	else
 	{
-		version = (EWebsocketVersion)regExpVersion.cap(1).toUInt();
+		handshakeOK = false;
 	}
 
-	// Key
-	QByteArray key, key1, key2;
-	if (version >= WS_V4)
+	// Version and keys
+	EWebsocketVersion version;
+	QByteArray key, key1, key2, key3;
+	if (fields->contains(QLatin1String("Sec-WebSocket-Version")))
 	{
-		regExpKey.setMinimal(true);
-		if (regExpKey.indexIn(request) == -1)
+		if (fields->contains(QLatin1String("Sec-WebSocket-Key")))
 		{
-			missingField = true;
+			version = ((EWebsocketVersion)(fields->value(QLatin1String("Sec-WebSocket-Version")).toUInt()));
+			key = fields->value(QLatin1String("Sec-WebSocket-Key")).toUtf8();
 		}
-		key = regExpKey.cap(1).toUtf8();
+		else
+		{
+			handshakeOK = false;
+		}
+	}
+	else if (fields->contains(QLatin1String("Sec-WebSocket-Key1")) && fields->contains(QLatin1String("Sec-WebSocket-Key2")) && tcpSocket->bytesAvailable() == 8)
+	{
+		version = WS_V0;
+		key1 = fields->value(QLatin1String("Sec-WebSocket-Key1")).toLatin1();
+		key2 = fields->value(QLatin1String("Sec-WebSocket-Key2")).toLatin1();
+		key3 = tcpSocket->read(8);
 	}
 	else
 	{
-		regExpKey1.setMinimal(true);
-		if (regExpKey1.indexIn(request) == -1)
-		{
-			missingField = true;
-		}
-		key1 = regExpKey1.cap(1).toLatin1();
-
-		regExpKey2.setMinimal(true);
-		if (regExpKey2.indexIn(request) == -1)
-		{
-			missingField = true;
-		}
-		key2 = regExpKey2.cap(1).toLatin1();
+		version = WS_VUnknow;
+		handshakeOK = false;
 	}
-	
+
 	////////////////////////////////////////////////////////////////
 
 	// If the mandatory fields are not specified, we abord the connection to the Websocket server
-	if ( missingField
-		|| version == WS_VUnknow
-		|| resourceName.isEmpty()
-		|| hostAddress.isEmpty()
-		|| ((key.isEmpty() && (key1.isEmpty() || key2.isEmpty() || key3.isEmpty()))) )
+	if (!handshakeOK)
 	{
 		showErrorAndClose(tcpSocket);
 		return;
@@ -225,22 +232,32 @@ void QWsServer::dataReceived()
 	
 	////////////////////////////////////////////////////////////////
 	
-	// Extract optional fields
+	// EXTRACT OPTIONAL FIELDS
 
 	// Origin
-	regExpOrigin.setMinimal(true);
-	regExpOrigin.indexIn(request);
-	QString origin = regExpOrigin.cap(2);
+	QString origin;
+	if (fields->contains(QLatin1String("Origin")))
+	{
+		origin = fields->value(QLatin1String("Origin"));
+	}
+	else if (fields->contains(QLatin1String("Sec-WebSocket-Origin")))
+	{
+		origin = fields->value(QLatin1String("Sec-WebSocket-Origin"));
+	}
 
 	// Protocol
-	regExpProtocol.setMinimal(true);
-	regExpProtocol.indexIn(request);
-	QString protocol = regExpProtocol.cap(1);
+	QString protocol;
+	if (fields->contains(QLatin1String("Sec-WebSocket-Protocol")))
+	{
+		protocol = fields->value(QLatin1String("Sec-WebSocket-Protocol"));
+	}
 
 	// Extensions
-	regExpExtensions.setMinimal(true);
-	regExpExtensions.indexIn(request);
-	QString extensions = regExpExtensions.cap(1);
+	QString extensions;
+	if (fields->contains(QLatin1String("Sec-WebSocket-Extensions")))
+	{
+		extensions = fields->value(QLatin1String("Sec-WebSocket-Extensions"));
+	}
 	
 	////////////////////////////////////////////////////////////////
 	
@@ -270,13 +287,13 @@ void QWsServer::dataReceived()
 	}
 
 	// Send opening handshake response
-	if (version == WS_V0)
+	if (version != WS_V0)
 	{
-		tcpSocket->write(response.toLatin1());
+		tcpSocket->write(response.toUtf8());
 	}
 	else
 	{
-		tcpSocket->write(response.toUtf8());
+		tcpSocket->write(response.toLatin1());
 	}
 	tcpSocket->flush();
 
