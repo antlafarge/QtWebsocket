@@ -18,9 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef QWSSOCKET_H
 #define QWSSOCKET_H
 
+#include <QRegExp>
 #include <QTcpSocket>
 #include <QHostAddress>
 #include <QTime>
+#include <QStringList>
+
+#include "QWsHandshake.h"
 
 enum EWebsocketVersion
 {
@@ -165,18 +169,16 @@ private:
 	QByteArray maskingKey;
 	ECloseStatusCode closeStatusCode;
 
-	static QRegExp regExpHttpResponse;
-	static QRegExp regExpIPv4;
-	static QRegExp regExpAccept;
-	static QRegExp regExpUpgrade;
-	static QRegExp regExpConnection;
 	QString handshakeResponse;
 	QByteArray key;
 
 public:
 	// Static functions
+	static QByteArray generateNonce();
 	static QByteArray generateMaskingKey();
 	static QByteArray generateMaskingKeyV4(QString key, QString nonce);
+	static QByteArray computeAcceptV0(QByteArray key1, QByteArray key2, QByteArray thirdPart);
+	static QByteArray computeAcceptV4(QByteArray key);
 	static QByteArray mask(QByteArray & data, QByteArray & maskingKey);
 	static QList<QByteArray> composeFrames(QByteArray byteArray, bool asBinary = false, int maxFrameBytes = 0);
 	static QByteArray composeHeader(bool end, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray());
@@ -184,6 +186,11 @@ public:
 
 	// static vars
 	static int maxBytesPerFrame;
+	static const QLatin1String emptyLine;
+	static QRegExp regExpIPv4;
+	static QRegExp regExpHttpRequest;
+	static QRegExp regExpHttpResponse;
+	static QRegExp regExpHttpField;
 };
 
 #endif // QWSSOCKET_H

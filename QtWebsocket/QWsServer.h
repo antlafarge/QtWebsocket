@@ -79,24 +79,10 @@ private:
 
 public:
 	// public static functions
-	static QByteArray computeAcceptV0(QByteArray key1, QByteArray key2, QByteArray thirdPart);
-	static QByteArray computeAcceptV4(QByteArray key);
-	static QByteArray generateNonce();
 	static QString composeOpeningHandshakeResponseV0(QByteArray accept, QString origin, QString hostAddress, QString hostPort, QString resourceName, QString protocol = "");
 	static QString composeOpeningHandshakeResponseV4(QByteArray accept, QByteArray nonce, QString protocol = "", QString extensions = "");
 	static QString composeOpeningHandshakeResponseV6(QByteArray accept, QString protocol = "", QString extensions = "");
 	static QString composeBadRequestResponse(QList<EWebsocketVersion> versions = QList<EWebsocketVersion>());
-
-	// public static vars
-	static QRegExp regExpHttpRequest;
-	static QRegExp regExpHost;
-	static QRegExp regExpKey;
-	static QRegExp regExpKey1;
-	static QRegExp regExpKey2;
-	static QRegExp regExpVersion;
-	static QRegExp regExpOrigin;
-	static QRegExp regExpProtocol;
-	static QRegExp regExpExtensions;
 };
 
 #endif // QWSSERVER_H

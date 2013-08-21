@@ -90,5 +90,8 @@
     <ClInclude Include="GeneratedFiles\ui_Client.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\QtWebsocket\QWsHandshake.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

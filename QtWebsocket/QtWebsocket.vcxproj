@@ -39,6 +39,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="QWsHandshake.cpp" />
     <ClCompile Include="QWsServer.cpp" />
     <ClCompile Include="QWsSocket.cpp" />
   </ItemGroup>
@@ -73,6 +74,9 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp" </Command>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="QWsHandshake.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7E3A920C-4257-41A1-B9B9-BFA138C1C8A2}</ProjectGuid>
