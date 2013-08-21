@@ -71,7 +71,6 @@ QWsSocket::~QWsSocket()
 	QAbstractSocket::SocketState state = QAbstractSocket::state();
 	if (state != QAbstractSocket::UnconnectedState)
 	{
-		qDebug() << "CloseAway, socket destroyed in server";
 		close(CloseGoingAway, QLatin1String("The server destroyed the socket."));
 		tcpSocket->abort();
 		QAbstractSocket::setSocketState(QAbstractSocket::UnconnectedState);
@@ -84,7 +83,7 @@ void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mo
 {
 	_hostPort = port;
 	QString hostName2 = QString(hostName).remove("ws://", Qt::CaseInsensitive);
-	if (hostName2.contains(QRegExp(QLatin1String("^localhost$"), Qt::CaseInsensitive)))
+	if (hostName2.compare(QLatin1String("localhost"), Qt::CaseInsensitive))
 	{
 		_host = QLatin1String("localhost");
 		_hostAddress = QHostAddress::LocalHost;
@@ -496,12 +495,12 @@ void QWsSocket::processDataV4()
 			} /* while (true) switch */
 }
 
-qint64 QWsSocket::writeFrame (const QByteArray & byteArray)
+qint64 QWsSocket::writeFrame (const QByteArray& byteArray)
 {
 	return tcpSocket->write(byteArray);
 }
 
-qint64 QWsSocket::writeFrames (const QList<QByteArray> & framesList)
+qint64 QWsSocket::writeFrames (const QList<QByteArray>& framesList)
 {
 	qint64 nbBytesWritten = 0;
 	for (int i=0 ; i<framesList.size() ; i++)

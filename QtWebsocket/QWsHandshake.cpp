@@ -92,6 +92,7 @@ bool QWsHandshake::read(QTcpSocket* tcpSocket)
 					httpRequestValid = false;
 					return false;
 				}
+				continue;
 			}
 		}
 		// end of handshake
