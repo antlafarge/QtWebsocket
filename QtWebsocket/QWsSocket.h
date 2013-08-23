@@ -20,6 +20,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <QRegExp>
 #include <QTcpSocket>
+#include <QSslSocket>
+#include <QSsl>
+#include <QSslKey>
 #include <QHostAddress>
 #include <QTime>
 #include <QStringList>
@@ -72,7 +75,7 @@ public:
 
 public:
 	// ctor
-	QWsSocket(QObject* parent = 0, QTcpSocket* socket = 0, EWebsocketVersion ws_v = WS_V13);
+	QWsSocket(QObject* parent = NULL, QTcpSocket* socket = NULL, EWebsocketVersion ws_v = WS_V13, bool useSsl = false);
 	// dtor
 	virtual ~QWsSocket();
 
@@ -103,11 +106,14 @@ public slots:
 	void disconnectFromHost();
 	void abort(QString reason = QString());
 	void ping();
+	void displaySslErrors(const QList<QSslError>& errors);
 
 signals:
 	void frameReceived(QString frame);
 	void frameReceived(QByteArray frame);
 	void pong(quint64 elapsedTime);
+	void encrypted();
+	void sslErrors(const QList<QSslError>& errors);
 
 protected:
 	qint64 writeFrames (const QList<QByteArray> & framesList);
@@ -119,6 +125,7 @@ protected slots:
 	void processDataV4();
 	void processHandshake();
 	void processTcpStateChanged(QAbstractSocket::SocketState socketState);
+	void startHandshake();
 
 private:
 	enum EReadingState
@@ -159,6 +166,8 @@ private:
 
 	QString handshakeResponse;
 	QByteArray key;
+
+	bool useSsl;
 
 public:
 	// Static functions

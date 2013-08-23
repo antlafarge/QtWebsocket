@@ -21,6 +21,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <QtEndian>
 #include <QHostInfo>
 #include <QDataStream>
+#include <QFile>
+
+#include <iostream>
 
 int QWsSocket::maxBytesPerFrame = 1400;
 
@@ -31,9 +34,9 @@ QRegExp QWsSocket::regExpHttpRequest(QLatin1String("^GET\\s(.*)\\sHTTP/(.+)\\r\\
 QRegExp QWsSocket::regExpHttpResponse(QLatin1String("^HTTP/1.1\\s(\\d{3})\\s(.+)\\r\\n"));
 QRegExp QWsSocket::regExpHttpField(QLatin1String("^(.+):\\s(.+)\\r\\n$"));
 
-QWsSocket::QWsSocket(QObject* parent, QTcpSocket* socket, EWebsocketVersion ws_v) :
+QWsSocket::QWsSocket(QObject* parent, QTcpSocket* socket, EWebsocketVersion ws_v, bool useSsl2) :
 	QAbstractSocket(QAbstractSocket::UnknownSocketType, parent),
-	tcpSocket(socket ? socket : new QTcpSocket),
+	tcpSocket(socket ? socket : (useSsl ? new QSslSocket : new QTcpSocket)),
 	_version(ws_v),
 	_hostPort(-1),
 	closingHandshakeSent(false),
@@ -43,7 +46,8 @@ QWsSocket::QWsSocket(QObject* parent, QTcpSocket* socket, EWebsocketVersion ws_v
 	hasMask(false),
 	payloadLength(0),
 	maskingKey(4, 0),
-	serverSideSocket(false)
+	serverSideSocket(false),
+	useSsl(useSsl2)
 {
 	tcpSocket->setParent(this);
 
@@ -82,7 +86,9 @@ QWsSocket::~QWsSocket()
 void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mode)
 {
 	_hostPort = port;
-	QString hostName2 = QString(hostName).remove("ws://", Qt::CaseInsensitive);
+	QString hostName2;
+	hostName2 = QString(hostName).remove("ws://", Qt::CaseInsensitive);
+	hostName2 = QString(hostName).remove("wss://", Qt::CaseInsensitive);
 	if (hostName2.compare(QLatin1String("localhost"), Qt::CaseInsensitive))
 	{
 		_host = QLatin1String("localhost");
@@ -99,16 +105,64 @@ void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mo
 		QList<QHostAddress> hostAddresses = info.addresses();
 		_hostAddress = hostAddresses[0];
 	}
-	QWsSocket::connectToHost(_hostAddress, _hostPort, mode);
+
+	if (useSsl)
+	{
+		QSslSocket* sslSocket = qobject_cast<QSslSocket*>(tcpSocket);
+		
+		QObject::connect(sslSocket, SIGNAL(sslErrors(const QList<QSslError>&)), this, SIGNAL(sslErrors(const QList<QSslError>&)), Qt::UniqueConnection);
+		QObject::connect(sslSocket, SIGNAL(sslErrors(const QList<QSslError>&)), this, SLOT(displaySslErrors(const QList<QSslError>&)), Qt::UniqueConnection);
+
+		QFile file("client-key.pem");
+		if (!file.open(QIODevice::ReadOnly))
+		{
+			std::cout << "cant load client key" << std::endl;
+			return;
+		}
+		QSslKey key(&file, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, QByteArray());
+		file.close();
+		sslSocket->setPrivateKey(key);
+		sslSocket->setLocalCertificate("client-crt.pem");
+		if (!sslSocket->addCaCertificates("ca.pem"))
+		{
+			std::cout << "cant open ca certificate" << std::endl;
+			return;
+		}
+		sslSocket->setPeerVerifyMode(QSslSocket::VerifyNone);
+		//sslSocket->ignoreSslErrors();
+		QObject::connect(sslSocket, SIGNAL(encrypted()), this, SLOT(startHandshake()), Qt::UniqueConnection);
+		sslSocket->connectToHostEncrypted(hostName2, port);
+		sslSocket->startClientEncryption();
+	}
+	else
+	{
+		QWsSocket::connectToHost(_hostAddress, _hostPort, mode);
+	}
+}
+
+void QWsSocket::displaySslErrors(const QList<QSslError>& errors)
+{
+	for (int i=0, sz=errors.size(); i<sz; i++)
+	{
+		QString errorString = errors.at(i).errorString();
+		std::cout << errorString.toStdString() << std::endl;
+	}
 }
 
 void QWsSocket::connectToHost(const QHostAddress& address, quint16 port, OpenMode mode)
 {
-	handshakeResponse.clear();
-	setPeerAddress(address);
-	setPeerPort(port);
-	setOpenMode(mode);
-	tcpSocket->connectToHost(address, port, mode);
+	if (useSsl)
+	{
+		QWsSocket::connectToHost(address.toString(), port, mode);
+	}
+	else
+	{
+		handshakeResponse.clear();
+		setPeerAddress(address);
+		setPeerPort(port);
+		setOpenMode(mode);
+		tcpSocket->connectToHost(address, port, mode);
+	}
 }
 
 void QWsSocket::disconnectFromHost()
@@ -168,7 +222,7 @@ void QWsSocket::close(ECloseStatusCode closeStatusCode, QString reason)
 					// Reason (optional)
 					if (reason.size())
 					{
-						QByteArray reason_ba = reason.toUtf8();
+						QByteArray reason_ba = reason.toLatin1();
 						if (! serverSideSocket)
 						{
 							reason_ba = QWsSocket::mask(reason_ba, maskingKey);
@@ -211,8 +265,8 @@ void QWsSocket::close(ECloseStatusCode closeStatusCode, QString reason)
 	if (closingHandshakeSent && closingHandshakeReceived)
 	{
 		QAbstractSocket::setSocketState(QAbstractSocket::UnconnectedState);
-		emit stateChanged(QAbstractSocket::UnconnectedState);
-		emit disconnected();
+		emit QAbstractSocket::stateChanged(QAbstractSocket::UnconnectedState);
+		emit QAbstractSocket::disconnected();
 		tcpSocket->disconnectFromHost();
 	}
 }
@@ -221,10 +275,10 @@ qint64 QWsSocket::write(const QString & string)
 {
 	if (_version == WS_V0)
 	{
-		return QWsSocket::write(string.toUtf8());
+		return QWsSocket::write(string.toLatin1());
 	}
 
-	const QList<QByteArray>& framesList = QWsSocket::composeFrames(string.toUtf8(), false, maxBytesPerFrame);
+	const QList<QByteArray>& framesList = QWsSocket::composeFrames(string.toLatin1(), false, maxBytesPerFrame);
 	return writeFrames(framesList);
 }
 
@@ -342,7 +396,7 @@ void QWsSocket::processDataV0()
 
 	if (currentFrame.size() > 0)
 	{
-		emit frameReceived(QString::fromUtf8(currentFrame));
+		emit frameReceived(QString::fromLatin1(currentFrame));
 		currentFrame.clear();
 	}
 
@@ -470,7 +524,7 @@ void QWsSocket::processDataV4()
 							emit frameReceived(currentFrame);
 							break;
 						case OpText:
-							emit frameReceived(QString::fromUtf8(currentFrame));
+							emit frameReceived(QString::fromLatin1(currentFrame));
 							break;
 						case OpPing:
 							write(QWsSocket::composeHeader(true, OpPong, 0));
@@ -510,6 +564,13 @@ qint64 QWsSocket::writeFrames(const QList<QByteArray>& framesList)
 	return nbBytesWritten;
 }
 
+void QWsSocket::startHandshake()
+{
+	key = generateNonce();
+	QString handshake = composeOpeningHandShake(QLatin1String("/"), _host, QLatin1String("QtWebsocket application"), key);
+	tcpSocket->write(handshake.toLatin1());
+}
+
 void QWsSocket::processTcpStateChanged(QAbstractSocket::SocketState tcpSocketState)
 {
 	QAbstractSocket::SocketState wsSocketState = QAbstractSocket::state();
@@ -529,11 +590,9 @@ void QWsSocket::processTcpStateChanged(QAbstractSocket::SocketState tcpSocketSta
 		}
 		case QAbstractSocket::ConnectedState:
 		{
-			if (wsSocketState == QAbstractSocket::ConnectingState)
+			if (!useSsl && wsSocketState == QAbstractSocket::ConnectingState)
 			{
-				key = generateNonce();
-				QString handshake = composeOpeningHandShake(QLatin1String("/"), _host, QLatin1String("QtWebsocket application"), key);
-				tcpSocket->write(handshake.toUtf8());
+				startHandshake();
 			}
 			break;
 		}
@@ -595,7 +654,7 @@ QByteArray QWsSocket::generateMaskingKey()
 QByteArray QWsSocket::generateMaskingKeyV4(QString key, QString nonce)
 {
 	QString concat = key + nonce + QLatin1String("61AC5F19-FBBA-4540-B96F-6561F1AB40A8");
-	QByteArray hash = QCryptographicHash::hash (concat.toUtf8(), QCryptographicHash::Sha1);
+	QByteArray hash = QCryptographicHash::hash (concat.toLatin1(), QCryptographicHash::Sha1);
 	return hash;
 }
 

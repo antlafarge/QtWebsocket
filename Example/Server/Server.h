@@ -29,7 +29,7 @@ class Server : public QObject
 	Q_OBJECT
 
 public:
-	Server();
+	Server(int port = 1337, bool useSsl = false);
 	~Server();
 
 public slots:

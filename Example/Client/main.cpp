@@ -22,8 +22,8 @@ int main(int argc, char *argv[])
 {
 	QApplication app(argc, argv);
 
-	Client w;
-	w.show();
+	Client client;
+	client.show();
 
 	return app.exec();
 }

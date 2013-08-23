@@ -18,10 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Server.h"
 #include <iostream>
 
-Server::Server()
+Server::Server(int port, bool useSsl)
 {
-	int port = 1337;
-	server = new QWsServer(this);
+	server = new QWsServer(this, useSsl);
 	if (! server->listen(QHostAddress::Any, port))
 	{
 		std::cout << tr("Error: Can't launch server").toStdString() << std::endl;

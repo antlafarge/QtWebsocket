@@ -20,13 +20,97 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <QTcpServer>
 #include <QTcpSocket>
+#include <QSsl>
+#include <QSslSocket>
+#include <QSslCertificate>
+#include <QSslKey>
 #include <QNetworkProxy>
 #include <QString>
 #include <QStringList>
 #include <QMap>
 #include <QQueue>
+#include <QFile>
 
 #include "QWsSocket.h"
+
+#include <iostream>
+
+// SslServer over TcpServer for encrypted websocket connection
+class SslServer : public QTcpServer
+{
+	Q_OBJECT
+
+public:
+	SslServer(QObject* parent = NULL) :
+		QTcpServer(parent)
+	{
+		QObject::connect(this, SIGNAL(newConnection()), this, SLOT(test()));
+	}
+	virtual ~SslServer()
+	{
+	}
+
+public slots:
+	void displaySslErrors(const QList<QSslError>& errors)
+	{
+		for (int i=0, sz=errors.size(); i<sz; i++)
+		{
+			std::cout << errors.at(i).errorString().toStdString() << std::endl;
+		}
+	}
+
+	void sslSocketEncrypted()
+	{
+		std::cout << "serverSocket ready (encryption OK)" << std::endl;
+		QSslSocket* serverSocket = qobject_cast<QSslSocket*>(sender());
+		emit newSslConnection(serverSocket);
+	}
+
+	void test()
+	{
+		std::cout << "tcp socket connected" << std::endl;
+	}
+
+signals:
+	void newSslConnection(QSslSocket* serverSocket);
+
+protected:
+	virtual void SslServer::incomingConnection(qintptr socketDescriptor)
+	{
+		QSslSocket* serverSocket = new QSslSocket;
+		QObject::connect(serverSocket, SIGNAL(sslErrors(const QList<QSslError>&)), this, SLOT(displaySslErrors(const QList<QSslError>&)));
+
+		if (serverSocket->setSocketDescriptor(socketDescriptor))
+		{
+			QFile file("server-key.pem");
+			if (!file.open(QIODevice::ReadOnly))
+			{
+				std::cout << "can't open key" << "server-key.pem";
+				return;
+			}
+			QSslKey key(&file, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, QByteArray());
+			file.close();
+			serverSocket->setPrivateKey(key);
+
+			if (!serverSocket->addCaCertificates("ca.pem"))
+			{
+				std::cout << "open certificate ca error" << "ca.pem";
+				return;
+			}
+		
+			serverSocket->setLocalCertificate("server-crt.pem");
+			serverSocket->setPeerVerifyMode(QSslSocket::VerifyNone);
+			//serverSocket->ignoreSslErrors();
+
+			QObject::connect(serverSocket, SIGNAL(encrypted()), this, SLOT(sslSocketEncrypted()));
+			serverSocket->startServerEncryption();
+		}
+		else
+		{
+			serverSocket->deleteLater();
+		}
+	}
+};
 
 class QWsServer : public QObject
 {
@@ -34,9 +118,12 @@ class QWsServer : public QObject
 
 public:
 	// ctor
-	QWsServer(QObject* parent = 0);
+	QWsServer(QObject* parent = 0, bool useSsl2 = false);
 	// dtor
 	virtual ~QWsServer();
+
+	// ssl
+	void setCertificate(const QSslCertificate &certificate, const QSslKey &key);
 
 	// public functions
 	void close();
@@ -67,15 +154,20 @@ protected:
 private slots:
 	// private slots
 	void newTcpConnection();
+	void newSslConnection(QSslSocket* serverSocket);
 	void closeTcpConnection();
 	void dataReceived();
-	void disconnected();
+	void tcpSocketDisconnected();
 
 private:
 	// private attributes
 	QTcpServer* tcpServer;
 	QQueue<QWsSocket*> pendingConnections;
 	QHash<const QTcpSocket*, QWsHandshake*> handshakeBuffer;
+
+	bool useSsl;
+	QSslKey sslKey;
+	QSslCertificate sslCertificate;
 
 public:
 	// public static functions

@@ -22,11 +22,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <QCryptographicHash>
 #include <QDateTime>
 
-QWsServer::QWsServer(QObject* parent)
-	: QObject(parent)
+QWsServer::QWsServer(QObject* parent, bool useSsl2)
+	: QObject(parent),
+	useSsl(useSsl2)
 {
-	tcpServer = new QTcpServer(this);
-	connect(tcpServer, SIGNAL(newConnection()), this, SLOT(newTcpConnection()));
+	if (useSsl)
+	{
+		tcpServer = new SslServer(this);
+		QObject::connect(tcpServer, SIGNAL(newSslConnection(QSslSocket*)), this, SLOT(newSslConnection(QSslSocket*)));
+	}
+	else
+	{
+		tcpServer = new QTcpServer(this);
+		QObject::connect(tcpServer, SIGNAL(newConnection()), this, SLOT(newTcpConnection()));
+	}
+
 	qsrand(QDateTime::currentMSecsSinceEpoch());
 }
 
@@ -58,14 +68,34 @@ QString QWsServer::errorString()
 void QWsServer::newTcpConnection()
 {
 	QTcpSocket* tcpSocket = tcpServer->nextPendingConnection();
+	if (tcpSocket == NULL)
+	{
+		return;
+	}
 	connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
-	connect(tcpSocket, SIGNAL(disconnected()), this, SLOT(disconnected()));
+	connect(tcpSocket, SIGNAL(disconnected()), this, SLOT(tcpSocketDisconnected()));
 	handshakeBuffer.insert(tcpSocket, new QWsHandshake(true));
 }
 
-void QWsServer::disconnected()
+void QWsServer::newSslConnection(QSslSocket* serverSocket)
 {
-	QTcpSocket* tcpSocket = (QTcpSocket *)sender();
+	if (serverSocket == NULL)
+	{
+		return;
+	}
+	connect(serverSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
+	connect(serverSocket, SIGNAL(disconnected()), this, SLOT(tcpSocketDisconnected()));
+	handshakeBuffer.insert(serverSocket, new QWsHandshake(true));
+}
+
+void QWsServer::tcpSocketDisconnected()
+{
+	QTcpSocket* tcpSocket = qobject_cast<QTcpSocket*>(sender());
+	if (tcpSocket == NULL)
+	{
+		return;
+	}
+	
 	QWsHandshake* handshake = handshakeBuffer.take(tcpSocket);
 	delete handshake;
 	tcpSocket->deleteLater();
@@ -78,7 +108,7 @@ void QWsServer::closeTcpConnection()
 	{
 		return;
 	}
-
+	
 	tcpSocket->close();
 }
 
@@ -127,7 +157,7 @@ void QWsServer::dataReceived()
 	
 	// Handshake fully parsed
 	QObject::disconnect(tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
-	QObject::disconnect(tcpSocket, SIGNAL(disconnected()), this, SLOT(disconnected()));
+	QObject::disconnect(tcpSocket, SIGNAL(disconnected()), this, SLOT(tcpSocketDisconnected()));
 
 	// Compose opening handshake response
 	QString response;
@@ -163,16 +193,36 @@ void QWsServer::dataReceived()
 	wsSocket->setExtensions(handshake.extensions);
 	wsSocket->serverSideSocket = true;
 	
-	// ORIGINAL CODE
-	//int socketDescriptor = tcpSocket->socketDescriptor();
-	//incomingConnection(socketDescriptor);
-	
-	// CHANGED CODE FOR LINUX COMPATIBILITY
-	addPendingConnection(wsSocket);
-	emit newConnection();
+	QWsHandshake* hsTmp = handshakeBuffer.take(tcpSocket);
+	delete hsTmp;
 
-	QWsHandshake* hstmp = handshakeBuffer.take(tcpSocket);
-	delete hstmp;
+	// SSL
+	/*if (encrypted)
+	{
+        QSslSocket *sslSocket = new QSslSocket(this);
+        sslSocket->setLocalCertificate(sslCertificate);
+        sslSocket->setPrivateKey(sslKey);
+        if (sslSocket->setSocketDescriptor(socketDescriptor))
+        {
+            qDebug() << "Trying to start encryption";
+            connect(sslSocket, SIGNAL(encrypted()), this, SLOT(onTcpConnectionReady()));
+            connect(sslSocket, SIGNAL(disconnected()), sslSocket, SLOT(deleteLater()));
+            sslSocket->startServerEncryption();
+        }
+        else
+        {
+            delete sslSocket;
+        }
+    }
+    else
+    {*/
+		// CAN'T DO THAT WITHOUT DISCONNECTING THE QTcpSocket
+		//int socketDescriptor = tcpSocket->socketDescriptor();
+		//incomingConnection(socketDescriptor);	
+		// USE THIS INSTEAD
+		addPendingConnection(wsSocket);
+		emit newConnection();
+    //}
 }
 
 void QWsServer::incomingConnection(int socketDescriptor)

@@ -41,6 +41,7 @@ protected slots:
 	void disconnectSocket();
 	void displayMessage(QString message);
 	void socketStateChanged(QAbstractSocket::SocketState socketState);
+	void displaySslErrors(const QList<QSslError>& errors);
 
 protected:
 	QWsSocket* wsSocket;

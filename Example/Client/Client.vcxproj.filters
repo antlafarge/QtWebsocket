@@ -76,22 +76,22 @@
     <CustomBuild Include="Client.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="Client.ui">
-      <Filter>Form Files</Filter>
-    </CustomBuild>
     <CustomBuild Include="..\..\QtWebsocket\QWsServer.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
     <CustomBuild Include="..\..\QtWebsocket\QWsSocket.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="Client.ui">
+      <Filter>Form Files</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GeneratedFiles\ui_Client.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\QtWebsocket\QWsHandshake.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GeneratedFiles\ui_Client.h">
+      <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

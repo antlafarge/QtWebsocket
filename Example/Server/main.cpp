@@ -23,7 +23,9 @@ int main(int argc, char *argv[])
 {
 	QCoreApplication app(argc, argv);
 
-	Server myServer;
+	int port = 1337;
+	bool useSsl = true;
+	Server myServer(port, useSsl);
 
 	return app.exec();
 }

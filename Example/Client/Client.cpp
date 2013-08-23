@@ -25,7 +25,9 @@ Client::Client(QWidget *parent) :
 {
 	ui->setupUi(this);
 
-	wsSocket = new QWsSocket(this);
+	EWebsocketVersion version = WS_V13;
+	bool useSsl = true;
+	wsSocket = new QWsSocket(this, NULL, version, useSsl);
 
 	socketStateChanged(wsSocket->state());
 
@@ -37,6 +39,7 @@ Client::Client(QWidget *parent) :
 	QObject::connect(wsSocket, SIGNAL(frameReceived(QString)), this, SLOT(displayMessage(QString)));
 	QObject::connect(wsSocket, SIGNAL(connected()), this, SLOT(socketConnected()));
 	QObject::connect(wsSocket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
+	QObject::connect(wsSocket, SIGNAL(sslErrors(const QList<QSslError>&)), this, SLOT(displaySslErrors(const QList<QSslError>&)));
 }
 
 Client::~Client()
@@ -56,11 +59,21 @@ void Client::displayMessage(QString message)
 	ui->chatTextEdit->append(message);
 }
 
+void Client::displaySslErrors(const QList<QSslError>& errors)
+{
+	for (int i=0, sz=errors.size(); i<sz; i++)
+	{
+		QString errorString = errors.at(i).errorString();
+		displayMessage(errorString);
+	}
+}
+
 void Client::connectSocket()
 {
 	bool ok;
+	QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "wss://127.0.0.1:1337", &ok);
 	//QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://127.0.0.1:1337", &ok);
-	QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://localhost:1337", &ok);
+	//QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://localhost:1337", &ok);
 	//QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://echo.websocket.org:80", &ok);
 	ipAddress = ipAddress.trimmed();
 	if (ok && !ipAddress.isEmpty())
