@@ -110,8 +110,9 @@ signals:
 	void pong(quint64 elapsedTime);
 
 protected:
-	qint64 writeFrames (const QList<QByteArray> & framesList);
-	qint64 writeFrame (const QByteArray & byteArray);
+	qint64 writeFrames (const QList<QByteArray>& framesList);
+	qint64 writeFrame (const QByteArray& byteArray);
+	inline qint64 internalWrite(const QByteArray& string, bool asBinary);
 
 protected slots:
 	virtual void close(ECloseStatusCode closeStatusCode = NoCloseStatusCode, QString reason = QString());
@@ -164,18 +165,25 @@ private:
 	static const QString connectionRefusedStr;
 	QString handshakeResponse;
 	QByteArray key;
+	QByteArray key1;
+	QByteArray key2;
+	QByteArray key3;
+	QByteArray accept;
 
 public:
 	// Static functions
 	static QByteArray generateNonce();
+	static QByteArray generateKey1or2();
+	static QByteArray generateKey3();
 	static QByteArray generateMaskingKey();
-	static QByteArray generateMaskingKeyV4(QString key, QString nonce);
+	static QByteArray generateMaskingKeyV4(QByteArray key, QByteArray nonce);
 	static QByteArray computeAcceptV0(QByteArray key1, QByteArray key2, QByteArray thirdPart);
 	static QByteArray computeAcceptV4(QByteArray key);
 	static QByteArray mask(const QByteArray & data, QByteArray & maskingKey);
-	static QList<QByteArray> composeFrames(QByteArray byteArray, bool asBinary = false, int maxFrameBytes = 0);
+	static QList<QByteArray> composeFrames(QByteArray byteArray, QByteArray& maskingKey, bool asBinary = false, int maxFrameBytes = 0);
 	static QByteArray composeHeader(bool end, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray());
-	static QString composeOpeningHandShake(QString resourceName, QString host, QString origin, QByteArray key, QString protocol = "", QString extensions = "");
+	static QString composeOpeningHandShakeV0(QString resourceName, QString host, QByteArray key1, QByteArray key2, QByteArray key3, QString origin = "", QString protocol = "", QString extensions = "");
+	static QString composeOpeningHandShakeV13(QString resourceName, QString host, QByteArray key, QString origin = "", QString protocol = "", QString extensions = "");
 
 	// static vars
 	static const int maxBytesPerFrame = 1400;

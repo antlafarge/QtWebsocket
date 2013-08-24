@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 Server::Server()
 {
-	int port = 1337;
+	int port = 80;
 	server = new QWsServer(this);
 	if (! server->listen(QHostAddress::Any, port))
 	{

@@ -26,6 +26,7 @@ Client::Client(QWidget *parent) :
 	ui->setupUi(this);
 
 	wsSocket = new QWsSocket(this);
+	//wsSocket = new QWsSocket(this, NULL, WS_V0);
 
 	socketStateChanged(wsSocket->state());
 
@@ -59,9 +60,9 @@ void Client::displayMessage(QString message)
 void Client::connectSocket()
 {
 	bool ok;
-	//QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://127.0.0.1:1337", &ok);
-	//QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://localhost:1337", &ok);
-	QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://echo.websocket.org:80", &ok);
+	//QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://127.0.0.1:80", &ok);
+	QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://localhost:80", &ok);
+	//QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://echo.websocket.org:80", &ok);
 	ipAddress = ipAddress.trimmed();
 	if (ok && !ipAddress.isEmpty())
 	{

@@ -25,9 +25,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 QWsServer::QWsServer(QObject* parent)
 	: QObject(parent)
 {
+	qsrand(QDateTime::currentMSecsSinceEpoch());
 	tcpServer = new QTcpServer(this);
 	connect(tcpServer, SIGNAL(newConnection()), this, SLOT(newTcpConnection()));
-	qsrand(QDateTime::currentMSecsSinceEpoch());
 }
 
 QWsServer::~QWsServer()

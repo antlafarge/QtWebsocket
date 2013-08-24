@@ -150,6 +150,7 @@ bool QWsHandshake::isValidCommonPart()
 		return false;
 	}
 	
+	//MANDATORY
 	// Upgrade
 	if ((!fields.contains(QLatin1String("Upgrade"))) || (fields.value(QLatin1String("Upgrade")).compare(QLatin1String("websocket"), Qt::CaseInsensitive)))
 	{
@@ -162,6 +163,7 @@ bool QWsHandshake::isValidCommonPart()
 		return false;
 	}
 	
+	// OPTIONAL
 	// Protocol
 	if (fields.contains(QLatin1String("Sec-WebSocket-Protocol")))
 	{
@@ -188,7 +190,10 @@ bool QWsHandshake::isValidClientPart()
 		{
 			QStringList splitted = host.split(QLatin1Char(':'));
 			hostAddress = splitted.first();
-			hostPort = splitted.last();
+			if (splitted.size() == 2)
+			{
+				hostPort = splitted.last();
+			}
 		}
 		else
 		{
