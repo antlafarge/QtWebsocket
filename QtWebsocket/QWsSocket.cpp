@@ -22,9 +22,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <QHostInfo>
 #include <QDataStream>
 
-int QWsSocket::maxBytesPerFrame = 1400;
-
 const QLatin1String QWsSocket::emptyLine("\r\n");
+const QString QWsSocket::connectionRefusedStr(QLatin1String("Websocket connection refused"));
 
 QRegExp QWsSocket::regExpIPv4(QLatin1String("^([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\.([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3}$"));
 QRegExp QWsSocket::regExpHttpRequest(QLatin1String("^GET\\s(.*)\\sHTTP/(.+)\\r\\n"));
@@ -36,14 +35,14 @@ QWsSocket::QWsSocket(QObject* parent, QTcpSocket* socket, EWebsocketVersion ws_v
 	tcpSocket(socket ? socket : new QTcpSocket),
 	_version(ws_v),
 	_hostPort(-1),
+	serverSideSocket(false),
 	closingHandshakeSent(false),
 	closingHandshakeReceived(false),
 	readingState(HeaderPending),
 	isFinalFragment(false),
 	hasMask(false),
 	payloadLength(0),
-	maskingKey(4, 0),
-	serverSideSocket(false)
+	maskingKey(4, 0)
 {
 	tcpSocket->setParent(this);
 
@@ -59,6 +58,7 @@ QWsSocket::QWsSocket(QObject* parent, QTcpSocket* socket, EWebsocketVersion ws_v
 	{
 		QObject::connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(processDataV4()));
 	}
+	QObject::connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(processTcpError(QAbstractSocket::SocketError)));
 	QObject::connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SIGNAL(error(QAbstractSocket::SocketError)));
 	QObject::connect(tcpSocket, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)), this, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)));
 	QObject::connect(tcpSocket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(processTcpStateChanged(QAbstractSocket::SocketState)));
@@ -179,7 +179,7 @@ void QWsSocket::close(ECloseStatusCode closeStatusCode, QString reason)
 
 					BA.append(body);
 				}
-				
+
 				// Send closing handshake
 				tcpSocket->write(BA);
 
@@ -208,7 +208,7 @@ void QWsSocket::close(ECloseStatusCode closeStatusCode, QString reason)
 		emit QAbstractSocket::stateChanged(QAbstractSocket::ClosingState);
 		emit QAbstractSocket::aboutToClose();
 	}
-	
+
 	if (closingHandshakeSent && closingHandshakeReceived)
 	{
 		QAbstractSocket::setSocketState(QAbstractSocket::UnconnectedState);
@@ -224,9 +224,18 @@ qint64 QWsSocket::write(const QString & string)
 	{
 		return QWsSocket::write(string.toUtf8());
 	}
-
+	
 	const QList<QByteArray>& framesList = QWsSocket::composeFrames(string.toUtf8(), false, maxBytesPerFrame);
-	return writeFrames(framesList);
+
+	if(writeFrames(framesList) != -1)
+	{
+		emit bytesWritten(string.size());
+		return string.size();
+	}
+	else
+	{
+		return -1;
+	}
 }
 
 qint64 QWsSocket::write(const QByteArray & byteArray)
@@ -242,10 +251,15 @@ qint64 QWsSocket::write(const QByteArray & byteArray)
 
 	const QList<QByteArray>& framesList = QWsSocket::composeFrames(byteArray, true, maxBytesPerFrame);
 
-	qint64 nbBytesWritten = writeFrames(framesList);
-	emit bytesWritten(nbBytesWritten);
-
-	return nbBytesWritten;
+	if(writeFrames(framesList) != -1)
+	{
+		emit bytesWritten(byteArray.size());
+		return byteArray.size();
+	}
+	else
+	{
+		return -1;
+	}
 }
 
 void QWsSocket::processHandshake()
@@ -366,7 +380,7 @@ void QWsSocket::processDataV4()
 					if (tcpSocket->bytesAvailable() < 2)
 						return;
 
-					// END, RSV1-3, Opcode
+					// FIN, RSV1-3, Opcode
 					char header[2];
 					tcpSocket->read(header, 2); // XXX: Handle return value
 					isFinalFragment = (header[0] & 0x80) != 0;
@@ -498,7 +512,7 @@ void QWsSocket::processDataV4()
 
 qint64 QWsSocket::writeFrame(const QByteArray& byteArray)
 {
-	return tcpSocket->write(byteArray);
+	return tcpSocket->write(byteArray); // writes data to internal buffer and returns full size always; then emits signals
 }
 
 qint64 QWsSocket::writeFrames(const QList<QByteArray>& framesList)
@@ -532,7 +546,9 @@ void QWsSocket::processTcpStateChanged(QAbstractSocket::SocketState tcpSocketSta
 		{
 			if (wsSocketState == QAbstractSocket::ConnectingState)
 			{
-				key = generateNonce();
+				setLocalAddress(tcpSocket->localAddress());
+				setLocalPort(tcpSocket->localPort());
+				key = QWsSocket::generateNonce();
 				QString handshake = composeOpeningHandShake(QLatin1String("/"), _host, QLatin1String("QtWebsocket application"), key);
 				tcpSocket->write(handshake.toUtf8());
 			}
@@ -583,6 +599,13 @@ QByteArray QWsSocket::generateNonce()
 	return nonce.toBase64();
 }
 
+void QWsSocket::processTcpError(QAbstractSocket::SocketError err)
+{
+	setSocketError(tcpSocket->error());
+	setErrorString(tcpSocket->errorString());
+	emit error(err);
+}
+
 QByteArray QWsSocket::generateMaskingKey()
 {
 	QByteArray key;
@@ -628,7 +651,7 @@ QByteArray QWsSocket::computeAcceptV4(QByteArray key)
 	return hash.toBase64();
 }
 
-QByteArray QWsSocket::mask(QByteArray& data, QByteArray& maskingKey)
+QByteArray QWsSocket::mask(const QByteArray& data, QByteArray& maskingKey)
 {
 	QByteArray result;
 	result.reserve(data.size());

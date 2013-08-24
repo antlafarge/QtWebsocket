@@ -94,7 +94,7 @@ public:
 	void setProtocol(QString p);
 	void setExtensions(QString e);
 
-	qint64 write(const QString & string); // write data as text
+	qint64 write(const QString& string); // write data as text
 	qint64 write(const QByteArray & byteArray); // write data as binary
 
 public slots:
@@ -119,6 +119,7 @@ protected slots:
 	void processDataV4();
 	void processHandshake();
 	void processTcpStateChanged(QAbstractSocket::SocketState socketState);
+	void processTcpError(QAbstractSocket::SocketError err);
 
 private:
 	enum EReadingState
@@ -157,6 +158,10 @@ private:
 	QByteArray maskingKey;
 	ECloseStatusCode closeStatusCode;
 
+	static const QString regExpAcceptStr;
+	static const QString regExpUpgradeStr;
+	static const QString regExpConnectionStr;
+	static const QString connectionRefusedStr;
 	QString handshakeResponse;
 	QByteArray key;
 
@@ -167,13 +172,13 @@ public:
 	static QByteArray generateMaskingKeyV4(QString key, QString nonce);
 	static QByteArray computeAcceptV0(QByteArray key1, QByteArray key2, QByteArray thirdPart);
 	static QByteArray computeAcceptV4(QByteArray key);
-	static QByteArray mask(QByteArray & data, QByteArray & maskingKey);
+	static QByteArray mask(const QByteArray & data, QByteArray & maskingKey);
 	static QList<QByteArray> composeFrames(QByteArray byteArray, bool asBinary = false, int maxFrameBytes = 0);
 	static QByteArray composeHeader(bool end, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray());
 	static QString composeOpeningHandShake(QString resourceName, QString host, QString origin, QByteArray key, QString protocol = "", QString extensions = "");
 
 	// static vars
-	static int maxBytesPerFrame;
+	static const int maxBytesPerFrame = 1400;
 	static const QLatin1String emptyLine;
 	static QRegExp regExpIPv4;
 	static QRegExp regExpHttpRequest;
