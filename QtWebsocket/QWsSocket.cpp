@@ -86,21 +86,22 @@ QWsSocket::~QWsSocket()
 void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mode)
 {
 	_hostPort = port;
-	QString hostName2;
-	hostName2 = QString(hostName).remove("ws://", Qt::CaseInsensitive);
-	hostName2 = QString(hostName).remove("wss://", Qt::CaseInsensitive);
-	if (hostName2.compare(QLatin1String("localhost"), Qt::CaseInsensitive))
+	QString hostName2(hostName);
+	hostName2 = hostName2.remove("ws://", Qt::CaseInsensitive);
+	hostName2 = hostName2.remove("wss://", Qt::CaseInsensitive);
+	if (hostName2.contains(QRegExp("^localhost$", Qt::CaseInsensitive)))
 	{
 		_host = QLatin1String("localhost");
 		_hostAddress = QHostAddress::LocalHost;
 	}
 	else if (hostName2.contains(QRegExp(QWsSocket::regExpIPv4)))
 	{
-		_host = QLatin1String("localhost");
+		_host = hostName2;
 		_hostAddress = QHostAddress(hostName2);
 	}
 	else
 	{
+		_host = hostName2;
 		QHostInfo info = QHostInfo::fromName(hostName2);
 		QList<QHostAddress> hostAddresses = info.addresses();
 		_hostAddress = hostAddresses[0];
