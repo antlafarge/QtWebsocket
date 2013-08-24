@@ -46,6 +46,7 @@ public:
 
 	bool clientSide;
 
+	bool readStarted;
 	bool complete;
 	
 	QHash<QString, QString> fields;

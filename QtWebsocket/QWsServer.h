@@ -88,7 +88,7 @@ protected:
 				std::cout << "can't open key" << "server-key.pem";
 				return;
 			}
-			QSslKey key(&file, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, QByteArray());
+			QSslKey key(&file, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, QByteArray("qtwebsocket-server-key"));
 			file.close();
 			serverSocket->setPrivateKey(key);
 

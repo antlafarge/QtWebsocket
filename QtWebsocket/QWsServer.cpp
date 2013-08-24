@@ -128,7 +128,7 @@ void QWsServer::dataReceived()
 	{
 		return;
 	}
-	
+
 	QWsHandshake& handshake = *(handshakeBuffer.value(tcpSocket));
 
 	if (handshake.read(tcpSocket) == false)
@@ -138,9 +138,9 @@ void QWsServer::dataReceived()
 	}
 
 	// handshake complete
-	if (!handshake.complete)
+	if (!handshake.readStarted || !handshake.complete)
 	{
-		if (!handshake.httpRequestValid)
+		if (handshake.readStarted && !handshake.httpRequestValid)
 		{
 			showErrorAndClose(tcpSocket);
 		}

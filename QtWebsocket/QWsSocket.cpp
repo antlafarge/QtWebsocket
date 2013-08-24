@@ -119,7 +119,7 @@ void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mo
 			std::cout << "cant load client key" << std::endl;
 			return;
 		}
-		QSslKey key(&file, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, QByteArray());
+		QSslKey key(&file, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, QByteArray("qtwebsocket-client-key"));
 		file.close();
 		sslSocket->setPrivateKey(key);
 		sslSocket->setLocalCertificate("client-crt.pem");
@@ -130,7 +130,7 @@ void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mo
 		}
 		sslSocket->setPeerVerifyMode(QSslSocket::VerifyNone);
 		//sslSocket->ignoreSslErrors();
-		QObject::connect(sslSocket, SIGNAL(encrypted()), this, SLOT(startHandshake()), Qt::UniqueConnection);
+		QObject::connect(sslSocket, SIGNAL(encrypted()), this, SLOT(onEncrypted()), Qt::UniqueConnection);
 		sslSocket->connectToHostEncrypted(hostName2, port);
 		sslSocket->startClientEncryption();
 	}
@@ -314,6 +314,11 @@ void QWsSocket::processHandshake()
 	if (handshake.read(tcpSocket) == false)
 	{
 		emit error(QAbstractSocket::ConnectionRefusedError);
+		return;
+	}
+
+	if (!handshake.readStarted || !handshake.complete)
+	{
 		return;
 	}
 
@@ -562,6 +567,14 @@ qint64 QWsSocket::writeFrames(const QList<QByteArray>& framesList)
 		nbBytesWritten += writeFrame(framesList[i]);
 	}
 	return nbBytesWritten;
+}
+
+void QWsSocket::onEncrypted()
+{
+	if (!serverSideSocket)
+	{
+		startHandshake();
+	}
 }
 
 void QWsSocket::startHandshake()

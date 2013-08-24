@@ -125,6 +125,7 @@ protected slots:
 	void processDataV4();
 	void processHandshake();
 	void processTcpStateChanged(QAbstractSocket::SocketState socketState);
+	void onEncrypted();
 	void startHandshake();
 
 private:

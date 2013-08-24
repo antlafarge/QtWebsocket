@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 QWsHandshake::QWsHandshake(bool clientSide) :
 	clientSide(clientSide),
 	complete(false),
+	readStarted(false),
 	httpRequestValid(false)
 {
 }
@@ -53,8 +54,9 @@ bool QWsHandshake::read(QTcpSocket* tcpSocket)
 			return false;
 		}
 		// start of handshake
-		if (!httpRequestValid)
+		if (!readStarted)
 		{
+			readStarted = true;
 			httpRequestValid = true;
 			if (clientSide)
 			{
