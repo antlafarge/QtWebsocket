@@ -43,6 +43,9 @@
    <property name="text">
     <string/>
    </property>
+   <property name="placeholderText">
+    <string>message</string>
+   </property>
   </widget>
   <widget class="QPushButton" name="sendButton">
    <property name="geometry">
@@ -77,6 +80,9 @@
     </rect>
    </property>
    <property name="text">
+    <string/>
+   </property>
+   <property name="placeholderText">
     <string>pseudo</string>
    </property>
   </widget>

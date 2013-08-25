@@ -25,6 +25,9 @@ Client::Client(QWidget *parent) :
 {
 	ui->setupUi(this);
 
+	defaultPseudo = QString("user%1").arg(qrand() % 9000 + 1000);
+	ui->pseudoLineEdit->setPlaceholderText(defaultPseudo);
+
 	wsSocket = new QWsSocket(this);
 	//wsSocket = new QWsSocket(this, NULL, WS_V0);
 
@@ -47,9 +50,15 @@ Client::~Client()
 
 void Client::sendMessage()
 {
-	QString message = ui->pseudoLineEdit->text() + QLatin1String(": ") + ui->textLineEdit->text();
+	QString pseudo = ui->pseudoLineEdit->text();
+	pseudo = (pseudo.isEmpty() ? defaultPseudo : pseudo);
+
+	QString message = ui->textLineEdit->text();
+	message = (message.isEmpty() ? QLatin1String("echo") : message);
+
 	ui->textLineEdit->clear();
-	wsSocket->write(message);
+
+	wsSocket->write(QString("%1: %2").arg(pseudo).arg(message));
 }
 
 void Client::displayMessage(QString message)
@@ -79,7 +88,7 @@ void Client::connectSocket()
 			ip = ipAddress;
 			port = 80;
 		}
-		wsSocket->connectToHost(ip.toLatin1(), port);
+		wsSocket->connectToHost(ip.toUtf8(), port);
 	}
 }
 

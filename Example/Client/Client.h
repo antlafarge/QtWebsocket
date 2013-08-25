@@ -44,6 +44,7 @@ protected slots:
 
 protected:
 	QWsSocket* wsSocket;
+	QString defaultPseudo;
 
 private:
 	Ui::Client* ui;
