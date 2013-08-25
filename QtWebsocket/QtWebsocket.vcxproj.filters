@@ -60,12 +60,33 @@
     <ClCompile Include="QWsHandshake.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="QTlsServer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_QTlsServer.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_QTlsServer.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Template\moc_QTlsServer.cpp">
+      <Filter>Generated Files\Template</Filter>
+    </ClCompile>
+    <ClCompile Include="functions.h">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="functions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="QWsServer.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
     <CustomBuild Include="QWsSocket.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="QTlsServer.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>

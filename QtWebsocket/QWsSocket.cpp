@@ -22,8 +22,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <QHostInfo>
 #include <QDataStream>
 #include <QFile>
+#include <QtCore/qmath.h>
 
 #include <iostream>
+
+#include "functions.h"
+
+namespace QtWebsocket
+{
 
 const QLatin1String QWsSocket::emptyLine("\r\n");
 const QString QWsSocket::connectionRefusedStr(QLatin1String("Websocket connection refused"));
@@ -33,10 +39,10 @@ QRegExp QWsSocket::regExpHttpRequest(QLatin1String("^GET\\s(.*)\\sHTTP/(.+)\\r\\
 QRegExp QWsSocket::regExpHttpResponse(QLatin1String("^HTTP/1.1\\s(\\d{3})\\s(.+)\\r\\n"));
 QRegExp QWsSocket::regExpHttpField(QLatin1String("^(.+):\\s(.+)\\r\\n$"));
 
-QWsSocket::QWsSocket(QObject* parent, QTcpSocket* socket, EWebsocketVersion ws_v, bool useSsl2) :
+QWsSocket::QWsSocket(QObject* parent, QTcpSocket* socket, EWebsocketVersion ws_v, Protocol baseProtocolToUse) :
 	QAbstractSocket(QAbstractSocket::UnknownSocketType, parent),
-	useSsl(useSsl2),
-	tcpSocket(socket ? socket : (useSsl ? new QSslSocket : new QTcpSocket)),
+	baseProtocol(baseProtocolToUse),
+	tcpSocket(socket ? socket : (baseProtocolToUse & Tls ? new QSslSocket : new QTcpSocket)),
 	_version(ws_v),
 	_hostPort(-1),
 	serverSideSocket(false),
@@ -108,7 +114,7 @@ void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mo
 		_hostAddress = hostAddresses[0];
 	}
 
-	if (useSsl)
+	if (baseProtocol & Tls)
 	{
 		QSslSocket* sslSocket = qobject_cast<QSslSocket*>(tcpSocket);
 		
@@ -153,7 +159,7 @@ void QWsSocket::displaySslErrors(const QList<QSslError>& errors)
 
 void QWsSocket::connectToHost(const QHostAddress& address, quint16 port, OpenMode mode)
 {
-	if (useSsl)
+	if (baseProtocol & Tls)
 	{
 		QWsSocket::connectToHost(address.toString(), port, mode);
 	}
@@ -224,7 +230,7 @@ void QWsSocket::close(ECloseStatusCode closeStatusCode, QString reason)
 					// Reason (optional)
 					if (reason.size())
 					{
-						QByteArray reason_ba = reason.toLatin1();
+						QByteArray reason_ba = reason.toUtf8();
 						if (! serverSideSocket)
 						{
 							reason_ba = QWsSocket::mask(reason_ba, maskingKey);
@@ -429,7 +435,7 @@ void QWsSocket::processDataV0()
 
 	if (currentFrame.size() > 0)
 	{
-		emit frameReceived(QString::fromLatin1(currentFrame));
+		emit frameReceived(QString::fromUtf8(currentFrame));
 		currentFrame.clear();
 	}
 
@@ -577,7 +583,7 @@ void QWsSocket::processDataV4()
 							emit frameReceived(currentFrame);
 							break;
 						case OpText:
-							emit frameReceived(QString::fromLatin1(currentFrame));
+							emit frameReceived(QString::fromUtf8(currentFrame));
 							break;
 						case OpPing:
 							write(QWsSocket::composeHeader(true, OpPong, 0));
@@ -672,7 +678,7 @@ void QWsSocket::processTcpStateChanged(QAbstractSocket::SocketState tcpSocketSta
 		}
 		case QAbstractSocket::ConnectedState:
 		{
-			if (!useSsl && wsSocketState == QAbstractSocket::ConnectingState)
+			if (!(baseProtocol & Tls) && wsSocketState == QAbstractSocket::ConnectingState)
 			{
 				setLocalAddress(tcpSocket->localAddress());
 				setLocalPort(tcpSocket->localPort());
@@ -717,42 +723,6 @@ void QWsSocket::processTcpError(QAbstractSocket::SocketError err)
 	emit error(err);
 }
 
-quint8 bitCount(quint32 n)
-{
-	quint8 count = 0;
-	while (n)
-	{
-		if (n & 1)
-		{
-			count++;
-		}
-		n >>= 1;
-	}
-	return count;
-}
-
-quint32 randquint32()
-{
-	const quint8 numberOfBits = bitCount(RAND_MAX);
-	quint32 myRand = 0;
-	int i = 3;
-	while (i--)
-	{
-		myRand += qrand();
-		myRand <<= numberOfBits;
-	}
-	return myRand;
-}
-
-quint32 randquint32(quint32 low, quint32 high)
-{
-	quint32 low2 = qMin(low, high);
-	quint32 high2 = qMax(low, high);
-	quint32 myRand = randquint32();
-	float factor = (float)UINT_MAX / (float)(high2 - low2);
-	return low2 + (myRand / factor);
-}
-
 QByteArray QWsSocket::generateNonce()
 {
 	QByteArray nonce;
@@ -766,7 +736,6 @@ QByteArray QWsSocket::generateNonce()
 	return nonce.toBase64();
 }
 
-#include <QtCore/qmath.h>
 QByteArray QWsSocket::generateKey1or2()
 {
 	QByteArray key;
@@ -1127,3 +1096,5 @@ QString QWsSocket::extensions()
 {
 	return _extensions;
 }
+
+} // namespace QtWebsocket

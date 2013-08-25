@@ -20,6 +20,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <QTcpSocket>
 
+namespace QtWebsocket
+{
+
 enum EWebsocketVersion
 {
 	WS_VUnknow = -1,
@@ -74,5 +77,7 @@ public:
 	QString protocol;
 	QString extensions;
 };
+
+} // namespace QtWebsocket
 
 #endif // QWSHANDSHAKE_H

@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ServerThreaded::ServerThreaded()
 {
 	int port = 80;
-	server = new QWsServer(this);
+	server = new QtWebsocket::QWsServer(this);
 	if (! server->listen(QHostAddress::Any, port))
 	{
 		std::cout << QObject::tr("Error: Can't launch server").toStdString() << std::endl;
@@ -43,7 +43,7 @@ void ServerThreaded::processNewConnection()
 	std::cout << QObject::tr("Client connected").toStdString() << std::endl;
 
 	// Get the connecting socket
-	QWsSocket* socket = server->nextPendingConnection();
+	QtWebsocket::QWsSocket* socket = server->nextPendingConnection();
 
 	// Create a new thread and giving to him the socket
 	SocketThread* thread = new SocketThread(socket);

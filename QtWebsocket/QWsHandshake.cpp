@@ -24,6 +24,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "QWsSocket.h"
 
+namespace QtWebsocket
+{
+
 QWsHandshake::QWsHandshake(bool clientSide) :
 	clientSide(clientSide),
 	complete(false),
@@ -260,3 +263,5 @@ bool QWsHandshake::isValidServerPart()
 
 	return true;
 }
+
+} // namespace QtWebsocket

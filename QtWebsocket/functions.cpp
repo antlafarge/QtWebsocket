@@ -15,32 +15,45 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SERVER_H
-#define SERVER_H
+#include <QtCore/qmath.h>
 
-#include <QtCore>
-#include <QtNetwork>
-
-#include "QWsServer.h"
-#include "QWsSocket.h"
-
-class Server : public QObject
+namespace QtWebsocket
 {
-	Q_OBJECT
 
-public:
-	Server(int port = 80, QtWebsocket::Protocol protocol = QtWebsocket::Tcp);
-	~Server();
+quint8 bitCount(quint32 n)
+{
+	quint8 count = 0;
+	while (n)
+	{
+		if (n & 1)
+		{
+			count++;
+		}
+		n >>= 1;
+	}
+	return count;
+}
 
-public slots:
-	void processNewConnection();
-	void processMessage(QString message);
-	void processPong(quint64 elapsedTime);
-	void socketDisconnected();
+quint32 randquint32()
+{
+	const quint8 numberOfBits = bitCount(RAND_MAX);
+	quint32 myRand = 0;
+	int i = 3;
+	while (i--)
+	{
+		myRand += qrand();
+		myRand <<= numberOfBits;
+	}
+	return myRand;
+}
 
-private:
-	QtWebsocket::QWsServer* server;
-	QList<QtWebsocket::QWsSocket*> clients;
-};
+quint32 randquint32(quint32 low, quint32 high)
+{
+	quint32 low2 = qMin(low, high);
+	quint32 high2 = qMax(low, high);
+	quint32 myRand = randquint32();
+	double factor = (double)UINT_MAX / (double)(high2 - low2);
+	return low2 + (myRand / factor);
+}
 
-#endif // SERVER_H
+} // namespace QtWebsocket

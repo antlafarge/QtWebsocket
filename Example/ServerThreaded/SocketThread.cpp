@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <QtCore>
 #include <iostream>
 
-SocketThread::SocketThread(QWsSocket* wsSocket) :
+SocketThread::SocketThread(QtWebsocket::QWsSocket* wsSocket) :
 	socket(wsSocket)
 {
 	// Set this thread as parent of the socket

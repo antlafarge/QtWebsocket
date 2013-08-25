@@ -6,7 +6,7 @@
 	</head>
 	<body>
 		<p>
-			<input type="text" id="wsURI" value="ws://localhost:1337"><br>
+			<input type="text" id="wsURI" value="ws://localhost:80"><br>
 			<input type="checkbox" onclick="secureURI(this.checked)"> TLS secured connection<br>
 			<button onClick="network.connect(document.querySelector('#wsURI').value)">Connect</button>
 			<button onClick="network.disconnect()">Disconnect</button>
@@ -45,7 +45,7 @@
 				{
 					if (this.websocket)
 					{
-						if (this.websocket.connected())
+						if (this.connected())
 						{
 							this.websocket.close();
 						}
@@ -81,14 +81,6 @@
 					{
 						console.warn("Websocket error:", evt.data);
 					};
-					this.websocket.connected = function()
-					{
-						if (this.readyState == 1)
-						{
-							return true;
-						}
-						return false;
-					};
 					updateSocketState(this.websocket);
 				}
 				catch(exception)
@@ -97,35 +89,42 @@
 					console.error("Websocket fatal error", exception);
 				}
 			}
+			
+			Network.prototype.connected = function()
+			{
+				if (this.websocket && this.websocket.readyState == 1)
+				{
+					return true;
+				}
+				return false;
+			};
 
 			Network.prototype.reconnect = function()
 			{
-				if (this.websocket.connected())
+				if (this.connected())
 				{
 					this.disconnect();
 				}
 				this.connect();
 			}
 
-			Network.prototype.send = function(command)
-			{
-				var BA = command.serialize();
-				var AB = Convert.toArrayBuffer(BA);
-				if (this.websocket.connected())
-				{
-					this.websocket.send(AB);
-				}
-			};
-
 			Network.prototype.disconnect = function()
 			{
 				this.disconnectionAsked = true;
-				if (this.websocket && this.websocket.connected())
+				if (this.connected())
 				{
 					this.websocket.close();
 					updateSocketState(this.websocket);
 				}
 			}
+
+			Network.prototype.send = function(message)
+			{
+				if (this.connected())
+				{
+					this.websocket.send(message);
+				}
+			};
 
 			Network.prototype.checkSocket = function()
 			{
@@ -174,10 +173,10 @@
 				var message = document.getElementById("inputMessage").value;
 				message = message ? message : "echo";
 				var strToSend = pseudo + ": " + message;
-				if (websocket && websocket.readyState === 1)
+				if (network && network.connected())
 				{
 					document.getElementById("inputMessage").value = "";
-					websocket.send(strToSend);
+					network.send(strToSend);
 					console.log("Message sent :", '"'+strToSend+'"');
 				}
 			}

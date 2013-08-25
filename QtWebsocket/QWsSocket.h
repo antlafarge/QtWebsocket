@@ -29,6 +29,54 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "QWsHandshake.h"
 
+namespace QtWebsocket
+{
+	
+enum Protocol
+{
+	None = 0x0,
+	Tcp = 0x1,
+	Tls = 0x2,
+	//TcpTls= 0x3 // soon
+};
+
+enum EOpcode
+{
+	OpContinue = 0x0,
+	OpText = 0x1,
+	OpBinary = 0x2,
+	OpReserved3 = 0x3,
+	OpReserved4 = 0x4,
+	OpReserved5 = 0x5,
+	OpReserved6 = 0x6,
+	OpReserved7 = 0x7,
+	OpClose = 0x8,
+	OpPing = 0x9,
+	OpPong = 0xA,
+	OpReservedB = 0xB,
+	OpReservedV = 0xC,
+	OpReservedD = 0xD,
+	OpReservedE = 0xE,
+	OpReservedF = 0xF
+};
+enum ECloseStatusCode
+{
+	NoCloseStatusCode = 0,
+	CloseNormal = 1000,
+	CloseGoingAway = 1001,
+	CloseProtocolError = 1002,
+	CloseDataTypeNotSupported = 1003,
+	CloseReserved1004 = 1004,
+	CloseMissingStatusCode = 1005,
+	CloseAbnormalDisconnection = 1006,
+	CloseWrongDataType = 1007,
+	ClosePolicyViolated = 1008,
+	CloseTooMuchData = 1009,
+	CloseMissingExtension = 1010,
+	CloseBadOperation = 1011,
+	CloseTLSHandshakeFailed = 1015
+};
+
 class QWsSocket : public QAbstractSocket
 {
 	Q_OBJECT
@@ -36,46 +84,8 @@ class QWsSocket : public QAbstractSocket
 	friend class QWsServer;
 
 public:
-	enum EOpcode
-	{
-		OpContinue = 0x0,
-		OpText = 0x1,
-		OpBinary = 0x2,
-		OpReserved3 = 0x3,
-		OpReserved4 = 0x4,
-		OpReserved5 = 0x5,
-		OpReserved6 = 0x6,
-		OpReserved7 = 0x7,
-		OpClose = 0x8,
-		OpPing = 0x9,
-		OpPong = 0xA,
-		OpReservedB = 0xB,
-		OpReservedV = 0xC,
-		OpReservedD = 0xD,
-		OpReservedE = 0xE,
-		OpReservedF = 0xF
-	};
-	enum ECloseStatusCode
-	{
-		NoCloseStatusCode = 0,
-		CloseNormal = 1000,
-		CloseGoingAway = 1001,
-		CloseProtocolError = 1002,
-		CloseDataTypeNotSupported = 1003,
-		CloseReserved1004 = 1004,
-		CloseMissingStatusCode = 1005,
-		CloseAbnormalDisconnection = 1006,
-		CloseWrongDataType = 1007,
-		ClosePolicyViolated = 1008,
-		CloseTooMuchData = 1009,
-		CloseMissingExtension = 1010,
-		CloseBadOperation = 1011,
-		CloseTLSHandshakeFailed = 1015
-	};
-
-public:
 	// ctor
-	QWsSocket(QObject* parent = NULL, QTcpSocket* socket = NULL, EWebsocketVersion ws_v = WS_V13, bool useSsl = false);
+	QWsSocket(QObject* parent = NULL, QTcpSocket* socket = NULL, EWebsocketVersion ws_v = WS_V13, Protocol baseProtocolToUse = Tcp);
 	// dtor
 	virtual ~QWsSocket();
 
@@ -178,7 +188,7 @@ private:
 	QByteArray key3;
 	QByteArray accept;
 
-	bool useSsl;
+	Protocol baseProtocol;
 
 public:
 	// Static functions
@@ -203,5 +213,7 @@ public:
 	static QRegExp regExpHttpResponse;
 	static QRegExp regExpHttpField;
 };
+
+} // namespace QtWebsocket
 
 #endif // QWSSOCKET_H

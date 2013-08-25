@@ -40,7 +40,7 @@ signals:
 	void broadcastMessage(QString message);
 
 private:
-	QWsServer* server;
+	QtWebsocket::QWsServer* server;
 };
 
 #endif // SERVERTHREADED_H

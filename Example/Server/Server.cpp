@@ -18,9 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "Server.h"
 #include <iostream>
 
-Server::Server(int port, bool useSsl)
+Server::Server(int port, QtWebsocket::Protocol protocol)
 {
-	server = new QWsServer(this, useSsl);
+	server = new QtWebsocket::QWsServer(this, protocol);
 	if (! server->listen(QHostAddress::Any, port))
 	{
 		std::cout << tr("Error: Can't launch server").toStdString() << std::endl;
@@ -39,7 +39,7 @@ Server::~Server()
 
 void Server::processNewConnection()
 {
-	QWsSocket* clientSocket = server->nextPendingConnection();
+	QtWebsocket::QWsSocket* clientSocket = server->nextPendingConnection();
 
 	connect(clientSocket, SIGNAL(frameReceived(QString)), this, SLOT(processMessage(QString)));
 	connect(clientSocket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
@@ -52,7 +52,7 @@ void Server::processNewConnection()
 
 void Server::processMessage(QString frame)
 {
-	QWsSocket* socket = qobject_cast<QWsSocket*>(sender());
+	QtWebsocket::QWsSocket* socket = qobject_cast<QtWebsocket::QWsSocket*>(sender());
 	if (socket == 0)
 	{
 		return;
@@ -60,7 +60,7 @@ void Server::processMessage(QString frame)
 
 	std::cout << frame.toStdString() << std::endl;
 	
-	QWsSocket* client;
+	QtWebsocket::QWsSocket* client;
 	foreach (client, clients)
 	{
 		client->write(frame);
@@ -74,7 +74,7 @@ void Server::processPong(quint64 elapsedTime)
 
 void Server::socketDisconnected()
 {
-	QWsSocket* socket = qobject_cast<QWsSocket*>(sender());
+	QtWebsocket::QWsSocket* socket = qobject_cast<QtWebsocket::QWsSocket*>(sender());
 	if (socket == 0)
 	{
 		return;

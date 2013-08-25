@@ -44,7 +44,7 @@ protected slots:
 	void displaySslErrors(const QList<QSslError>& errors);
 
 protected:
-	QWsSocket* wsSocket;
+	QtWebsocket::QWsSocket* wsSocket;
 	QString defaultPseudo;
 
 private:

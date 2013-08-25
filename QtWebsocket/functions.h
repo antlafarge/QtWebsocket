@@ -15,32 +15,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SERVER_H
-#define SERVER_H
+#ifndef QTWS_FUNCTIONS
+#define QTWS_FUNCTIONS
 
-#include <QtCore>
-#include <QtNetwork>
+#include <QtCore/qmath.h>
 
-#include "QWsServer.h"
-#include "QWsSocket.h"
-
-class Server : public QObject
+namespace QtWebsocket
 {
-	Q_OBJECT
 
-public:
-	Server(int port = 80, QtWebsocket::Protocol protocol = QtWebsocket::Tcp);
-	~Server();
+quint8 bitCount(quint32 n);
+quint32 randquint32();
+quint32 randquint32(quint32 low, quint32 high);
 
-public slots:
-	void processNewConnection();
-	void processMessage(QString message);
-	void processPong(quint64 elapsedTime);
-	void socketDisconnected();
+} // namespace QtWebsocket
 
-private:
-	QtWebsocket::QWsServer* server;
-	QList<QtWebsocket::QWsSocket*> clients;
-};
-
-#endif // SERVER_H
+#endif // QTWS_FUNCTIONS

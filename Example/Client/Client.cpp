@@ -28,9 +28,9 @@ Client::Client(QWidget *parent) :
 	defaultPseudo = QString("user%1").arg(qrand() % 9000 + 1000);
 	ui->pseudoLineEdit->setPlaceholderText(defaultPseudo);
 
-	EWebsocketVersion version = WS_V13;
-	bool useSsl = true;
-	wsSocket = new QWsSocket(this, NULL, version, useSsl);
+	QtWebsocket::EWebsocketVersion version = QtWebsocket::WS_V13;
+	QtWebsocket::Protocol protocol = QtWebsocket::Tcp;
+	wsSocket = new QtWebsocket::QWsSocket(this, NULL, version, protocol);
 
 	socketStateChanged(wsSocket->state());
 

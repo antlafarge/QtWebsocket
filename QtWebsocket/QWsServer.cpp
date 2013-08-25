@@ -22,20 +22,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <QCryptographicHash>
 #include <QDateTime>
 
-QWsServer::QWsServer(QObject* parent, bool useSsl2)
+namespace QtWebsocket
+{
+
+QWsServer::QWsServer(QObject* parent, Protocol allowedProtocols)
 	: QObject(parent),
-	useSsl(useSsl2)
+	tcpServer(new QTcpServer(this)),
+	tlsServer(this, allowedProtocols)
 {
 	qsrand(QDateTime::currentMSecsSinceEpoch());
 
-	if (useSsl)
+	if (allowedProtocols & Tls)
 	{
-		tcpServer = new SslServer(this);
+		tcpServer = &tlsServer;
 		QObject::connect(tcpServer, SIGNAL(newSslConnection(QSslSocket*)), this, SLOT(newSslConnection(QSslSocket*)));
 	}
 	else
 	{
-		tcpServer = new QTcpServer(this);
 		QObject::connect(tcpServer, SIGNAL(newConnection()), this, SLOT(newTcpConnection()));
 	}
 }
@@ -53,6 +56,11 @@ bool QWsServer::listen(const QHostAddress & address, quint16 port)
 void QWsServer::close()
 {
 	tcpServer->close();
+}
+
+Protocol QWsServer::allowedProtocols()
+{
+	return tlsServer.allowedProtocols();
 }
 
 QAbstractSocket::SocketError QWsServer::serverError()
@@ -173,7 +181,7 @@ void QWsServer::dataReceived()
 		QByteArray nonce = QWsSocket::generateNonce();
 		handshakeResponse = QWsServer::composeOpeningHandshakeResponseV4(accept, nonce, handshake.protocol).toUtf8();
 	}
-	else
+	else // version WS_V0
 	{
 		QByteArray accept = QWsSocket::computeAcceptV0(handshake.key1, handshake.key2, handshake.key3);
 		// safari 5.1.7 don't accept the utf8 charset here...
@@ -393,3 +401,5 @@ QString QWsServer::composeBadRequestResponse(QList<EWebsocketVersion> versions)
 	}
 	return response;
 }
+
+} // namespace QtWebsocket

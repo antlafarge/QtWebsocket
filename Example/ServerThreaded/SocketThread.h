@@ -27,10 +27,10 @@ class SocketThread : public QThread
 	Q_OBJECT
 
 public:
-	SocketThread(QWsSocket* wsSocket);
+	SocketThread(QtWebsocket::QWsSocket* wsSocket);
 	~SocketThread();
 
-	QWsSocket* socket;
+	QtWebsocket::QWsSocket* socket;
 	void run();
 
 private slots:
