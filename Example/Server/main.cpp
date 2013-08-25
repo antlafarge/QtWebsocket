@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 {
 	QCoreApplication app(argc, argv);
 
-	int port = 1337;
+	int port = 80;
 	bool useSsl = true;
 	Server myServer(port, useSsl);
 

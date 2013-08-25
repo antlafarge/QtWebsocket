@@ -1,6 +1,8 @@
+<!DOCTYPE html>
 <html>
 	<head>
 		<title>Websocket client test</title>
+		<meta charset="utf-8">
 	</head>
 	<body>
 		<p>
@@ -232,12 +234,7 @@
 				document.querySelector("#wsURI").value = uri;
 			}
 			
-			function generatePseudo()
-			{
-				return "user " + Math.floor(Math.random()*8999+1000);
-			}
-			
-			document.querySelector("#inputPseudo").setAttribute("placeholder", generatePseudo());
+			document.querySelector("#inputPseudo").setAttribute("placeholder", "user" + Math.floor(Math.random() * 8999 + 1000));
 			
 			var chatTextArea = document.getElementById("chatTextArea");
 			var network = new Network();

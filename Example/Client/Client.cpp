@@ -25,6 +25,9 @@ Client::Client(QWidget *parent) :
 {
 	ui->setupUi(this);
 
+	defaultPseudo = QString("user%1").arg(qrand() % 9000 + 1000);
+	ui->pseudoLineEdit->setPlaceholderText(defaultPseudo);
+
 	EWebsocketVersion version = WS_V13;
 	bool useSsl = true;
 	wsSocket = new QWsSocket(this, NULL, version, useSsl);
@@ -49,9 +52,15 @@ Client::~Client()
 
 void Client::sendMessage()
 {
-	QString message = ui->pseudoLineEdit->text() + QLatin1String(": ") + ui->textLineEdit->text();
+	QString pseudo = ui->pseudoLineEdit->text();
+	pseudo = (pseudo.isEmpty() ? defaultPseudo : pseudo);
+
+	QString message = ui->textLineEdit->text();
+	message = (message.isEmpty() ? QLatin1String("echo") : message);
+
 	ui->textLineEdit->clear();
-	wsSocket->write(message);
+
+	wsSocket->write(QString("%1: %2").arg(pseudo).arg(message));
 }
 
 void Client::displayMessage(QString message)
@@ -71,9 +80,9 @@ void Client::displaySslErrors(const QList<QSslError>& errors)
 void Client::connectSocket()
 {
 	bool ok;
-	//QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://localhost:1337", &ok);
-	//QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://127.0.0.1:1337", &ok);
-	QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://echo.websocket.org:80", &ok);
+	QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://localhost:80", &ok);
+	//QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://127.0.0.1:80", &ok);
+	//QString ipAddress = QInputDialog::getText(this, tr("Client"), tr("Server IP:"), QLineEdit::Normal, "ws://echo.websocket.org:80", &ok);
 	ipAddress = ipAddress.trimmed();
 	if (ok && !ipAddress.isEmpty())
 	{
@@ -90,7 +99,7 @@ void Client::connectSocket()
 			ip = ipAddress;
 			port = 80;
 		}
-		wsSocket->connectToHost(ip.toLatin1(), port);
+		wsSocket->connectToHost(ip.toUtf8(), port);
 	}
 }
 

@@ -26,6 +26,8 @@ QWsServer::QWsServer(QObject* parent, bool useSsl2)
 	: QObject(parent),
 	useSsl(useSsl2)
 {
+	qsrand(QDateTime::currentMSecsSinceEpoch());
+
 	if (useSsl)
 	{
 		tcpServer = new SslServer(this);
@@ -36,8 +38,6 @@ QWsServer::QWsServer(QObject* parent, bool useSsl2)
 		tcpServer = new QTcpServer(this);
 		QObject::connect(tcpServer, SIGNAL(newConnection()), this, SLOT(newTcpConnection()));
 	}
-
-	qsrand(QDateTime::currentMSecsSinceEpoch());
 }
 
 QWsServer::~QWsServer()
@@ -116,7 +116,7 @@ static void showErrorAndClose(QTcpSocket* tcpSocket)
 {
 	// Send bad request response
 	QString response = QWsServer::composeBadRequestResponse(QList<EWebsocketVersion>() << WS_V6 << WS_V7 << WS_V8 << WS_V13);
-	tcpSocket->write(response.toLatin1());
+	tcpSocket->write(response.toUtf8());
 	tcpSocket->flush();
 	tcpSocket->close();
 }
@@ -160,27 +160,28 @@ void QWsServer::dataReceived()
 	QObject::disconnect(tcpSocket, SIGNAL(disconnected()), this, SLOT(tcpSocketDisconnected()));
 
 	// Compose opening handshake response
-	QString response;
+	QByteArray handshakeResponse;
 
 	if (handshake.version >= WS_V6)
 	{
 		QByteArray accept = QWsSocket::computeAcceptV4(handshake.key);
-		response = QWsServer::composeOpeningHandshakeResponseV6(accept, handshake.protocol);
+		handshakeResponse = QWsServer::composeOpeningHandshakeResponseV6(accept, handshake.protocol).toUtf8();
 	}
 	else if (handshake.version >= WS_V4)
 	{
 		QByteArray accept = QWsSocket::computeAcceptV4(handshake.key);
 		QByteArray nonce = QWsSocket::generateNonce();
-		response = QWsServer::composeOpeningHandshakeResponseV4(accept, nonce, handshake.protocol);
+		handshakeResponse = QWsServer::composeOpeningHandshakeResponseV4(accept, nonce, handshake.protocol).toUtf8();
 	}
 	else
 	{
 		QByteArray accept = QWsSocket::computeAcceptV0(handshake.key1, handshake.key2, handshake.key3);
-		response = QWsServer::composeOpeningHandshakeResponseV0(accept, handshake.origin, handshake.hostAddress, handshake.hostPort, handshake.resourceName , handshake.protocol);
+		// safari 5.1.7 don't accept the utf8 charset here...
+		handshakeResponse = QWsServer::composeOpeningHandshakeResponseV0(accept, handshake.origin, handshake.hostAddress, handshake.hostPort, handshake.resourceName , handshake.protocol).toLatin1();
 	}
-
+	
 	// Send opening handshake response
-	tcpSocket->write(response.toLatin1());
+	tcpSocket->write(handshakeResponse);
 	tcpSocket->flush();
 
 	QWsSocket* wsSocket = new QWsSocket(this, tcpSocket, handshake.version);

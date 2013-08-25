@@ -46,7 +46,7 @@ bool QWsHandshake::read(QTcpSocket* tcpSocket)
 	while (tcpSocket->canReadLine())
 	{
 		// read a line
-		QString line = QString::fromLatin1(tcpSocket->readLine());
+		QString line = QString::fromUtf8(tcpSocket->readLine());
 		rawHandshake += line;
 		// check length of line
 		if (line.length() > 1000) // incase of garbage input
@@ -120,7 +120,7 @@ bool QWsHandshake::read(QTcpSocket* tcpSocket)
 	if (tcpSocket->bytesAvailable() == 8 && fields.contains(QLatin1String("Sec-WebSocket-Key1")) && fields.contains(QLatin1String("Sec-WebSocket-Key2")))
 	{
 		key3 = tcpSocket->read(8);
-		rawHandshake += QString::fromLatin1(key3);
+		rawHandshake += QString::fromUtf8(key3);
 	}
 
 	return true;
@@ -152,6 +152,7 @@ bool QWsHandshake::isValidCommonPart()
 		return false;
 	}
 	
+	//MANDATORY
 	// Upgrade
 	if ((!fields.contains(QLatin1String("Upgrade"))) || (fields.value(QLatin1String("Upgrade")).compare(QLatin1String("websocket"), Qt::CaseInsensitive)))
 	{
@@ -159,11 +160,12 @@ bool QWsHandshake::isValidCommonPart()
 	}
 
 	// Connection
-	if ((!fields.contains(QLatin1String("Connection"))) || (fields.value(QLatin1String("Connection")).compare(QLatin1String("Upgrade"), Qt::CaseInsensitive)))
+	if ((!fields.contains(QLatin1String("Connection"))) || (!fields.value(QLatin1String("Connection")).split(QRegExp("\\s?,\\s?")).contains(QLatin1String("Upgrade"), Qt::CaseInsensitive)))
 	{
 		return false;
 	}
 	
+	// OPTIONAL
 	// Protocol
 	if (fields.contains(QLatin1String("Sec-WebSocket-Protocol")))
 	{
@@ -190,7 +192,10 @@ bool QWsHandshake::isValidClientPart()
 		{
 			QStringList splitted = host.split(QLatin1Char(':'));
 			hostAddress = splitted.first();
-			hostPort = splitted.last();
+			if (splitted.size() == 2)
+			{
+				hostPort = splitted.last();
+			}
 		}
 		else
 		{
@@ -208,7 +213,7 @@ bool QWsHandshake::isValidClientPart()
 		if (fields.contains(QLatin1String("Sec-WebSocket-Key")))
 		{
 			version = ((EWebsocketVersion)(fields.value(QLatin1String("Sec-WebSocket-Version")).toUInt()));
-			key = fields.value(QLatin1String("Sec-WebSocket-Key")).toLatin1();
+			key = fields.value(QLatin1String("Sec-WebSocket-Key")).toUtf8();
 		}
 		else
 		{
@@ -218,8 +223,8 @@ bool QWsHandshake::isValidClientPart()
 	else if (fields.contains(QLatin1String("Sec-WebSocket-Key1")) && fields.contains(QLatin1String("Sec-WebSocket-Key2")) && !key3.isEmpty())
 	{
 		version = WS_V0;
-		key1 = fields.value(QLatin1String("Sec-WebSocket-Key1")).toLatin1();
-		key2 = fields.value(QLatin1String("Sec-WebSocket-Key2")).toLatin1();
+		key1 = fields.value(QLatin1String("Sec-WebSocket-Key1")).toUtf8();
+		key2 = fields.value(QLatin1String("Sec-WebSocket-Key2")).toUtf8();
 	}
 	else
 	{
@@ -246,7 +251,7 @@ bool QWsHandshake::isValidServerPart()
 	// accept
 	if (fields.contains(QLatin1String("Sec-WebSocket-Accept")))
 	{
-		accept = fields.value(QLatin1String("Sec-WebSocket-Accept")).toLatin1();
+		accept = fields.value(QLatin1String("Sec-WebSocket-Accept")).toUtf8();
 	}
 	else
 	{
