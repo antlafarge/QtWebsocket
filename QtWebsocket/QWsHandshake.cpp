@@ -29,8 +29,8 @@ namespace QtWebsocket
 
 QWsHandshake::QWsHandshake(WsMode wsMode) :
 	_wsMode(wsMode),
-	complete(false),
 	readStarted(false),
+	complete(false),
 	httpRequestValid(false)
 {
 }
@@ -121,7 +121,6 @@ bool QWsHandshake::read(QTcpSocket* tcpSocket)
 		return false;
 	}
 	// read key3 if existing (for first websocket version)
-	int aaa = tcpSocket->bytesAvailable();
 	if (_wsMode == WsClientMode && tcpSocket->bytesAvailable() == 8 && fields.contains(QLatin1String("Sec-WebSocket-Key1")) && fields.contains(QLatin1String("Sec-WebSocket-Key2")))
 	{
 		key3 = tcpSocket->read(8);

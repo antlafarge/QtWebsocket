@@ -15,9 +15,13 @@ CONFIG += staticlib
 SOURCES += \
     QWsServer.cpp \
     QWsSocket.cpp \
-    QWsHandshake.cpp
+    QWsHandshake.cpp \
+    QTlsServer.cpp \
+    functions.cpp
 
 HEADERS += \
     QWsServer.h \
     QWsSocket.h \
-    QWsHandshake.h
+    QWsHandshake.h \
+    QTlsServer.h \
+    functions.h

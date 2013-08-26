@@ -44,18 +44,18 @@ QRegExp QWsSocket::regExpHttpField(QLatin1String("^(.+):\\s(.+)\\r\\n$"));
 
 QWsSocket::QWsSocket(QObject* parent, QTcpSocket* socket, EWebsocketVersion ws_v) :
 	QAbstractSocket(QAbstractSocket::UnknownSocketType, parent),
-	_secured(false),
 	tcpSocket(socket ? socket : new QTcpSocket),
 	_version(ws_v),
-	_hostPort(-1),
 	_wsMode(WsClientMode),
+	_hostPort(-1),
 	closingHandshakeSent(false),
 	closingHandshakeReceived(false),
 	readingState(HeaderPending),
 	isFinalFragment(false),
 	hasMask(false),
 	payloadLength(0),
-	maskingKey(4, 0)
+	maskingKey(4, 0),
+	_secured(false)
 {
 	initTcpSocket();
 }
@@ -392,16 +392,16 @@ void QWsSocket::processHandshake()
 		return;
 	}
 
-	accept = handshake.accept;
-
 	// If the mandatory params are not setted, we abord the connection to the Websocket server
 	if ( !handshake.isValid()
-		|| (_version >= WS_V4 && (QWsSocket::computeAcceptV4(key) != accept))
-		|| (_version == WS_V0 && (QWsSocket::computeAcceptV0(key1, key2, key3) != accept)) )
+		|| (_version >= WS_V4 && (QWsSocket::computeAcceptV4(key) != handshake.accept))
+		|| (_version == WS_V0 && (QWsSocket::computeAcceptV0(key1, key2, key3) != handshake.accept)) )
 	{
 		emit error(QAbstractSocket::ConnectionRefusedError);
 		return;
 	}
+	
+	accept = handshake.accept;
 
 	// handshake procedure succeeded
 	QAbstractSocket::setSocketState(QAbstractSocket::ConnectedState);
