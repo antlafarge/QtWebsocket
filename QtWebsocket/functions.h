@@ -15,18 +15,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef QTWS_FUNCTIONS
-#define QTWS_FUNCTIONS
+#ifndef QTWS_FUNCTIONS_H
+#define QTWS_FUNCTIONS_H
 
 #include <QtCore/qmath.h>
 
 namespace QtWebsocket
 {
 
-quint8 bitCount(quint32 n);
-quint32 randquint32();
-quint32 randquint32(quint32 low, quint32 high);
+bool rand2();
+quint8 rand8(quint8 low = 0, quint8 high = 0);
+quint16 rand16(quint16 low = 0, quint16 high = 0);
+quint32 rand32(quint32 low = 0, quint32 high = 0);
+quint64 rand64(quint64 low = 0, quint64 high = 0);
 
 } // namespace QtWebsocket
 
-#endif // QTWS_FUNCTIONS
+#endif // QTWS_FUNCTIONS_H

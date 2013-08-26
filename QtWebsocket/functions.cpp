@@ -20,40 +20,79 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace QtWebsocket
 {
 
-quint8 bitCount(quint32 n)
+bool rand2()
 {
-	quint8 count = 0;
-	while (n)
-	{
-		if (n & 1)
-		{
-			count++;
-		}
-		n >>= 1;
-	}
-	return count;
+	return (qrand() & 0x1) == 0x1;
 }
 
-quint32 randquint32()
+quint8 rand8(quint8 low, quint8 high)
 {
-	const quint8 numberOfBits = bitCount(RAND_MAX);
-	quint32 myRand = 0;
-	int i = 3;
-	while (i--)
+	if (low == 0 && high == 0)
 	{
-		myRand += qrand();
-		myRand <<= numberOfBits;
+		high = UCHAR_MAX;
 	}
-	return myRand;
+	else if (low > high)
+	{
+		qSwap(low, high);
+	}
+	return low + (qrand() % (high - low + 1));
 }
 
-quint32 randquint32(quint32 low, quint32 high)
+quint16 rand16(quint16 low, quint16 high)
 {
-	quint32 low2 = qMin(low, high);
-	quint32 high2 = qMax(low, high);
-	quint32 myRand = randquint32();
-	double factor = (double)UINT_MAX / (double)(high2 - low2);
-	return low2 + (myRand / factor);
+	if (low == 0 && high == 0)
+	{
+		high = USHRT_MAX;
+	}
+	else if (low > high)
+	{
+		qSwap(low, high);
+	}
+	quint16 range = high - low;
+	if (range < RAND_MAX)
+	{
+		return low + (qrand() % (range + 1));
+	}
+	else
+	{
+		quint16 myRand = qrand();
+		myRand += (((quint16)qrand()) << 15);
+		return low + (myRand % (high - low + 1));
+	}
+}
+
+quint32 rand32(quint32 low, quint32 high)
+{
+	if (low == 0 && high == 0)
+	{
+		high = ULONG_MAX;
+	}
+	else if (low > high)
+	{
+		qSwap(low, high);
+	}
+	quint32 myRand = qrand();
+	myRand += (((quint32)qrand()) << 15);
+	myRand += (((quint32)qrand()) << 30);
+	return low + (myRand % (high - low + 1));
+}
+
+quint64 rand64(quint64 low, quint64 high)
+{
+	if (low == 0 && high == 0)
+	{
+		high = ULLONG_MAX;
+	}
+	else if (low > high)
+	{
+		qSwap(low, high);
+	}
+	quint64 myRand = qrand();
+	myRand += (((quint64)qrand()) << 15);
+	myRand += (((quint64)qrand()) << 30);
+	myRand += (((quint64)qrand()) << 45);
+	myRand += (((quint64)qrand()) << 60);
+	return low + (myRand % (high - low + 1));
 }
 
 } // namespace QtWebsocket

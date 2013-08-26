@@ -87,9 +87,6 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\QtWebsocket\QWsHandshake.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GeneratedFiles\ui_Client.h">
       <Filter>Generated Files</Filter>
     </ClInclude>

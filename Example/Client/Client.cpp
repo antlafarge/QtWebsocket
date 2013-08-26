@@ -28,9 +28,7 @@ Client::Client(QWidget *parent) :
 	defaultPseudo = QString("user%1").arg(qrand() % 9000 + 1000);
 	ui->pseudoLineEdit->setPlaceholderText(defaultPseudo);
 
-	QtWebsocket::EWebsocketVersion version = QtWebsocket::WS_V13;
-	QtWebsocket::Protocol protocol = QtWebsocket::Tcp;
-	wsSocket = new QtWebsocket::QWsSocket(this, NULL, version, protocol);
+	wsSocket = new QtWebsocket::QWsSocket(this, NULL, QtWebsocket::WS_V13);
 
 	socketStateChanged(wsSocket->state());
 

@@ -30,12 +30,10 @@ QWsServer::QWsServer(QObject* parent, Protocol allowedProtocols)
 	tcpServer(new QTcpServer(this)),
 	tlsServer(this, allowedProtocols)
 {
-	qsrand(QDateTime::currentMSecsSinceEpoch());
-
 	if (allowedProtocols & Tls)
 	{
 		tcpServer = &tlsServer;
-		QObject::connect(tcpServer, SIGNAL(newSslConnection(QSslSocket*)), this, SLOT(newSslConnection(QSslSocket*)));
+		QObject::connect(tcpServer, SIGNAL(newTlsConnection(QSslSocket*)), this, SLOT(newTlsConnection(QSslSocket*)));
 	}
 	else
 	{
@@ -80,19 +78,19 @@ void QWsServer::newTcpConnection()
 	{
 		return;
 	}
-	connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
-	connect(tcpSocket, SIGNAL(disconnected()), this, SLOT(tcpSocketDisconnected()));
+	QObject::connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
+	QObject::connect(tcpSocket, SIGNAL(disconnected()), this, SLOT(tcpSocketDisconnected()));
 	handshakeBuffer.insert(tcpSocket, new QWsHandshake(true));
 }
 
-void QWsServer::newSslConnection(QSslSocket* serverSocket)
+void QWsServer::newTlsConnection(QSslSocket* serverSocket)
 {
 	if (serverSocket == NULL)
 	{
 		return;
 	}
-	connect(serverSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
-	connect(serverSocket, SIGNAL(disconnected()), this, SLOT(tcpSocketDisconnected()));
+	QObject::connect(serverSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
+	QObject::connect(serverSocket, SIGNAL(disconnected()), this, SLOT(tcpSocketDisconnected()));
 	handshakeBuffer.insert(serverSocket, new QWsHandshake(true));
 }
 
@@ -205,33 +203,12 @@ void QWsServer::dataReceived()
 	QWsHandshake* hsTmp = handshakeBuffer.take(tcpSocket);
 	delete hsTmp;
 
-	// SSL
-	/*if (encrypted)
-	{
-        QSslSocket *sslSocket = new QSslSocket(this);
-        sslSocket->setLocalCertificate(sslCertificate);
-        sslSocket->setPrivateKey(sslKey);
-        if (sslSocket->setSocketDescriptor(socketDescriptor))
-        {
-            qDebug() << "Trying to start encryption";
-            connect(sslSocket, SIGNAL(encrypted()), this, SLOT(onTcpConnectionReady()));
-            connect(sslSocket, SIGNAL(disconnected()), sslSocket, SLOT(deleteLater()));
-            sslSocket->startServerEncryption();
-        }
-        else
-        {
-            delete sslSocket;
-        }
-    }
-    else
-    {*/
-		// CAN'T DO THAT WITHOUT DISCONNECTING THE QTcpSocket
-		//int socketDescriptor = tcpSocket->socketDescriptor();
-		//incomingConnection(socketDescriptor);	
-		// USE THIS INSTEAD
-		addPendingConnection(wsSocket);
-		emit newConnection();
-    //}
+	// CAN'T DO THAT WITHOUT DISCONNECTING THE QTcpSocket
+	//int socketDescriptor = tcpSocket->socketDescriptor();
+	//incomingConnection(socketDescriptor);	
+	// USE THIS INSTEAD
+	addPendingConnection(wsSocket);
+	emit newConnection();
 }
 
 void QWsServer::incomingConnection(int socketDescriptor)

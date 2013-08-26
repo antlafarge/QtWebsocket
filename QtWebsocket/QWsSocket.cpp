@@ -33,16 +33,19 @@ namespace QtWebsocket
 
 const QLatin1String QWsSocket::emptyLine("\r\n");
 const QString QWsSocket::connectionRefusedStr(QLatin1String("Websocket connection refused"));
+const QRegExp regExpUriStart("^wss?://", Qt::CaseInsensitive);
+const QRegExp regExpUri("^wss?://([^\\s]+)$", Qt::CaseInsensitive);
+const QRegExp regExpLocalhostUri("^wss?://localhost$", Qt::CaseInsensitive);
 
-QRegExp QWsSocket::regExpIPv4(QLatin1String("^([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\.([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3}$"));
+QRegExp QWsSocket::regExpIPv4(QLatin1String("^wss?://([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\.([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3}$"));
 QRegExp QWsSocket::regExpHttpRequest(QLatin1String("^GET\\s(.*)\\sHTTP/(.+)\\r\\n"));
 QRegExp QWsSocket::regExpHttpResponse(QLatin1String("^HTTP/1.1\\s(\\d{3})\\s(.+)\\r\\n"));
 QRegExp QWsSocket::regExpHttpField(QLatin1String("^(.+):\\s(.+)\\r\\n$"));
 
-QWsSocket::QWsSocket(QObject* parent, QTcpSocket* socket, EWebsocketVersion ws_v, Protocol baseProtocolToUse) :
+QWsSocket::QWsSocket(QObject* parent, QTcpSocket* socket, EWebsocketVersion ws_v) :
 	QAbstractSocket(QAbstractSocket::UnknownSocketType, parent),
-	baseProtocol(baseProtocolToUse),
-	tcpSocket(socket ? socket : (baseProtocolToUse & Tls ? new QSslSocket : new QTcpSocket)),
+	_secured(false),
+	tcpSocket(socket ? socket : new QTcpSocket),
 	_version(ws_v),
 	_hostPort(-1),
 	serverSideSocket(false),
@@ -54,27 +57,7 @@ QWsSocket::QWsSocket(QObject* parent, QTcpSocket* socket, EWebsocketVersion ws_v
 	payloadLength(0),
 	maskingKey(4, 0)
 {
-	qsrand(QDateTime::currentMSecsSinceEpoch());
-	tcpSocket->setParent(this);
-
-	QAbstractSocket::setSocketState(tcpSocket->state());
-	QAbstractSocket::setPeerAddress(tcpSocket->peerAddress());
-	QAbstractSocket::setPeerPort(tcpSocket->peerPort());
-
-	if (_version == WS_V0)
-	{
-		QObject::connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(processDataV0()));
-	}
-	else
-	{
-		QObject::connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(processDataV4()));
-	}
-	QObject::connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(processTcpError(QAbstractSocket::SocketError)));
-	QObject::connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SIGNAL(error(QAbstractSocket::SocketError)));
-	QObject::connect(tcpSocket, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)), this, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)));
-	QObject::connect(tcpSocket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(processTcpStateChanged(QAbstractSocket::SocketState)));
-	QObject::connect(tcpSocket, SIGNAL(readChannelFinished()), this, SIGNAL(readChannelFinished()));
-	QObject::connect(tcpSocket, SIGNAL(hostFound()), this, SIGNAL(hostFound()));
+	initTcpSocket();
 }
 
 QWsSocket::~QWsSocket()
@@ -90,36 +73,95 @@ QWsSocket::~QWsSocket()
 	}
 }
 
-void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mode)
+void QWsSocket::initTcpSocket()
 {
-	_hostPort = port;
-	QString hostName2(hostName);
-	hostName2 = hostName2.remove("ws://", Qt::CaseInsensitive);
-	hostName2 = hostName2.remove("wss://", Qt::CaseInsensitive);
-	if (hostName2.contains(QRegExp("^localhost$", Qt::CaseInsensitive)))
+	if (tcpSocket == NULL)
 	{
-		_host = QLatin1String("localhost");
-		_hostAddress = QHostAddress::LocalHost;
+		return;
 	}
-	else if (hostName2.contains(QRegExp(QWsSocket::regExpIPv4)))
+
+	tcpSocket->setParent(this);
+
+	QAbstractSocket::setSocketState(tcpSocket->state());
+	QAbstractSocket::setPeerAddress(tcpSocket->peerAddress());
+	QAbstractSocket::setPeerPort(tcpSocket->peerPort());
+
+	if (_version == WS_V0)
 	{
-		_host = hostName2;
-		_hostAddress = QHostAddress(hostName2);
+		QObject::connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(processDataV0()), Qt::UniqueConnection);
 	}
 	else
 	{
-		_host = hostName2;
-		QHostInfo info = QHostInfo::fromName(hostName2);
-		QList<QHostAddress> hostAddresses = info.addresses();
-		_hostAddress = hostAddresses[0];
+		QObject::connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(processDataV4()), Qt::UniqueConnection);
+	}
+	QObject::connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(processTcpError(QAbstractSocket::SocketError)), Qt::UniqueConnection);
+	QObject::connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SIGNAL(error(QAbstractSocket::SocketError)), Qt::UniqueConnection);
+	QObject::connect(tcpSocket, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)), this, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)), Qt::UniqueConnection);
+	QObject::connect(tcpSocket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(processTcpStateChanged(QAbstractSocket::SocketState)), Qt::UniqueConnection);
+	QObject::connect(tcpSocket, SIGNAL(readChannelFinished()), this, SIGNAL(readChannelFinished()), Qt::UniqueConnection);
+	QObject::connect(tcpSocket, SIGNAL(hostFound()), this, SIGNAL(hostFound()), Qt::UniqueConnection);
+}
+
+void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mode)
+{
+	// abort connection if a the socket is not in the Unconnected state
+	if (QAbstractSocket::SocketState() != QAbstractSocket::UnconnectedState)
+	{
+		QAbstractSocket::abort();
 	}
 
-	if (baseProtocol & Tls)
+	// trim the hostname
+	_host = hostName.trimmed();
+
+	// check the validity of the Websocket URI scheme
+	if (!_host.contains(regExpUri))
 	{
-		QSslSocket* sslSocket = qobject_cast<QSslSocket*>(tcpSocket);
-		
+		return;
+	}
+	if (_host.startsWith("wss://", Qt::CaseInsensitive))
+	{
+		_secured = true;
+	}
+
+	// remove the websocket URI scheme for TCP connection
+	_hostPort = port;
+	
+	QString hostWithoutProtocol = _host.remove(regExpUriStart);
+	// check localhost uri
+	if (_host.contains(regExpLocalhostUri))
+	{
+		_hostAddress = QHostAddress::LocalHost;
+	}
+	// check IPv4 URI
+	// TODO IPv6
+	else if (_host.contains(QRegExp(QWsSocket::regExpIPv4)))
+	{
+		_hostAddress = QHostAddress(hostWithoutProtocol);
+	}
+	// from hostName
+	else
+	{
+		QHostInfo info = QHostInfo::fromName(hostWithoutProtocol);
+		QList<QHostAddress> hostAddresses = info.addresses();
+		if (hostAddresses.size())
+		{
+			_hostAddress = hostAddresses.first();
+		}
+		else
+		{
+			return;
+		}
+	}
+
+	if (_secured)
+	{
+		// replace tcpSocket by sslSocket
+		tcpSocket->deleteLater();
+		QSslSocket* sslSocket = new QSslSocket;
+		tcpSocket = sslSocket;
+		initTcpSocket();
+
 		QObject::connect(sslSocket, SIGNAL(sslErrors(const QList<QSslError>&)), this, SIGNAL(sslErrors(const QList<QSslError>&)), Qt::UniqueConnection);
-		QObject::connect(sslSocket, SIGNAL(sslErrors(const QList<QSslError>&)), this, SLOT(displaySslErrors(const QList<QSslError>&)), Qt::UniqueConnection);
 
 		QFile file("client-key.pem");
 		if (!file.open(QIODevice::ReadOnly))
@@ -139,37 +181,30 @@ void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mo
 		sslSocket->setPeerVerifyMode(QSslSocket::VerifyNone);
 		//sslSocket->ignoreSslErrors();
 		QObject::connect(sslSocket, SIGNAL(encrypted()), this, SLOT(onEncrypted()), Qt::UniqueConnection);
-		sslSocket->connectToHostEncrypted(hostName2, port);
+		sslSocket->connectToHostEncrypted(_host, port);
 		sslSocket->startClientEncryption();
 	}
 	else
 	{
+		// redirected to the other function
 		QWsSocket::connectToHost(_hostAddress, _hostPort, mode);
-	}
-}
-
-void QWsSocket::displaySslErrors(const QList<QSslError>& errors)
-{
-	for (int i=0, sz=errors.size(); i<sz; i++)
-	{
-		QString errorString = errors.at(i).errorString();
-		std::cout << errorString.toStdString() << std::endl;
 	}
 }
 
 void QWsSocket::connectToHost(const QHostAddress& address, quint16 port, OpenMode mode)
 {
-	if (baseProtocol & Tls)
-	{
-		QWsSocket::connectToHost(address.toString(), port, mode);
-	}
-	else
+	if (!_secured)
 	{
 		handshakeResponse.clear();
 		setPeerAddress(address);
 		setPeerPort(port);
 		setOpenMode(mode);
 		tcpSocket->connectToHost(address, port, mode);
+	}
+	else
+	{
+		// redirected to the other function
+		QWsSocket::connectToHost(address.toString(), port, mode);
 	}
 }
 
@@ -678,7 +713,7 @@ void QWsSocket::processTcpStateChanged(QAbstractSocket::SocketState tcpSocketSta
 		}
 		case QAbstractSocket::ConnectedState:
 		{
-			if (!(baseProtocol & Tls) && wsSocketState == QAbstractSocket::ConnectingState)
+			if (!_secured && wsSocketState == QAbstractSocket::ConnectingState)
 			{
 				setLocalAddress(tcpSocket->localAddress());
 				setLocalPort(tcpSocket->localPort());
@@ -730,7 +765,7 @@ QByteArray QWsSocket::generateNonce()
 	int i = 16;
 	while(i--)
 	{
-		nonce.append(randquint32(0, 255));
+		nonce.append(rand8());
 	}
 
 	return nonce.toBase64();
@@ -741,26 +776,26 @@ QByteArray QWsSocket::generateKey1or2()
 	QByteArray key;
 
 	// generate spaces number
-	quint32 spaces = randquint32(1, 12);
+	quint32 spaces = rand8(1, 12);
 
 	// generate a correct random number
 	quint32 partMax = qFloor((double)UINT_MAX / (double)spaces);
-	quint32 part = randquint32(0, partMax);
+	quint32 part = rand32(0, partMax);
 	quint32 key_number = part * spaces;
 	key = QByteArray::number(key_number);
 
 	// integrate some random characters
-	int i = randquint32(10, 15);
+	int i = rand8(10, 15);
 	while (i--)
 	{
-		key.insert(randquint32(0, key.size()), randquint32(32, 126));
+		key.insert(rand8(0, key.size()), rand8(32, 126));
 	}
 
 	// integrate spaces
 	int j = spaces;
 	while (j--)
 	{
-		key.insert(randquint32(0, key.size()), QLatin1String(" "));
+		key.insert(rand8(0, key.size()), QLatin1String(" "));
 	}
 
 	return key;

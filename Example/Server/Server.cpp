@@ -30,7 +30,7 @@ Server::Server(int port, QtWebsocket::Protocol protocol)
 	{
 		std::cout << tr("Server is listening on port %1").arg(port).toStdString() << std::endl;
 	}
-	connect(server, SIGNAL(newConnection()), this, SLOT(processNewConnection()));
+	QObject::connect(server, SIGNAL(newConnection()), this, SLOT(processNewConnection()));
 }
 
 Server::~Server()
@@ -41,13 +41,74 @@ void Server::processNewConnection()
 {
 	QtWebsocket::QWsSocket* clientSocket = server->nextPendingConnection();
 
-	connect(clientSocket, SIGNAL(frameReceived(QString)), this, SLOT(processMessage(QString)));
-	connect(clientSocket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
-	connect(clientSocket, SIGNAL(pong(quint64)), this, SLOT(processPong(quint64)));
+	QObject::connect(clientSocket, SIGNAL(frameReceived(QString)), this, SLOT(processMessage(QString)));
+	QObject::connect(clientSocket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
+	QObject::connect(clientSocket, SIGNAL(pong(quint64)), this, SLOT(processPong(quint64)));
 
 	clients << clientSocket;
 
 	std::cout << tr("Client connected").toStdString() << std::endl;
+}
+
+QString toReadableAscii(QString string)
+{
+	string.replace(QRegExp(QLatin1String("[ÀÁÂÃÄÅ]")), "ÀÁÂÃÄÅ");
+	string.replace(QRegExp(QLatin1String("[àáâãäåª]")), "a");
+	string.replace(QRegExp(QLatin1String("[ÈÉÊË£]")), "E");
+	string.replace(QRegExp(QLatin1String("[èéêë]")), "e");
+	string.replace(QRegExp(QLatin1String("[ÌÍÎÏ]")), "I");
+	string.replace(QRegExp(QLatin1String("[ìíîï¡]")), "i");
+	string.replace(QRegExp(QLatin1String("[ÒÓÔÕÖØ]")), "O");
+	string.replace(QRegExp(QLatin1String("[òóôõöðø¤°º]")), "o");
+	string.replace(QRegExp(QLatin1String("[ÙÚÛÜ]")), "U");
+	string.replace(QRegExp(QLatin1String("[ùúûüµ]")), "u");
+	string.replace(QRegExp(QLatin1String("[¥Ý]")), "Y");
+	string.replace(QRegExp(QLatin1String("[ýÿ]")), "y");
+	string.replace(QRegExp(QLatin1String("[Ç¢]")), "C");
+	string.replace(QLatin1Char('ç'), "c");
+	string.replace(QLatin1Char('©'), "(C)");
+	string.replace(QLatin1Char('®'), "(R)");
+	string.replace(QLatin1Char('«'), "<<");
+	string.replace(QLatin1Char('»'), ">>");
+	string.replace(QLatin1Char('¦'), "|");
+	string.replace(QLatin1Char('§'), "S");
+	string.replace(QLatin1Char('¨'), "\"");
+	string.replace(QLatin1Char('¬'), "-");
+	string.replace(QLatin1Char('-'), "-");
+	string.replace(QLatin1Char('¯'), "-");
+	string.replace(QLatin1Char('¹'), "^1");
+	string.replace(QLatin1Char('²'), "^2");
+	string.replace(QLatin1Char('³'), "^3");
+	string.replace(QLatin1Char('±'), "+-");
+	string.replace(QLatin1Char('¼'), "1/4");
+	string.replace(QLatin1Char('½'), "1/2");
+	string.replace(QLatin1Char('¾'), "3/4");
+	string.replace(QLatin1Char('×'), "x");
+	string.replace(QLatin1Char('÷'), "/");
+	string.replace(QLatin1Char('´'), "`");
+	string.replace(QLatin1Char('·'), ".");
+	string.replace(QLatin1Char('¸'), ",");
+	string.replace(QLatin1Char('¿'), "?");
+	string.replace(QLatin1Char('¶'), "g");
+	string.replace(QLatin1Char('Æ'), "AE");
+	string.replace(QLatin1Char('æ'), "ae");
+	string.replace(QLatin1Char('Ð'), "D");
+	string.replace(QLatin1Char('Ñ'), "N");
+	string.replace(QLatin1Char('ñ'), "n");
+	string.replace(QLatin1Char('Þ'), "D");
+	string.replace(QLatin1Char('þ'), "d");
+	string.replace(QLatin1Char('ß'), "B");
+	string.replace(QChar(0x20AC), "E");
+	int i = string.size();
+	while (i--)
+	{
+		QChar c = string.at(i);
+		if (c < 32 || c > 126)
+		{
+			string[i] = ' ';
+		}
+	}
+	return string;
 }
 
 void Server::processMessage(QString frame)
@@ -57,8 +118,7 @@ void Server::processMessage(QString frame)
 	{
 		return;
 	}
-
-	std::cout << frame.toStdString() << std::endl;
+	std::cout << toReadableAscii(frame).toStdString() << std::endl;
 	
 	QtWebsocket::QWsSocket* client;
 	foreach (client, clients)

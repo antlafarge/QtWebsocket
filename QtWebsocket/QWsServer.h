@@ -79,7 +79,7 @@ protected:
 private slots:
 	// private slots
 	void newTcpConnection();
-	void newSslConnection(QSslSocket* serverSocket);
+	void newTlsConnection(QSslSocket* serverSocket);
 	void closeTcpConnection();
 	void dataReceived();
 	void tcpSocketDisconnected();

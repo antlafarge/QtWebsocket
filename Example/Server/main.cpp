@@ -22,10 +22,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 int main(int argc, char *argv[])
 {
 	QCoreApplication app(argc, argv);
+	
+	qsrand(QDateTime::currentMSecsSinceEpoch());
 
-	int port = 80;
-	QtWebsocket::Protocol protocol = QtWebsocket::Tcp;
-	Server myServer(port, protocol);
+	Server myServer(80, QtWebsocket::Tcp);
 
 	return app.exec();
 }

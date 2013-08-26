@@ -43,7 +43,7 @@ Protocol QTlsServer::allowedProtocols()
 
 void QTlsServer::test()
 {
-std::cout << "tcp socket connected" << std::endl;
+	std::cout << "tcp socket connected, waiting for TLS handshake" << std::endl;
 }
 
 void QTlsServer::displayTlsErrors(const QList<QSslError>& errors)
@@ -63,7 +63,7 @@ void QTlsServer::tlsSocketEncrypted()
 void QTlsServer::incomingConnection(qintptr socketDescriptor)
 {
 	QSslSocket* serverSocket = new QSslSocket;
-	QObject::connect(serverSocket, SIGNAL(sslErrors(const QList<QSslError>&)), this, SLOT(displaySslErrors(const QList<QSslError>&)));
+	QObject::connect(serverSocket, SIGNAL(sslErrors(const QList<QSslError>&)), this, SLOT(displayTlsErrors(const QList<QSslError>&)));
 
 	if (serverSocket->setSocketDescriptor(socketDescriptor))
 	{
@@ -87,7 +87,7 @@ void QTlsServer::incomingConnection(qintptr socketDescriptor)
 		serverSocket->setPeerVerifyMode(QSslSocket::VerifyNone);
 		//serverSocket->ignoreSslErrors();
 
-		QObject::connect(serverSocket, SIGNAL(encrypted()), this, SLOT(sslSocketEncrypted()));
+		QObject::connect(serverSocket, SIGNAL(encrypted()), this, SLOT(tlsSocketEncrypted()));
 		serverSocket->startServerEncryption();
 	}
 	else

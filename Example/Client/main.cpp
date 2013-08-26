@@ -21,6 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 int main(int argc, char *argv[])
 {
 	QApplication app(argc, argv);
+	
+	qsrand(QDateTime::currentMSecsSinceEpoch());
 
 	Client client;
 	client.show();

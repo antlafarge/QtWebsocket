@@ -85,7 +85,7 @@ class QWsSocket : public QAbstractSocket
 
 public:
 	// ctor
-	QWsSocket(QObject* parent = NULL, QTcpSocket* socket = NULL, EWebsocketVersion ws_v = WS_V13, Protocol baseProtocolToUse = Tcp);
+	QWsSocket(QObject* parent = NULL, QTcpSocket* socket = NULL, EWebsocketVersion ws_v = WS_V13);
 	// dtor
 	virtual ~QWsSocket();
 
@@ -116,7 +116,6 @@ public slots:
 	void disconnectFromHost();
 	void abort(QString reason = QString());
 	void ping();
-	void displaySslErrors(const QList<QSslError>& errors);
 
 signals:
 	void frameReceived(QString frame);
@@ -129,6 +128,7 @@ protected:
 	qint64 writeFrames (const QList<QByteArray>& framesList);
 	qint64 writeFrame (const QByteArray& byteArray);
 	inline qint64 internalWrite(const QByteArray& string, bool asBinary);
+	void initTcpSocket();
 
 protected slots:
 	virtual void close(ECloseStatusCode closeStatusCode = NoCloseStatusCode, QString reason = QString());
@@ -188,7 +188,7 @@ private:
 	QByteArray key3;
 	QByteArray accept;
 
-	Protocol baseProtocol;
+	bool _secured;
 
 public:
 	// Static functions

@@ -76,9 +76,4 @@
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\QtWebsocket\QWsHandshake.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
 </Project>
