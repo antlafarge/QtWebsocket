@@ -86,6 +86,9 @@
     <CustomBuild Include="QTlsServer.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="WsEnums.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="QWsHandshake.h">

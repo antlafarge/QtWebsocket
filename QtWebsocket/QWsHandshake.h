@@ -20,6 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <QTcpSocket>
 
+#include "WsEnums.h"
+
 namespace QtWebsocket
 {
 
@@ -38,7 +40,7 @@ enum EWebsocketVersion
 class QWsHandshake
 {
 public:
-	QWsHandshake(bool clientSide = true);
+	QWsHandshake(WsMode wsMode = WsClientMode);
 	~QWsHandshake();
 
 	bool read(QTcpSocket* tcpSocket);
@@ -47,7 +49,7 @@ public:
 	bool isValidServerPart();
 	bool isValidClientPart();
 
-	bool clientSide;
+	WsMode _wsMode;
 
 	bool readStarted;
 	bool complete;
@@ -58,6 +60,7 @@ public:
 	
 	QString httpRequestVersion;
 	bool httpRequestValid;
+	QString errorString;
 
 	QString resourceName;
 	

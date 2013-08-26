@@ -80,7 +80,7 @@ void QWsServer::newTcpConnection()
 	}
 	QObject::connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 	QObject::connect(tcpSocket, SIGNAL(disconnected()), this, SLOT(tcpSocketDisconnected()));
-	handshakeBuffer.insert(tcpSocket, new QWsHandshake(true));
+	handshakeBuffer.insert(tcpSocket, new QWsHandshake(WsClientMode));
 }
 
 void QWsServer::newTlsConnection(QSslSocket* serverSocket)
@@ -91,7 +91,7 @@ void QWsServer::newTlsConnection(QSslSocket* serverSocket)
 	}
 	QObject::connect(serverSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 	QObject::connect(serverSocket, SIGNAL(disconnected()), this, SLOT(tcpSocketDisconnected()));
-	handshakeBuffer.insert(serverSocket, new QWsHandshake(true));
+	handshakeBuffer.insert(serverSocket, new QWsHandshake(WsClientMode));
 }
 
 void QWsServer::tcpSocketDisconnected()
@@ -198,7 +198,7 @@ void QWsServer::dataReceived()
 	wsSocket->setOrigin(handshake.origin);
 	wsSocket->setProtocol(handshake.protocol);
 	wsSocket->setExtensions(handshake.extensions);
-	wsSocket->serverSideSocket = true;
+	wsSocket->_wsMode = WsServerMode;
 	
 	QWsHandshake* hsTmp = handshakeBuffer.take(tcpSocket);
 	delete hsTmp;

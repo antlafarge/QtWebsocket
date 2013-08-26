@@ -27,8 +27,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 namespace QtWebsocket
 {
 
-QWsHandshake::QWsHandshake(bool clientSide) :
-	clientSide(clientSide),
+QWsHandshake::QWsHandshake(WsMode wsMode) :
+	_wsMode(wsMode),
 	complete(false),
 	readStarted(false),
 	httpRequestValid(false)
@@ -61,7 +61,7 @@ bool QWsHandshake::read(QTcpSocket* tcpSocket)
 		{
 			readStarted = true;
 			httpRequestValid = true;
-			if (clientSide)
+			if (_wsMode == WsClientMode)
 			{
 				// CHECK HTTP GET REQUEST
 				QWsSocket::regExpHttpRequest.setMinimal(true);
@@ -94,6 +94,7 @@ bool QWsHandshake::read(QTcpSocket* tcpSocket)
 				QString httpMessage = QWsSocket::regExpHttpResponse.cap(2);
 				if (httpCode != 101)
 				{
+					errorString = line;
 					httpRequestValid = false;
 					return false;
 				}
@@ -120,10 +121,16 @@ bool QWsHandshake::read(QTcpSocket* tcpSocket)
 		return false;
 	}
 	// read key3 if existing (for first websocket version)
-	if (tcpSocket->bytesAvailable() == 8 && fields.contains(QLatin1String("Sec-WebSocket-Key1")) && fields.contains(QLatin1String("Sec-WebSocket-Key2")))
+	int aaa = tcpSocket->bytesAvailable();
+	if (_wsMode == WsClientMode && tcpSocket->bytesAvailable() == 8 && fields.contains(QLatin1String("Sec-WebSocket-Key1")) && fields.contains(QLatin1String("Sec-WebSocket-Key2")))
 	{
 		key3 = tcpSocket->read(8);
 		rawHandshake += QString::fromUtf8(key3);
+	}
+	else if (_wsMode == WsServerMode && tcpSocket->bytesAvailable() == 16)
+	{
+		accept = tcpSocket->read(16);
+		rawHandshake += QString::fromUtf8(accept);
 	}
 
 	return true;
@@ -138,7 +145,7 @@ bool QWsHandshake::isValid()
 	}
 	
 	// clientSide
-	if (clientSide)
+	if (_wsMode == WsClientMode)
 	{
 		return isValidClientPart();
 	}
@@ -256,7 +263,7 @@ bool QWsHandshake::isValidServerPart()
 	{
 		accept = fields.value(QLatin1String("Sec-WebSocket-Accept")).toUtf8();
 	}
-	else
+	else if (accept.size() == 0) // for protocol version 0, accept 
 	{
 		return false;
 	}

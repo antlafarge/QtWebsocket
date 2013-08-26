@@ -35,9 +35,9 @@ const QLatin1String QWsSocket::emptyLine("\r\n");
 const QString QWsSocket::connectionRefusedStr(QLatin1String("Websocket connection refused"));
 const QRegExp regExpUriStart("^wss?://", Qt::CaseInsensitive);
 const QRegExp regExpUri("^wss?://([^\\s]+)$", Qt::CaseInsensitive);
-const QRegExp regExpLocalhostUri("^wss?://localhost$", Qt::CaseInsensitive);
+const QRegExp regExpLocalhostUri("^localhost$", Qt::CaseInsensitive);
 
-QRegExp QWsSocket::regExpIPv4(QLatin1String("^wss?://([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\.([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3}$"));
+QRegExp QWsSocket::regExpIPv4(QLatin1String("^([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\.([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3}$"));
 QRegExp QWsSocket::regExpHttpRequest(QLatin1String("^GET\\s(.*)\\sHTTP/(.+)\\r\\n"));
 QRegExp QWsSocket::regExpHttpResponse(QLatin1String("^HTTP/1.1\\s(\\d{3})\\s(.+)\\r\\n"));
 QRegExp QWsSocket::regExpHttpField(QLatin1String("^(.+):\\s(.+)\\r\\n$"));
@@ -48,7 +48,7 @@ QWsSocket::QWsSocket(QObject* parent, QTcpSocket* socket, EWebsocketVersion ws_v
 	tcpSocket(socket ? socket : new QTcpSocket),
 	_version(ws_v),
 	_hostPort(-1),
-	serverSideSocket(false),
+	_wsMode(WsClientMode),
 	closingHandshakeSent(false),
 	closingHandshakeReceived(false),
 	readingState(HeaderPending),
@@ -111,22 +111,22 @@ void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mo
 	}
 
 	// trim the hostname
-	_host = hostName.trimmed();
+	_hostName = hostName.trimmed();
 
 	// check the validity of the Websocket URI scheme
-	if (!_host.contains(regExpUri))
+	if (!_hostName.contains(regExpUri))
 	{
 		return;
 	}
-	if (_host.startsWith("wss://", Qt::CaseInsensitive))
+	if (_hostName.startsWith("wss://", Qt::CaseInsensitive))
 	{
 		_secured = true;
 	}
 
 	// remove the websocket URI scheme for TCP connection
+	_host = QString(_hostName).remove(regExpUriStart);
 	_hostPort = port;
 	
-	QString hostWithoutProtocol = _host.remove(regExpUriStart);
 	// check localhost uri
 	if (_host.contains(regExpLocalhostUri))
 	{
@@ -136,12 +136,12 @@ void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mo
 	// TODO IPv6
 	else if (_host.contains(QRegExp(QWsSocket::regExpIPv4)))
 	{
-		_hostAddress = QHostAddress(hostWithoutProtocol);
+		_hostAddress = QHostAddress(_host);
 	}
 	// from hostName
 	else
 	{
-		QHostInfo info = QHostInfo::fromName(hostWithoutProtocol);
+		QHostInfo info = QHostInfo::fromName(_host);
 		QList<QHostAddress> hostAddresses = info.addresses();
 		if (hostAddresses.size())
 		{
@@ -250,8 +250,10 @@ void QWsSocket::close(ECloseStatusCode closeStatusCode, QString reason)
 				{
 					// Header
 					QByteArray maskingKey;
-					if (! serverSideSocket)
+					if (_wsMode == WsClientMode)
+					{
 						maskingKey = QWsSocket::generateMaskingKey();
+					}
 					BA.append(QWsSocket::composeHeader(true, OpClose, reason.size() + 2, maskingKey));
 
 					QByteArray body;
@@ -266,7 +268,7 @@ void QWsSocket::close(ECloseStatusCode closeStatusCode, QString reason)
 					if (reason.size())
 					{
 						QByteArray reason_ba = reason.toUtf8();
-						if (! serverSideSocket)
+						if (_wsMode == WsClientMode)
 						{
 							reason_ba = QWsSocket::mask(reason_ba, maskingKey);
 						}
@@ -343,7 +345,7 @@ qint64 QWsSocket::internalWrite(const QByteArray& byteArray, bool asBinary)
 	}
 	
 	QByteArray maskingKey;
-	if (!serverSideSocket)
+	if (_wsMode == WsClientMode)
 	{
 		if (_version == WS_V4)
 		{
@@ -376,11 +378,12 @@ void QWsSocket::processHandshake()
 		return;
 	}
 	
-	QWsHandshake handshake(false);
+	QWsHandshake handshake(WsServerMode);
 	
 	if (handshake.read(tcpSocket) == false)
 	{
 		emit error(QAbstractSocket::ConnectionRefusedError);
+		tcpSocket->abort();
 		return;
 	}
 
@@ -392,7 +395,9 @@ void QWsSocket::processHandshake()
 	accept = handshake.accept;
 
 	// If the mandatory params are not setted, we abord the connection to the Websocket server
-	if (!handshake.isValid() || (QWsSocket::computeAcceptV4(key) != handshake.accept) )
+	if ( !handshake.isValid()
+		|| (_version >= WS_V4 && (QWsSocket::computeAcceptV4(key) != accept))
+		|| (_version == WS_V0 && (QWsSocket::computeAcceptV0(key1, key2, key3) != accept)) )
 	{
 		emit error(QAbstractSocket::ConnectionRefusedError);
 		return;
@@ -663,7 +668,7 @@ qint64 QWsSocket::writeFrames(const QList<QByteArray>& framesList)
 
 void QWsSocket::onEncrypted()
 {
-	if (!serverSideSocket)
+	if (_wsMode == WsClientMode)
 	{
 		startHandshake();
 	}
@@ -675,7 +680,7 @@ void QWsSocket::startHandshake()
 	if (_version == WS_V13)
 	{
 		key = QWsSocket::generateNonce();
-		QString handshake = composeOpeningHandShakeV13(QLatin1String("/"), _host, key);
+		QString handshake = composeOpeningHandShakeV13("/", _host, key);
 		tcpSocket->write(handshake.toUtf8());
 	}
 	else if (_version == WS_V0)
@@ -683,7 +688,7 @@ void QWsSocket::startHandshake()
 		key1 = QWsSocket::generateKey1or2();
 		key2 = QWsSocket::generateKey1or2();
 		key3 = QWsSocket::generateKey3();
-		QString handshake = composeOpeningHandShakeV0(QLatin1String("/"), _host, key1, key2, key3);
+		QString handshake = composeOpeningHandShakeV0("/", _host, key1, key2, key3);
 		tcpSocket->write(handshake.toUtf8());
 	}
 	else // support more version soon
@@ -776,7 +781,7 @@ QByteArray QWsSocket::generateKey1or2()
 	QByteArray key;
 
 	// generate spaces number
-	quint32 spaces = rand8(1, 12);
+	quint32 spaces = rand8(2, 10);
 
 	// generate a correct random number
 	quint32 partMax = qFloor((double)UINT_MAX / (double)spaces);
@@ -785,17 +790,22 @@ QByteArray QWsSocket::generateKey1or2()
 	key = QByteArray::number(key_number);
 
 	// integrate some random characters
-	int i = rand8(10, 15);
+	int i = rand8(10, 20);
 	while (i--)
 	{
-		key.insert(rand8(0, key.size()), rand8(32, 126));
+		QChar car;
+		do
+		{
+			car = rand8(32, 126);
+		} while (car.isDigit());
+		key.insert(rand8(0, key.size()), car);
 	}
 
 	// integrate spaces
 	int j = spaces;
 	while (j--)
 	{
-		key.insert(rand8(0, key.size()), QLatin1String(" "));
+		key.insert(rand8(1, key.size()-1), QLatin1String(" "));
 	}
 
 	return key;
@@ -808,7 +818,7 @@ QByteArray QWsSocket::generateKey3()
 	int i = 8;
 	while(i--)
 	{
-		key.append(qrand() % 0x100);
+		key.append(rand8(32, 126));
 	}
 
 	return key;
@@ -1001,7 +1011,7 @@ QByteArray QWsSocket::composeHeader(bool end, EOpcode opcode, quint64 payloadLen
 QString QWsSocket::composeOpeningHandShakeV13(QString resourceName, QString host, QByteArray key, QString origin, QString protocol, QString extensions)
 {
 	QString hs;
-	hs += QString("GET %1 HTTP/1.1\r\n").arg(resourceName);
+	hs += QString("GET %1%2 HTTP/1.1\r\n").arg(resourceName).arg(resourceName.endsWith('/') ? "" : "/");
 	hs += QString("Host: %1\r\n").arg(host);
 	hs += QLatin1String("Upgrade: websocket\r\n");
 	hs += QLatin1String("Connection: Upgrade\r\n");
@@ -1032,7 +1042,6 @@ QString QWsSocket::composeOpeningHandShakeV0(QString resourceName, QString host,
 	hs += QLatin1String("Connection: Upgrade\r\n");
 	hs += QString("Sec-WebSocket-Key1: %1\r\n").arg(QLatin1String(key1));
 	hs += QString("Sec-WebSocket-Key2: %1\r\n").arg(QLatin1String(key2));
-	hs += QLatin1String("Sec-WebSocket-Version: 13\r\n");
 	if (!origin.isEmpty())
 	{
 		hs += QString("Origin: %1\r\n").arg(origin);
