@@ -53,6 +53,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="QTlsServer.cpp" />
+    <ClCompile Include="QWsFrame.cpp" />
     <ClCompile Include="QWsHandshake.cpp" />
     <ClCompile Include="QWsServer.cpp" />
     <ClCompile Include="QWsSocket.cpp" />
@@ -128,6 +129,7 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp" </Command>
     </CustomBuild>
     <ClInclude Include="functions.h" />
+    <ClInclude Include="QWsFrame.h" />
     <ClInclude Include="QWsHandshake.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

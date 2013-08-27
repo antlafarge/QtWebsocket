@@ -20,8 +20,6 @@ SOURCES += \
 
 HEADERS += \
 				QWsSocket.h \
-				QWsServer.h \
-				QWsHandshake.h \
 				Client.h
 
 FORMS += Client.ui

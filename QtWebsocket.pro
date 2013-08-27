@@ -2,6 +2,7 @@ TEMPLATE = subdirs
 
 SUBDIRS += \
     QtWebsocket \
+    Example/Client \
     Example/Server \
     Example/ServerThreaded \
-    Example/Client
+    AutobahnTestSuite

@@ -14,14 +14,17 @@ CONFIG += staticlib
 
 SOURCES += \
     QWsServer.cpp \
-    QWsSocket.cpp \
+				QWsSocket.cpp \
     QWsHandshake.cpp \
+				QWsFrame.cpp \
     QTlsServer.cpp \
-    functions.cpp
+				functions.cpp
 
 HEADERS += \
     QWsServer.h \
     QWsSocket.h \
-    QWsHandshake.h \
+				QWsHandshake.h \
+				QWsFrame.h \
     QTlsServer.h \
-    functions.h
+				functions.h \
+    WsEnums.h

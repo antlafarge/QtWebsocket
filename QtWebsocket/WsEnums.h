@@ -25,7 +25,7 @@ enum Protocol
 {
 	None = 0x0,
 	Tcp = 0x1,
-	Tls = 0x2,
+	Tls = 0x2
 	//TcpTls= 0x3 // soon
 };
 
@@ -35,7 +35,7 @@ enum WsMode
 	WsServerMode = 2
 };
 
-enum EOpcode
+enum Opcode
 {
 	OpContinue = 0x0,
 	OpText = 0x1,
@@ -54,7 +54,8 @@ enum EOpcode
 	OpReservedE = 0xE,
 	OpReservedF = 0xF
 };
-enum ECloseStatusCode
+
+enum CloseStatusCode
 {
 	NoCloseStatusCode = 0,
 	CloseNormal = 1000,
@@ -70,6 +71,16 @@ enum ECloseStatusCode
 	CloseMissingExtension = 1010,
 	CloseBadOperation = 1011,
 	CloseTLSHandshakeFailed = 1015
+};
+
+enum ReadingState
+{
+	HeaderPending,
+	PayloadLengthPending,
+	BigPayloadLenghPending,
+	MaskPending,
+	PayloadBodyPending,
+	CloseDataPending
 };
 
 } // namespace QtWebsocket

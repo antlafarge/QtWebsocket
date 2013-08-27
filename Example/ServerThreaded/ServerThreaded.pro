@@ -21,7 +21,6 @@ SOURCES += \
 HEADERS += \
 				QWsServer.h \
 				QWsSocket.h \
-				QWsHandshake.h \
     ServerThreaded.h \
     SocketThread.h
 

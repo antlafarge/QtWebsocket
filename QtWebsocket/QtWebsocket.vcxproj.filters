@@ -75,6 +75,9 @@
     <ClCompile Include="functions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="QWsFrame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="QWsServer.h">
@@ -95,6 +98,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="functions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="QWsFrame.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -29,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "WsEnums.h"
 #include "QWsHandshake.h"
+#include "QWsFrame.h"
 
 namespace QtWebsocket
 {
@@ -87,7 +88,7 @@ protected:
 	void initTcpSocket();
 
 protected slots:
-	virtual void close(ECloseStatusCode closeStatusCode = NoCloseStatusCode, QString reason = QString());
+	virtual void close(CloseStatusCode closeStatusCode = NoCloseStatusCode, QString reason = QString());
 	void processDataV0();
 	void processDataV4();
 	void processHandshake();
@@ -97,15 +98,6 @@ protected slots:
 	void onEncrypted();
 
 private:
-	enum EReadingState
-	{
-		HeaderPending,
-		PayloadLengthPending,
-		BigPayloadLenghPending,
-		MaskPending,
-		PayloadBodyPending,
-		CloseDataPending
-	};
 
 	// private vars
 	QTcpSocket* tcpSocket;
@@ -113,6 +105,16 @@ private:
 	QTime pingTimer;
 	
 	WsMode _wsMode;
+
+	QWsFrame* _currentFrame;
+	QByteArray currentData;
+	Opcode currentDataOpcode;
+
+	/*!
+	 * True if we are waiting for a final data fragment.
+	 */
+	bool continuation;
+
 	EWebsocketVersion _version;
 	QString _resourceName;
 	QString _hostName;
@@ -126,13 +128,8 @@ private:
 	bool closingHandshakeSent;
 	bool closingHandshakeReceived;
 
-	EReadingState readingState;
-	EOpcode opcode;
-	bool isFinalFragment;
-	bool hasMask;
-	quint64 payloadLength;
-	QByteArray maskingKey;
-	ECloseStatusCode closeStatusCode;
+	Opcode currentOpcode;
+	CloseStatusCode closeStatusCode;
 
 	static const QString regExpAcceptStr;
 	static const QString regExpUpgradeStr;
@@ -147,6 +144,27 @@ private:
 
 	bool _secured;
 
+	/*!
+	 * Sends pong response with `applicationData` appended.
+	 */
+	void handlePing(QByteArray applicationData = QByteArray());
+
+	/*!
+	 * Processes the joined payload of the previous frames.
+	 *
+	 * Called if the final and valid non-control frame has been received.
+	 */
+	void handleData();
+
+	/*!
+	 * Processes the current control frame.
+	 *
+	 * Responds to ping and pong or closes connection according to
+	 * `currentOpcode`. Called if a complete and valid control frame has been
+	 * received.
+	 */
+	void handleControlFrame();
+
 public:
 	// Static functions
 	static QByteArray generateNonce();
@@ -156,11 +174,19 @@ public:
 	static QByteArray generateMaskingKeyV4(QByteArray key, QByteArray nonce);
 	static QByteArray computeAcceptV0(QByteArray key1, QByteArray key2, QByteArray thirdPart);
 	static QByteArray computeAcceptV4(QByteArray key);
-	static QByteArray mask(const QByteArray & data, QByteArray & maskingKey);
-	static QList<QByteArray> composeFrames(QByteArray byteArray, QByteArray& maskingKey, bool asBinary = false, int maxFrameBytes = 0);
-	static QByteArray composeHeader(bool end, EOpcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray());
+	static QByteArray mask(const QByteArray& data, QByteArray& maskingKey);
+	static QList<QByteArray> composeFrames(QByteArray data, Opcode opcode = OpText, QByteArray maskingKey = QByteArray(), int maxFrameBytes = 0);
+	static QByteArray composeHeader(bool end, Opcode opcode, quint64 payloadLength, QByteArray maskingKey = QByteArray());
 	static QString composeOpeningHandShakeV0(QString resourceName, QString host, QByteArray key1, QByteArray key2, QByteArray key3, QString origin = "", QString protocol = "", QString extensions = "");
 	static QString composeOpeningHandShakeV13(QString resourceName, QString host, QByteArray key, QString origin = "", QString protocol = "", QString extensions = "");
+
+	/*!
+	 * Encapsulates `applicationData` in a single Frame.
+	 *
+	 * The frame size is deduced from `applicationData.size()` and there are no
+	 * checks performed on it.
+	 */
+	static QByteArray composeFrame(QByteArray applicationData, Opcode opcode, bool final = true);
 
 	// static vars
 	static const int maxBytesPerFrame = 1400;

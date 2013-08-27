@@ -10,18 +10,16 @@ TARGET = Server
 CONFIG += console
 TEMPLATE = app
 
+DEPENDPATH += "../../QtWebsocket"
 SOURCES += \
     main.cpp \
     Server.cpp
 
+INCLUDEPATH += "../../QtWebsocket"
 HEADERS += \
-    QWsSocket.h \
-    QWsServer.h \
-				QWsHandshake.h \
+				QWsServer.h \
+				QWsSocket.h \
     Server.h
-
-INCLUDEPATH += ../../QtWebsocket
-DEPENDPATH += ../../QtWebsocket
 
 win32:CONFIG(release, debug|release): LIBS += -L../../QtWebsocket/release/ -lQtWebsocket
 else:win32:CONFIG(debug, debug|release): LIBS += -L../../QtWebsocket/debug/ -lQtWebsocket
