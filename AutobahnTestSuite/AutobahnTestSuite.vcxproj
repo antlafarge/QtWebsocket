@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Template|Win32">
+      <Configuration>Template</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CF0BAFAA-70E5-4777-8196-AAE035657648}</ProjectGuid>
+    <RootNamespace>AutobahnTestSuite</RootNamespace>
+    <Keyword>Qt4VSv1.0</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)$(Platform)\$(Configuration)\</IntDir>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.;$(QTDIR)\include;.\GeneratedFiles\$(Configuration);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtNetwork;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>UNICODE;WIN32;QT_LARGEFILE_SUPPORT;QT_DLL;QT_NO_DEBUG;NDEBUG;QT_CORE_LIB;QT_NETWORK_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <TreatWChar_tAsBuiltInType>false</TreatWChar_tAsBuiltInType>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>qtmain.lib;QtCore4.lib;QtNetwork4.lib;Qt5Core.lib;Qt5Network.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(ProjectName).exe</OutputFile>
+      <AdditionalLibraryDirectories>$(QTDIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\qtwebsocket;.;$(QTDIR)\include;.\GeneratedFiles\$(Configuration);$(QTDIR)\include\QtCore;$(QTDIR)\include\QtNetwork;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>UNICODE;WIN32;QT_LARGEFILE_SUPPORT;QT_DLL;QT_CORE_LIB;QT_NETWORK_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <TreatWChar_tAsBuiltInType>false</TreatWChar_tAsBuiltInType>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>qtmaind.lib;QtWebsocket.lib;Qt5Cored.lib;Qt5Networkd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)$(ProjectName).exe</OutputFile>
+      <AdditionalLibraryDirectories>$(QTDIR)\lib;$(SolutionDir)$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>QT_CORE_LIB;QT_NETWORK_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(QTDIR)\include\QtCore;$(QTDIR)\include\QtNetwork;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>Qt5Core.lib;Qt5Network.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="TestServer.cpp" />
+    <ClCompile Include="GeneratedFiles\Release\moc_QWsServer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_QWsSocket.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_TestServer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_QWsServer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_QWsSocket.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_TestServer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\QtWebSocket\QWsServer.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing QWsServer.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(Configuration)\moc_%(Filename).cpp"  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_CORE_LIB -DQT_NETWORK_LIB "-I.\..\qtwebsocket" "-I." "-I$(QTDIR)\include" "-I.\GeneratedFiles\$(Configuration)\." "-I$(QTDIR)\include\QtCore" "-I$(QTDIR)\include\QtNetwork"
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath);%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles\$(Configuration)\moc_%(Filename).cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing QWsServer.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(Configuration)\moc_%(Filename).cpp"  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DNDEBUG -DQT_CORE_LIB -DQT_NETWORK_LIB "-I." "-I$(QTDIR)\include" "-I.\GeneratedFiles\$(Configuration)\." "-I$(QTDIR)\include\QtCore" "-I$(QTDIR)\include\QtNetwork"
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath);%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\GeneratedFiles\$(Configuration)\moc_%(Filename).cpp;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+      </Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">Performing Custom Build Tools</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+      </Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+      </AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include="..\QtWebSocket\QWsSocket.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing QWsSocket.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(Configuration)\moc_%(Filename).cpp"  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_CORE_LIB -DQT_NETWORK_LIB "-I.\..\qtwebsocket" "-I." "-I$(QTDIR)\include" "-I.\GeneratedFiles\$(Configuration)\." "-I$(QTDIR)\include\QtCore" "-I$(QTDIR)\include\QtNetwork"
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath);%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles\$(Configuration)\moc_%(Filename).cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing QWsSocket.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(Configuration)\moc_%(Filename).cpp"  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DNDEBUG -DQT_CORE_LIB -DQT_NETWORK_LIB "-I." "-I$(QTDIR)\include" "-I.\GeneratedFiles\$(Configuration)\." "-I$(QTDIR)\include\QtCore" "-I$(QTDIR)\include\QtNetwork"
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath);%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\GeneratedFiles\$(Configuration)\moc_%(Filename).cpp;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+      </Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">Performing Custom Build Tools</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+      </Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+      </AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include="TestServer.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing TestServer.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(Configuration)\moc_%(Filename).cpp"  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_CORE_LIB -DQT_NETWORK_LIB "-I.\..\qtwebsocket" "-I." "-I$(QTDIR)\include" "-I.\GeneratedFiles\$(Configuration)\." "-I$(QTDIR)\include\QtCore" "-I$(QTDIR)\include\QtNetwork"
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath);%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles\$(Configuration)\moc_%(Filename).cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing TestServer.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(Configuration)\moc_%(Filename).cpp"  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DNDEBUG -DQT_CORE_LIB -DQT_NETWORK_LIB "-I." "-I$(QTDIR)\include" "-I.\GeneratedFiles\$(Configuration)\." "-I$(QTDIR)\include\QtCore" "-I$(QTDIR)\include\QtNetwork"
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath);%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\GeneratedFiles\$(Configuration)\moc_%(Filename).cpp;%(Outputs)</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+      </Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">Performing Custom Build Tools</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+      </Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+      </AdditionalInputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\QtWebsocket\QtWebsocket.vcxproj">
+      <Project>{7e3a920c-4257-41a1-b9b9-bfa138c1c8a2}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties lreleaseOptions="" lupdateOnBuild="0" lupdateOptions="" MocDir=".\GeneratedFiles\$(ConfigurationName)" MocOptions="" QtVersion_x0020_Win32="4.8.2" RccDir=".\GeneratedFiles" UicDir=".\GeneratedFiles" Qt5Version_x0020_Win32="qt5_vs" />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>
