@@ -22,11 +22,11 @@ namespace QtWebsocket
 {
 	
 QWsFrame::QWsFrame() :
-	readingState( HeaderPending ),
-	final( false ),
-	rsv( 0 ),
-	hasMask( false ),
-	payloadLength( 0 )
+	readingState(HeaderPending),
+	final(false),
+	rsv(0),
+	hasMask(false),
+	payloadLength(0)
 {}
 
 
@@ -40,10 +40,10 @@ void QWsFrame::clear()
 QByteArray QWsFrame::data() const
 {
 	QByteArray result;
-	result.reserve( payload.size() );
-	if ( hasMask ) {
-		for ( int i=0 ; i<payload.size() ; i++ )
-			result[i] = ( payload[i] ^ maskingKey[ i % 4 ] );
+	result.reserve(payload.size());
+	if (hasMask) {
+		for (int i=0 ; i<payload.size() ; i++)
+			result[i] = (payload[i] ^ maskingKey[i % 4]);
 		return result;
 	}
 	else
@@ -58,17 +58,17 @@ bool QWsFrame::controlFrame() const
 // TODO implement, finished flag;
 bool QWsFrame::valid() const
 {
-	if ( payloadLength >> 63 ) // Most significant bit must be 0
+	if (payloadLength >> 63) // Most significant bit must be 0
 		return false;
-	if ( rsv & 0x70 )
+	if (rsv & 0x70)
 		return false;
-	if ( opcode >= 0x3 && opcode <= 0x7 ) // Reserved opcode
+	if (opcode >= 0x3 && opcode <= 0x7) // Reserved opcode
 		return false;
-	if ( opcode >= 0xB && opcode <= 0xF ) // Reserved control opcode
+	if (opcode >= 0xB && opcode <= 0xF) // Reserved control opcode
 		return false;
-	if ( controlFrame() && !final ) // Control frames must not be fragmented
+	if (controlFrame() && !final) // Control frames must not be fragmented
 		return false;
-	if ( controlFrame() && payloadLength > 125 ) // Control frames must have small payload
+	if (controlFrame() && payloadLength > 125) // Control frames must have small payload
 		return false;
 
 	return true;
