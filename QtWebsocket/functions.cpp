@@ -18,6 +18,7 @@ along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <QtCore/qmath.h>
+#include <climits>
 
 namespace QtWebsocket
 {
