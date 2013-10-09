@@ -56,7 +56,7 @@ I created it to show how you can use properly the lib.
 - Text and binary data  
 - Multi-thread support  
 - Server and client implementation  
-- WSS protocol (HTTPS/SSL/TLS)
+- WSS protocol (HTTPS/SSL/TLS)  
 
 **Todo**
 - Websocket extensions  
