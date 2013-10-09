@@ -1,24 +1,25 @@
 # QtWebsocket
 
 A Qt Websocket server and client implementation.  
-The client has been recently added in the project and is still a beta implementation.
 
 ## Licence
 
-Copyright (C) 2013 Antoine Lafarge qtwebsocket@gmail.com
+Copyright 2013 Antoine Lafarge qtwebsocket@gmail.com
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
+This file is part of QtWebsocket.
+
+QtWebsocket is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 any later version.
 
-This program is distributed in the hope that it will be useful,
+QtWebsocket is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+GNU Lesser General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU Lesser General Public License
+along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 
 ## Compatibility
 
@@ -51,17 +52,13 @@ I created it to show how you can use properly the lib.
 
 ## Development
 
-**Implemented functionnalities**  
-- Opening handshake  
-- Frames (send and receive)  
-- Mask sent frames, receive masked frames  
-- Control frames (close, ping, pong)  
-- Multi-frames (send and receive)  
+**Implemented functionalities**  
+- Text and binary data  
 - Multi-thread support  
-- Client implementation _(beta)_
+- Server and client implementation  
+- WSS protocol (HTTPS/SSL/TLS)
 
 **Todo**
-- Websocket extensions
-- WSS protocol (SSL)
+- Websocket extensions  
 
-_Thanks for your interest._
+_Thank you for your interest._
