@@ -93,18 +93,18 @@ void QWsSocket::initTcpSocket()
 
 	if (_version == WS_V0)
 	{
-		QObject::connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(processDataV0()), Qt::UniqueConnection);
+		QObject::connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(processDataV0()));
 	}
 	else
 	{
-		QObject::connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(processDataV4()), Qt::UniqueConnection);
+		QObject::connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(processDataV4()));
 	}
-	QObject::connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(processTcpError(QAbstractSocket::SocketError)), Qt::UniqueConnection);
-	QObject::connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SIGNAL(error(QAbstractSocket::SocketError)), Qt::UniqueConnection);
-	QObject::connect(tcpSocket, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)), this, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)), Qt::UniqueConnection);
-	QObject::connect(tcpSocket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(processTcpStateChanged(QAbstractSocket::SocketState)), Qt::UniqueConnection);
-	QObject::connect(tcpSocket, SIGNAL(readChannelFinished()), this, SIGNAL(readChannelFinished()), Qt::UniqueConnection);
-	QObject::connect(tcpSocket, SIGNAL(hostFound()), this, SIGNAL(hostFound()), Qt::UniqueConnection);
+	QObject::connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(processTcpError(QAbstractSocket::SocketError)));
+	QObject::connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SIGNAL(error(QAbstractSocket::SocketError)));
+	QObject::connect(tcpSocket, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)), this, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)));
+	QObject::connect(tcpSocket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(processTcpStateChanged(QAbstractSocket::SocketState)));
+	QObject::connect(tcpSocket, SIGNAL(readChannelFinished()), this, SIGNAL(readChannelFinished()));
+	QObject::connect(tcpSocket, SIGNAL(hostFound()), this, SIGNAL(hostFound()));
 }
 
 void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mode)
