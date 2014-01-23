@@ -194,7 +194,8 @@ public:
 	// static vars
 	static const int maxBytesPerFrame = 1400;
 	static const QLatin1String emptyLine;
-	static QRegExp regExpIPv4;
+	static const QLatin1String localhost_ipv4;
+	static const QLatin1String localhost_ipv6;
 	static QRegExp regExpHttpRequest;
 	static QRegExp regExpHttpResponse;
 	static QRegExp regExpHttpField;

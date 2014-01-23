@@ -36,12 +36,12 @@ namespace QtWebsocket
 {
 
 const QLatin1String QWsSocket::emptyLine("\r\n");
-const QString QWsSocket::connectionRefusedStr(QLatin1String("Websocket connection refused"));
 const QRegExp regExpUriStart("^wss?://", Qt::CaseInsensitive);
 const QRegExp regExpUri("^wss?://([^\\s]+)$", Qt::CaseInsensitive);
 const QRegExp regExpLocalhostUri("^localhost$", Qt::CaseInsensitive);
+const QLatin1String QWsSocket::localhost_ipv4("localhost");
+const QLatin1String QWsSocket::localhost_ipv6("localhost_ipv6");
 
-QRegExp QWsSocket::regExpIPv4(QLatin1String("^([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\.([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3}$"));
 QRegExp QWsSocket::regExpHttpRequest(QLatin1String("^GET\\s(.*)\\sHTTP/(.+)\\r\\n"));
 QRegExp QWsSocket::regExpHttpResponse(QLatin1String("^HTTP/1.1\\s(\\d{3})\\s(.+)\\r\\n"));
 QRegExp QWsSocket::regExpHttpField(QLatin1String("^(.+):\\s(.+)\\r\\n$"));
@@ -133,13 +133,19 @@ void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mo
 	_hostPort = port;
 	
 	// check localhost uri
-	if (_host.contains(regExpLocalhostUri))
+	if (!_host.compare(localhost_ipv4, Qt::CaseInsensitive))
 	{
 		_hostAddress = QHostAddress::LocalHost;
 	}
-	// check IPv4 URI
-	// TODO IPv6
-	else if (_host.contains(QRegExp(QWsSocket::regExpIPv4)))
+	else if (!_host.compare(localhost_ipv6, Qt::CaseInsensitive))
+	{
+		_hostAddress = QHostAddress::LocalHostIPv6;
+	}
+	// check IPv4/6 URI
+	// regexps are quite hard to understand, we'll use Qt address parsing facilities
+	// however, this adds extra temporary object construction overhead
+	// since we cannot memorize temporary object created in if-condition here.
+	else if (!QHostAddress(_host).isNull())
 	{
 		_hostAddress = QHostAddress(_host);
 	}
