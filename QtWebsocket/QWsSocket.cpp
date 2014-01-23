@@ -88,6 +88,8 @@ void QWsSocket::initTcpSocket()
 	QAbstractSocket::setSocketState(tcpSocket->state());
 	QAbstractSocket::setPeerAddress(tcpSocket->peerAddress());
 	QAbstractSocket::setPeerPort(tcpSocket->peerPort());
+	QAbstractSocket::setLocalAddress(tcpSocket->localAddress());
+	QAbstractSocket::setLocalPort(tcpSocket->localPort());
 
 	if (_version == WS_V0)
 	{
@@ -797,7 +799,7 @@ void QWsSocket::processTcpError(QAbstractSocket::SocketError err)
 {
 	setSocketError(tcpSocket->error());
 	setErrorString(tcpSocket->errorString());
-	emit error(err);
+	emit tcpError(err);
 }
 
 void QWsSocket::ping()

@@ -82,6 +82,7 @@ signals:
 	void pong(quint64 elapsedTime);
 	void encrypted();
 	void sslErrors(const QList<QSslError>& errors);
+	void tcpError(QAbstractSocket::SocketError err);
 
 protected:
 	qint64 writeFrames (const QList<QByteArray>& framesList);
