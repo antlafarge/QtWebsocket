@@ -20,26 +20,23 @@ along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef QWSSERVER_H
 #define QWSSERVER_H
 
-#include <QTcpServer>
-#include <QTcpSocket>
-#include <QSsl>
-#include <QSslSocket>
-#include <QSslCertificate>
-#include <QSslKey>
+class QTcpServer;
+class QTcpSocket;
+
+#include <QSslConfiguration>
 #include <QNetworkProxy>
 #include <QString>
-#include <QStringList>
-#include <QMap>
 #include <QQueue>
 #include <QFile>
 
-#include "QWsSocket.h"
-#include "QTlsServer.h"
-
-#include <iostream>
+#include "WsEnums.h"
 
 namespace QtWebsocket
 {
+
+class QTlsServer;
+class QWsSocket;
+class QWsHandshake;
 
 class QWsServer : public QObject
 {
@@ -47,28 +44,30 @@ class QWsServer : public QObject
 
 public:
 	// ctor
-	QWsServer(QObject* parent = 0, Protocol allowedProtocols = Tcp);
+	QWsServer(QObject* parent = 0, Protocol allowedProtocols = Tcp,
+			  const QSslConfiguration& sslConfiguration = QSslConfiguration::defaultConfiguration(),
+			  const QList<QSslCertificate>& caCertificates = QList<QSslCertificate>());
 	// dtor
 	virtual ~QWsServer();
 
 	// public functions
-	void close();
-	QString errorString();
 	bool hasPendingConnections();
-	bool isListening();
-	bool listen(const QHostAddress & address = QHostAddress::Any, quint16 port = 0);
-	int maxPendingConnections();
+	bool isListening(Protocol proto = Tcp);
+	bool listen(const QHostAddress & address = QHostAddress::Any, quint16 port = 0, Protocol proto = Tcp);
+	void close(Protocol proto = Tcp);
+	int maxPendingConnections(Protocol proto = Tcp);
 	virtual QWsSocket* nextPendingConnection();
-	QNetworkProxy proxy();
-	QHostAddress serverAddress();
-	QAbstractSocket::SocketError serverError();
-	quint16 serverPort();
-	void setMaxPendingConnections(int numConnections);
-	void setProxy(const QNetworkProxy & networkProxy);
-	bool setSocketDescriptor(int socketDescriptor);
-	int socketDescriptor();
-	bool waitForNewConnection(int msec = 0, bool* timedOut = 0);
 	Protocol allowedProtocols();
+	QAbstractSocket::SocketError serverError(Protocol proto = Tcp);
+	QString errorString(Protocol proto = Tcp);
+	QNetworkProxy proxy(Protocol proto = Tcp);
+	QHostAddress serverAddress(Protocol proto = Tcp);
+	quint16 serverPort(Protocol proto = Tcp);
+	void setMaxPendingConnections(int numConnections, Protocol proto = Tcp);
+	void setProxy(const QNetworkProxy & networkProxy, Protocol proto = Tcp);
+	bool setSocketDescriptor(int socketDescriptor, Protocol proto = Tcp);
+	int socketDescriptor(Protocol proto = Tcp);
+	bool waitForNewConnection(int msec = 0, bool* timedOut = 0, Protocol proto = Tcp);
 
 signals:
 	void newConnection();
@@ -76,7 +75,6 @@ signals:
 protected:
 	// protected functions
 	void addPendingConnection(QWsSocket* socket);
-	virtual void incomingConnection(int socketDescriptor);
 
 private slots:
 	// private slots
@@ -89,13 +87,10 @@ private slots:
 private:
 	// private attributes
 	QTcpServer* tcpServer;
-	QTlsServer tlsServer;
+	QTlsServer* tlsServer;
+	const Protocol _allowedProtocols;
 	QQueue<QWsSocket*> pendingConnections;
 	QHash<const QTcpSocket*, QWsHandshake*> handshakeBuffer;
-
-	bool useSsl;
-	QSslKey sslKey;
-	QSslCertificate sslCertificate;
 
 public:
 	// public static functions

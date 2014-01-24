@@ -22,9 +22,7 @@ along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <QRegExp>
 #include <QTcpSocket>
-#include <QSslSocket>
-#include <QSsl>
-#include <QSslKey>
+#include <QSslConfiguration>
 #include <QHostAddress>
 #include <QTime>
 #include <QStringList>
@@ -44,7 +42,11 @@ class QWsSocket : public QAbstractSocket
 
 public:
 	// ctor
-	QWsSocket(QObject* parent = NULL, QTcpSocket* socket = NULL, EWebsocketVersion ws_v = WS_V13);
+	QWsSocket(QObject* parent = 0,
+			  QTcpSocket* socket = 0,
+			  EWebsocketVersion ws_v = WS_V13,
+			  const QSslConfiguration* sslConfiguration = 0,
+			  const QList<QSslCertificate> &caCertificates = QList<QSslCertificate>());
 	// dtor
 	virtual ~QWsSocket();
 
@@ -57,6 +59,8 @@ public:
 	QString origin();
 	QString protocol();
 	QString extensions();
+	QSslConfiguration sslConfiguration();
+	bool isEncrypted();
 
 	void setResourceName(QString rn);
 	void setHost(QString h);
@@ -65,9 +69,13 @@ public:
 	void setOrigin(QString o);
 	void setProtocol(QString p);
 	void setExtensions(QString e);
+	void setSslConfiguration(const QSslConfiguration& s);
 
 	qint64 write(const QString& string); // write data as text
 	qint64 write(const QByteArray & byteArray); // write data as binary
+
+	static QSslConfiguration defaultSslConfiguration();
+	static void setDefaultSslConfiguration(const QSslConfiguration& s);
 
 public slots:
 	void connectToHost(const QString & hostName, quint16 port = 80, OpenMode mode = ReadWrite);
@@ -90,7 +98,7 @@ protected:
 	inline qint64 internalWrite(const QByteArray& string, bool asBinary);
 	void initTcpSocket();
 
-protected slots:
+protected slots: //TODO: why protected? maybe private?
 	virtual void close(CloseStatusCode closeStatusCode = NoCloseStatusCode, QString reason = QString());
 	void processDataV0();
 	void processDataV4();
@@ -98,7 +106,7 @@ protected slots:
 	void processTcpStateChanged(QAbstractSocket::SocketState socketState);
 	void processTcpError(QAbstractSocket::SocketError err);
 	void startHandshake();
-	void onEncrypted();
+	void onTransportLevelReady();
 
 private:
 
@@ -145,7 +153,9 @@ private:
 	QByteArray key3;
 	QByteArray accept;
 
-	bool _secured;
+	const bool _secured;
+	QSslConfiguration _sslConfiguration;
+	QList<QSslCertificate> caCertificates;
 
 	/*!
 	 * Sends pong response with `applicationData` appended.
@@ -199,6 +209,7 @@ public:
 	static QRegExp regExpHttpRequest;
 	static QRegExp regExpHttpResponse;
 	static QRegExp regExpHttpField;
+	static QSslConfiguration _defaultSslConfiguration;
 };
 
 } // namespace QtWebsocket

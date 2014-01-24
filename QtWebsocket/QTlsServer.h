@@ -21,47 +21,33 @@ along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 #define QTLSSERVER_H
 
 #include <QTcpServer>
-#include <QTcpSocket>
-#include <QSsl>
-#include <QSslSocket>
-#include <QSslCertificate>
-#include <QSslKey>
-#include <QNetworkProxy>
-#include <QString>
-#include <QStringList>
-#include <QMap>
-#include <QQueue>
-#include <QFile>
-
-#include "QWsSocket.h"
-
-#include <iostream>
+#include <QSslConfiguration>
 
 namespace QtWebsocket
 {
 
-// This class manage basic and secured (TLS/SSL) TCP connections
+// This class manages basic and secured (TLS/SSL) TCP connections
 class QTlsServer : public QTcpServer
 {
 	Q_OBJECT
 
+	QSslConfiguration sslConfiguration;
+	QList<QSslCertificate> caCertificates;
 public:
-	QTlsServer(QObject* parent = NULL, Protocol allowedProtocols = Tcp);
+	QTlsServer(const QSslConfiguration& sslConfiguration,
+			   const QList<QSslCertificate>& caCertificates,
+			   QObject* parent = 0);
 	virtual ~QTlsServer();
 
-	Protocol allowedProtocols();
-
-public slots:
+private slots:
 	void displayTlsErrors(const QList<QSslError>& errors);
 	void tlsSocketEncrypted();
-	void test();
 
 signals:
 	void newTlsConnection(QSslSocket* serverSocket);
 
 protected:
 	virtual void incomingConnection(qintptr socketDescriptor);
-	const Protocol _allowedProtocols;
 };
 
 } // namespace QtWebsocket
