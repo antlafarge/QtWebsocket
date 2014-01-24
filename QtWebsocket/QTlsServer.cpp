@@ -24,17 +24,24 @@ along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 namespace QtWebsocket
 {
 
-QTlsServer::QTlsServer(const QSslConfiguration& sslConfiguration,
+QTlsServer::QTlsServer(Protocol allowedProtocol,
+					   const QSslConfiguration& sslConfiguration,
 					   const QList<QSslCertificate> &caCertificates,
 					   QObject* parent) :
 	QTcpServer(parent),
 	sslConfiguration(sslConfiguration),
-	caCertificates(caCertificates)
+	caCertificates(caCertificates),
+	_allowedProtocol(allowedProtocol)
 {
 }
 
 QTlsServer::~QTlsServer()
 {
+}
+
+Protocol QTlsServer::allowedProtocol()
+{
+	return _allowedProtocol;
 }
 
 void QTlsServer::displayTlsErrors(const QList<QSslError>& errors)
@@ -53,6 +60,12 @@ void QTlsServer::tlsSocketEncrypted()
 
 void QTlsServer::incomingConnection(qintptr socketDescriptor)
 {
+	if(_allowedProtocol == Tcp)
+	{
+		QTcpServer::incomingConnection(socketDescriptor);
+		return;
+	}
+
 	QSslSocket* serverSocket = new QSslSocket;
 
 	if (serverSocket->setSocketDescriptor(socketDescriptor))

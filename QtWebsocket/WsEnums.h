@@ -27,8 +27,7 @@ enum Protocol
 {
 	None = 0x0,
 	Tcp = 0x1,
-	Tls = 0x2,
-	TcpTls = Tcp | Tls
+	Tls = 0x2
 };
 
 enum EWebsocketVersion

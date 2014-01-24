@@ -22,6 +22,7 @@ along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <QTcpServer>
 #include <QSslConfiguration>
+#include "WsEnums.h"
 
 namespace QtWebsocket
 {
@@ -33,11 +34,14 @@ class QTlsServer : public QTcpServer
 
 	QSslConfiguration sslConfiguration;
 	QList<QSslCertificate> caCertificates;
+	const Protocol _allowedProtocol;
 public:
-	QTlsServer(const QSslConfiguration& sslConfiguration,
+	QTlsServer(Protocol allowedProtocol,
+			   const QSslConfiguration& sslConfiguration,
 			   const QList<QSslCertificate>& caCertificates,
 			   QObject* parent = 0);
 	virtual ~QTlsServer();
+	Protocol allowedProtocol();
 
 private slots:
 	void displayTlsErrors(const QList<QSslError>& errors);

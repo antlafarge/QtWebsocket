@@ -44,30 +44,30 @@ class QWsServer : public QObject
 
 public:
 	// ctor
-	QWsServer(QObject* parent = 0, Protocol allowedProtocols = Tcp,
+	QWsServer(QObject* parent = 0, Protocol allowedProtocol = Tcp,
 			  const QSslConfiguration& sslConfiguration = QSslConfiguration::defaultConfiguration(),
 			  const QList<QSslCertificate>& caCertificates = QList<QSslCertificate>());
 	// dtor
 	virtual ~QWsServer();
 
 	// public functions
+	Protocol allowedProtocol();
 	bool hasPendingConnections();
-	bool isListening(Protocol proto = Tcp);
-	bool listen(const QHostAddress & address = QHostAddress::Any, quint16 port = 0, Protocol proto = Tcp);
-	void close(Protocol proto = Tcp);
-	int maxPendingConnections(Protocol proto = Tcp);
+	bool isListening();
+	bool listen(const QHostAddress & address = QHostAddress::Any, quint16 port = 0);
+	void close();
+	int maxPendingConnections();
 	virtual QWsSocket* nextPendingConnection();
-	Protocol allowedProtocols();
-	QAbstractSocket::SocketError serverError(Protocol proto = Tcp);
-	QString errorString(Protocol proto = Tcp);
-	QNetworkProxy proxy(Protocol proto = Tcp);
-	QHostAddress serverAddress(Protocol proto = Tcp);
-	quint16 serverPort(Protocol proto = Tcp);
-	void setMaxPendingConnections(int numConnections, Protocol proto = Tcp);
-	void setProxy(const QNetworkProxy & networkProxy, Protocol proto = Tcp);
+	QAbstractSocket::SocketError serverError();
+	QString errorString();
+	QNetworkProxy proxy();
+	QHostAddress serverAddress();
+	quint16 serverPort();
+	void setMaxPendingConnections(int numConnections);
+	void setProxy(const QNetworkProxy & networkProxy);
+	bool waitForNewConnection(int msec = 0, bool* timedOut = 0);
 	bool setSocketDescriptor(int socketDescriptor, Protocol proto = Tcp);
 	int socketDescriptor(Protocol proto = Tcp);
-	bool waitForNewConnection(int msec = 0, bool* timedOut = 0, Protocol proto = Tcp);
 
 signals:
 	void newConnection();
@@ -86,9 +86,7 @@ private slots:
 
 private:
 	// private attributes
-	QTcpServer* tcpServer;
 	QTlsServer* tlsServer;
-	const Protocol _allowedProtocols;
 	QQueue<QWsSocket*> pendingConnections;
 	QHash<const QTcpSocket*, QWsHandshake*> handshakeBuffer;
 
