@@ -18,19 +18,48 @@ along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "Server.h"
-#include <iostream>
+#include <qDebug>
 
 Server::Server(int port, QtWebsocket::Protocol protocol)
 {
-	server = new QtWebsocket::QWsServer(this, protocol);
-	if (! server->listen(QHostAddress::Any, port))
+	if(protocol == QtWebsocket::Tcp)
+		server = new QtWebsocket::QWsServer(this, protocol);
+	else
 	{
-		std::cout << tr("Error: Can't launch server").toStdString() << std::endl;
-		std::cout << tr("QWsServer error : %1").arg(server->errorString()).toStdString() << std::endl;
+		QFile file("server-key.pem");
+		if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+		{
+			qDebug() << "can't open key server-key.pem";
+			throw -1;
+		}
+		QSslKey key(&file, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, QByteArray("qtwebsocket-server-key"));
+		file.close();
+
+		QFile file2("server-crt.pem");
+		if (!file2.open(QIODevice::ReadOnly | QIODevice::Text))
+		{
+			qDebug() << "cant load server certificate server-crt.pem";
+			throw -2;
+		}
+		QSslCertificate localCert(&file2, QSsl::Pem);
+		file2.close();
+
+		QSslConfiguration sslConfiguration;
+		sslConfiguration.setPrivateKey(key);
+		sslConfiguration.setLocalCertificate(localCert);
+		sslConfiguration.setPeerVerifyMode(QSslSocket::VerifyNone);
+
+		QList<QSslCertificate> caCerts = QSslCertificate::fromPath("ca.pem");
+		server = new QtWebsocket::QWsServer(this, protocol, sslConfiguration, caCerts);
+	}
+	if (! server->listen(QHostAddress::Any, port, protocol))
+	{
+		qDebug() << tr("Error: Can't launch server");
+		qDebug() << tr("QWsServer error : %1").arg(server->errorString());
 	}
 	else
 	{
-		std::cout << tr("Server is listening on port %1").arg(port).toStdString() << std::endl;
+		qDebug() << tr("Server is listening on port %1").arg(port);
 	}
 	QObject::connect(server, SIGNAL(newConnection()), this, SLOT(processNewConnection()));
 }
@@ -49,7 +78,7 @@ void Server::processNewConnection()
 
 	clients << clientSocket;
 
-	std::cout << tr("Client connected").toStdString() << std::endl;
+	qDebug() << tr("Client connected (%1)").arg(clientSocket->isEncrypted() ? "encrypted" : "not encrypted");
 }
 
 QString toReadableAscii(QString string)
@@ -120,7 +149,7 @@ void Server::processMessage(QString frame)
 	{
 		return;
 	}
-	std::cout << toReadableAscii(frame).toStdString() << std::endl;
+	qDebug() << toReadableAscii(frame);
 	
 	QtWebsocket::QWsSocket* client;
 	foreach (client, clients)
@@ -131,7 +160,7 @@ void Server::processMessage(QString frame)
 
 void Server::processPong(quint64 elapsedTime)
 {
-	std::cout << tr("ping: %1 ms").arg(elapsedTime).toStdString() << std::endl;
+	qDebug() << tr("ping: %1 ms").arg(elapsedTime);
 }
 
 void Server::socketDisconnected()
@@ -146,5 +175,5 @@ void Server::socketDisconnected()
 
 	socket->deleteLater();
 
-	std::cout << tr("Client disconnected").toStdString() << std::endl;
+	qDebug() << tr("Client disconnected");
 }

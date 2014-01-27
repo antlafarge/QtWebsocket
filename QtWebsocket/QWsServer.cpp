@@ -17,65 +17,58 @@ You should have received a copy of the GNU Lesser General Public License
 along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "QWsServer.h"
-
-#include <QStringList>
+#include <QTcpServer>
 #include <QByteArray>
-#include <QCryptographicHash>
-#include <QDateTime>
+#include "QWsServer.h"
+#include "QWsSocket.h"
+#include "QTlsServer.h"
 
 namespace QtWebsocket
 {
 
-QWsServer::QWsServer(QObject* parent, Protocol allowedProtocols)
+QWsServer::QWsServer(QObject* parent, Protocol allowedProtocol,
+					 const QSslConfiguration &sslConfiguration,
+					 const QList<QSslCertificate> &caCertificates)
 	: QObject(parent),
-	tcpServer(new QTcpServer(this)),
-	tlsServer(this, allowedProtocols)
+	tlsServer(new QTlsServer(allowedProtocol, sslConfiguration, caCertificates, this))
 {
-	if (allowedProtocols & Tls)
-	{
-		tcpServer = &tlsServer;
-		QObject::connect(tcpServer, SIGNAL(newTlsConnection(QSslSocket*)), this, SLOT(newTlsConnection(QSslSocket*)));
-	}
-	else
-	{
-		QObject::connect(tcpServer, SIGNAL(newConnection()), this, SLOT(newTcpConnection()));
-	}
+	QObject::connect(tlsServer, SIGNAL(newTlsConnection(QSslSocket*)), this, SLOT(newTlsConnection(QSslSocket*)));
+	QObject::connect(tlsServer, SIGNAL(newConnection()), this, SLOT(newTcpConnection()));
 }
 
 QWsServer::~QWsServer()
 {
-	tcpServer->deleteLater();
+	// tlsServer will be deleted, because it is child of this
 }
 
 bool QWsServer::listen(const QHostAddress & address, quint16 port)
 {
-	return tcpServer->listen(address, port);
+	return tlsServer->listen(address, port);
 }
 
 void QWsServer::close()
 {
-	tcpServer->close();
+	tlsServer->close();
 }
 
-Protocol QWsServer::allowedProtocols()
+Protocol QWsServer::allowedProtocol()
 {
-	return tlsServer.allowedProtocols();
+	return tlsServer->allowedProtocol();
 }
 
 QAbstractSocket::SocketError QWsServer::serverError()
 {
-	return tcpServer->serverError();
+	return tlsServer->serverError();
 }
 
 QString QWsServer::errorString()
 {
-	return tcpServer->errorString();
+	return tlsServer->errorString();
 }
 
 void QWsServer::newTcpConnection()
 {
-	QTcpSocket* tcpSocket = tcpServer->nextPendingConnection();
+	QTcpSocket* tcpSocket = tlsServer->nextPendingConnection();
 	if (tcpSocket == NULL)
 	{
 		return;
@@ -99,10 +92,8 @@ void QWsServer::newTlsConnection(QSslSocket* serverSocket)
 void QWsServer::tcpSocketDisconnected()
 {
 	QTcpSocket* tcpSocket = qobject_cast<QTcpSocket*>(sender());
-	if (tcpSocket == NULL)
-	{
+	if (!tcpSocket)
 		return;
-	}
 	
 	QWsHandshake* handshake = handshakeBuffer.take(tcpSocket);
 	delete handshake;
@@ -112,10 +103,8 @@ void QWsServer::tcpSocketDisconnected()
 void QWsServer::closeTcpConnection()
 {
 	QTcpSocket* tcpSocket = qobject_cast<QTcpSocket*>(sender());
-	if (tcpSocket == NULL)
-	{
+	if (!tcpSocket)
 		return;
-	}
 	
 	tcpSocket->close();
 }
@@ -132,10 +121,8 @@ static void showErrorAndClose(QTcpSocket* tcpSocket)
 void QWsServer::dataReceived()
 {
 	QTcpSocket* tcpSocket = qobject_cast<QTcpSocket*>(sender());
-	if (tcpSocket == NULL)
-	{
+	if (!tcpSocket)
 		return;
-	}
 
 	QWsHandshake& handshake = *(handshakeBuffer.value(tcpSocket));
 
@@ -145,7 +132,7 @@ void QWsServer::dataReceived()
 		return;
 	}
 
-	// handshake complete
+	// handshake complete?
 	if (!handshake.readStarted || !handshake.complete)
 	{
 		if (handshake.readStarted && !handshake.httpRequestValid)
@@ -155,8 +142,8 @@ void QWsServer::dataReceived()
 		return;
 	}
 
-	// If the mandatory fields are not specified, we abord the connection to the Websocket server
-	// hansake valid
+	// If the mandatory fields are not specified, we abort the connection to the Websocket server
+	// handshake valid
 	if (!handshake.isValid())
 	{
 		showErrorAndClose(tcpSocket);
@@ -209,16 +196,7 @@ void QWsServer::dataReceived()
 	//int socketDescriptor = tcpSocket->socketDescriptor();
 	//incomingConnection(socketDescriptor);	
 	// USE THIS INSTEAD
-	addPendingConnection(wsSocket);
-	emit newConnection();
-}
-
-void QWsServer::incomingConnection(int socketDescriptor)
-{
-	QTcpSocket* tcpSocket = new QTcpSocket(tcpServer);
-	tcpSocket->setSocketDescriptor(socketDescriptor, QAbstractSocket::ConnectedState);
-	QWsSocket* wsSocket = new QWsSocket(this, tcpSocket);
-
+	//TODO: if maxPendingConnections is reached, wsSocket is lost (memory leak)
 	addPendingConnection(wsSocket);
 	emit newConnection();
 }
@@ -247,52 +225,55 @@ bool QWsServer::hasPendingConnections()
 
 int QWsServer::maxPendingConnections()
 {
-	return tcpServer->maxPendingConnections();
+	return tlsServer->maxPendingConnections();
 }
 
 bool QWsServer::isListening()
 {
-	return tcpServer->isListening();
+	return tlsServer->isListening();
 }
 
 QNetworkProxy QWsServer::proxy()
 {
-	return tcpServer->proxy();
+	return tlsServer->proxy();
 }
 
 QHostAddress QWsServer::serverAddress()
 {
-	return tcpServer->serverAddress();
+	return tlsServer->serverAddress();
 }
 
 quint16 QWsServer::serverPort()
 {
-	return tcpServer->serverPort();
+	return tlsServer->serverPort();
 }
 
 void QWsServer::setMaxPendingConnections(int numConnections)
 {
-	tcpServer->setMaxPendingConnections(numConnections);
+	return tlsServer->setMaxPendingConnections(numConnections);
 }
 
 void QWsServer::setProxy(const QNetworkProxy & networkProxy)
 {
-	tcpServer->setProxy(networkProxy);
+	return tlsServer->setProxy(networkProxy);
 }
 
-bool QWsServer::setSocketDescriptor(int socketDescriptor)
+bool QWsServer::setSocketDescriptor(int socketDescriptor, Protocol proto)
 {
-	return tcpServer->setSocketDescriptor(socketDescriptor);
+	Q_ASSERT(proto != TcpTls);
+	return ((proto & Tls) ? tlsServer : tcpServer)->setSocketDescriptor(socketDescriptor);
 }
 
-int QWsServer::socketDescriptor()
+int QWsServer::socketDescriptor(Protocol proto)
 {
-	return tcpServer->socketDescriptor();
+	Q_ASSERT(proto != TcpTls);
+	return ((proto & Tls) ? tlsServer : tcpServer)->socketDescriptor();
 }
 
-bool QWsServer::waitForNewConnection(int msec, bool* timedOut)
+bool QWsServer::waitForNewConnection(int msec, bool* timedOut, Protocol proto)
 {
-	return tcpServer->waitForNewConnection(msec, timedOut);
+	Q_ASSERT(proto != TcpTls);
+	return ((proto & Tls) ? tlsServer : tcpServer)->waitForNewConnection(msec, timedOut);
 }
 
 QString QWsServer::composeOpeningHandshakeResponseV0(QByteArray accept, QString origin, QString hostAddress, QString hostPort, QString resourceName, QString protocol)
