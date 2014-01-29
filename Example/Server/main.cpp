@@ -27,8 +27,7 @@ int main(int argc, char *argv[])
 	
 	qsrand(QDateTime::currentMSecsSinceEpoch());
 
-	Server myServerTcp(80, QtWebsocket::Tcp);
-	Server myServerTls(81, QtWebsocket::Tls);
+	Server myServer(80, QtWebsocket::Tcp);
 
 	return app.exec();
 }

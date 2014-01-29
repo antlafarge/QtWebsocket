@@ -37,7 +37,6 @@ public:
 
 protected slots:
 	void socketConnected();
-	void socketEncrypted();
 	void socketDisconnected();
 	void sendMessage();
 	void connectSocket();

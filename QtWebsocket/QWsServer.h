@@ -20,23 +20,26 @@ along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef QWSSERVER_H
 #define QWSSERVER_H
 
-class QTcpServer;
-class QTcpSocket;
-
-#include <QSslConfiguration>
+#include <QTcpServer>
+#include <QTcpSocket>
+#include <QSsl>
+#include <QSslSocket>
+#include <QSslCertificate>
+#include <QSslKey>
 #include <QNetworkProxy>
 #include <QString>
+#include <QStringList>
+#include <QMap>
 #include <QQueue>
 #include <QFile>
 
-#include "WsEnums.h"
+#include "QWsSocket.h"
+#include "QTlsServer.h"
+
+#include <iostream>
 
 namespace QtWebsocket
 {
-
-class QTlsServer;
-class QWsSocket;
-class QWsHandshake;
 
 class QWsServer : public QObject
 {
@@ -44,30 +47,28 @@ class QWsServer : public QObject
 
 public:
 	// ctor
-	QWsServer(QObject* parent = 0, Protocol allowedProtocol = Tcp,
-			  const QSslConfiguration& sslConfiguration = QSslConfiguration::defaultConfiguration(),
-			  const QList<QSslCertificate>& caCertificates = QList<QSslCertificate>());
+	QWsServer(QObject* parent = 0, Protocol allowedProtocols = Tcp);
 	// dtor
 	virtual ~QWsServer();
 
 	// public functions
-	Protocol allowedProtocol();
+	void close();
+	QString errorString();
 	bool hasPendingConnections();
 	bool isListening();
 	bool listen(const QHostAddress & address = QHostAddress::Any, quint16 port = 0);
-	void close();
 	int maxPendingConnections();
 	virtual QWsSocket* nextPendingConnection();
-	QAbstractSocket::SocketError serverError();
-	QString errorString();
 	QNetworkProxy proxy();
 	QHostAddress serverAddress();
+	QAbstractSocket::SocketError serverError();
 	quint16 serverPort();
 	void setMaxPendingConnections(int numConnections);
 	void setProxy(const QNetworkProxy & networkProxy);
+	bool setSocketDescriptor(int socketDescriptor);
+	int socketDescriptor();
 	bool waitForNewConnection(int msec = 0, bool* timedOut = 0);
-	bool setSocketDescriptor(int socketDescriptor, Protocol proto = Tcp);
-	int socketDescriptor(Protocol proto = Tcp);
+	Protocol allowedProtocols();
 
 signals:
 	void newConnection();
@@ -75,6 +76,7 @@ signals:
 protected:
 	// protected functions
 	void addPendingConnection(QWsSocket* socket);
+	virtual void incomingConnection(int socketDescriptor);
 
 private slots:
 	// private slots
@@ -86,9 +88,14 @@ private slots:
 
 private:
 	// private attributes
-	QTlsServer* tlsServer;
+	QTcpServer* tcpServer;
+	QTlsServer tlsServer;
 	QQueue<QWsSocket*> pendingConnections;
 	QHash<const QTcpSocket*, QWsHandshake*> handshakeBuffer;
+
+	bool useSsl;
+	QSslKey sslKey;
+	QSslCertificate sslCertificate;
 
 public:
 	// public static functions

@@ -22,7 +22,9 @@ along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <QRegExp>
 #include <QTcpSocket>
-#include <QSslConfiguration>
+#include <QSslSocket>
+#include <QSsl>
+#include <QSslKey>
 #include <QHostAddress>
 #include <QTime>
 #include <QStringList>
@@ -42,11 +44,7 @@ class QWsSocket : public QAbstractSocket
 
 public:
 	// ctor
-	QWsSocket(QObject* parent = 0,
-			  QTcpSocket* socket = 0,
-			  EWebsocketVersion ws_v = WS_V13,
-			  const QSslConfiguration* sslConfiguration = 0,
-			  const QList<QSslCertificate> &caCertificates = QList<QSslCertificate>());
+	QWsSocket(QObject* parent = NULL, QTcpSocket* socket = NULL, EWebsocketVersion ws_v = WS_V13);
 	// dtor
 	virtual ~QWsSocket();
 
@@ -59,8 +57,6 @@ public:
 	QString origin();
 	QString protocol();
 	QString extensions();
-	QSslConfiguration sslConfiguration();
-	bool isEncrypted();
 
 	void setResourceName(QString rn);
 	void setHost(QString h);
@@ -69,13 +65,9 @@ public:
 	void setOrigin(QString o);
 	void setProtocol(QString p);
 	void setExtensions(QString e);
-	void setSslConfiguration(const QSslConfiguration& s);
 
 	qint64 write(const QString& string); // write data as text
 	qint64 write(const QByteArray & byteArray); // write data as binary
-
-	static QSslConfiguration defaultSslConfiguration();
-	static void setDefaultSslConfiguration(const QSslConfiguration& s);
 
 public slots:
 	void connectToHost(const QString & hostName, quint16 port = 80, OpenMode mode = ReadWrite);
@@ -90,7 +82,6 @@ signals:
 	void pong(quint64 elapsedTime);
 	void encrypted();
 	void sslErrors(const QList<QSslError>& errors);
-	void tcpError(QAbstractSocket::SocketError err);
 
 protected:
 	qint64 writeFrames (const QList<QByteArray>& framesList);
@@ -98,7 +89,7 @@ protected:
 	inline qint64 internalWrite(const QByteArray& string, bool asBinary);
 	void initTcpSocket();
 
-protected slots: //TODO: why protected? maybe private?
+protected slots:
 	virtual void close(CloseStatusCode closeStatusCode = NoCloseStatusCode, QString reason = QString());
 	void processDataV0();
 	void processDataV4();
@@ -106,7 +97,7 @@ protected slots: //TODO: why protected? maybe private?
 	void processTcpStateChanged(QAbstractSocket::SocketState socketState);
 	void processTcpError(QAbstractSocket::SocketError err);
 	void startHandshake();
-	void onTransportLevelReady();
+	void onEncrypted();
 
 private:
 
@@ -153,9 +144,7 @@ private:
 	QByteArray key3;
 	QByteArray accept;
 
-	const bool _secured;
-	QSslConfiguration _sslConfiguration;
-	QList<QSslCertificate> caCertificates;
+	bool _secured;
 
 	/*!
 	 * Sends pong response with `applicationData` appended.
@@ -204,12 +193,10 @@ public:
 	// static vars
 	static const int maxBytesPerFrame = 1400;
 	static const QLatin1String emptyLine;
-	static const QLatin1String localhost_ipv4;
-	static const QLatin1String localhost_ipv6;
+	static QRegExp regExpIPv4;
 	static QRegExp regExpHttpRequest;
 	static QRegExp regExpHttpResponse;
 	static QRegExp regExpHttpField;
-	static QSslConfiguration _defaultSslConfiguration;
 };
 
 } // namespace QtWebsocket

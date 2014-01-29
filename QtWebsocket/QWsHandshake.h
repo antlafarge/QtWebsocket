@@ -20,14 +20,24 @@ along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef QWSHANDSHAKE_H
 #define QWSHANDSHAKE_H
 
-class QTcpSocket;
+#include <QTcpSocket>
 
-#include <QHash>
-#include <QString>
 #include "WsEnums.h"
 
 namespace QtWebsocket
 {
+
+enum EWebsocketVersion
+{
+	WS_VUnknow = -1,
+	WS_V0 = 0,
+	WS_V4 = 4,
+	WS_V5 = 5,
+	WS_V6 = 6,
+	WS_V7 = 7,
+	WS_V8 = 8,
+	WS_V13 = 13
+};
 
 class QWsHandshake
 {

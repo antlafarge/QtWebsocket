@@ -28,18 +28,7 @@ enum Protocol
 	None = 0x0,
 	Tcp = 0x1,
 	Tls = 0x2
-};
-
-enum EWebsocketVersion
-{
-	WS_VUnknow = -1,
-	WS_V0 = 0,
-	WS_V4 = 4,
-	WS_V5 = 5,
-	WS_V6 = 6,
-	WS_V7 = 7,
-	WS_V8 = 8,
-	WS_V13 = 13
+	//TcpTls= 0x3 // soon
 };
 
 enum WsMode
