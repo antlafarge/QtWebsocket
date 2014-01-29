@@ -6,13 +6,13 @@ TEMPLATE = app
 
 DEPENDPATH += "../QtWebsocket"
 SOURCES += \
-				main.cpp \
+    main.cpp \
     TestServer.cpp
 
 INCLUDEPATH += "../QtWebsocket"
 HEADERS += \
     QWsServer.h \
-				QWsSocket.h \
+    QWsSocket.h \
     TestServer.h
 
 win32:CONFIG(release, debug|release): LIBS += -L../QtWebsocket/release/ -lQtWebsocket

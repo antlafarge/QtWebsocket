@@ -17,8 +17,8 @@ SOURCES += \
 
 INCLUDEPATH += "../../QtWebsocket"
 HEADERS += \
-				QWsServer.h \
-				QWsSocket.h \
+    QWsServer.h \
+    QWsSocket.h \
     Server.h
 
 win32:CONFIG(release, debug|release): LIBS += -L../../QtWebsocket/release/ -lQtWebsocket
