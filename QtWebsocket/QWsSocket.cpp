@@ -25,8 +25,7 @@ along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 #include <QDataStream>
 #include <QFile>
 #include <QtCore/qmath.h>
-
-#include <iostream>
+#include <QDebug>
 
 #include "QWsServer.h"
 #include "QWsFrame.h"
@@ -36,19 +35,25 @@ namespace QtWebsocket
 {
 
 const QLatin1String QWsSocket::emptyLine("\r\n");
-const QString QWsSocket::connectionRefusedStr(QLatin1String("Websocket connection refused"));
 const QRegExp regExpUriStart("^wss?://", Qt::CaseInsensitive);
 const QRegExp regExpUri("^wss?://([^\\s]+)$", Qt::CaseInsensitive);
 const QRegExp regExpLocalhostUri("^localhost$", Qt::CaseInsensitive);
+const QLatin1String QWsSocket::localhost_ipv4("localhost");
+const QLatin1String QWsSocket::localhost_ipv6("localhost_ipv6");
 
-QRegExp QWsSocket::regExpIPv4(QLatin1String("^([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\.([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])){3}$"));
 QRegExp QWsSocket::regExpHttpRequest(QLatin1String("^GET\\s(.*)\\sHTTP/(.+)\\r\\n"));
 QRegExp QWsSocket::regExpHttpResponse(QLatin1String("^HTTP/1.1\\s(\\d{3})\\s(.+)\\r\\n"));
 QRegExp QWsSocket::regExpHttpField(QLatin1String("^(.+):\\s(.+)\\r\\n$"));
 
-QWsSocket::QWsSocket(QObject* parent, QTcpSocket* socket, EWebsocketVersion ws_v) :
+QSslConfiguration QWsSocket::_defaultSslConfiguration(QSslConfiguration::defaultConfiguration());
+
+QWsSocket::QWsSocket(QObject* parent,
+					 QTcpSocket* socket,
+					 EWebsocketVersion ws_v,
+					 const QSslConfiguration *sslConfiguration,
+					 const QList<QSslCertificate>& caCertificates) :
 	QAbstractSocket(QAbstractSocket::UnknownSocketType, parent),
-	tcpSocket(socket ? socket : new QTcpSocket),
+	tcpSocket(socket ? socket : new QSslSocket),
 	_wsMode(WsClientMode),
 	_currentFrame(new QWsFrame),
 	continuation(false),
@@ -56,7 +61,9 @@ QWsSocket::QWsSocket(QObject* parent, QTcpSocket* socket, EWebsocketVersion ws_v
 	_hostPort(-1),
 	closingHandshakeSent(false),
 	closingHandshakeReceived(false),
-	_secured(false)
+	_secured(qobject_cast<QSslSocket*>(tcpSocket)),
+	_sslConfiguration(sslConfiguration ? *sslConfiguration : _defaultSslConfiguration),
+	caCertificates(caCertificates)
 {
 	initTcpSocket();
 }
@@ -78,7 +85,7 @@ QWsSocket::~QWsSocket()
 
 void QWsSocket::initTcpSocket()
 {
-	if (tcpSocket == NULL)
+	if (!tcpSocket)
 	{
 		return;
 	}
@@ -88,21 +95,34 @@ void QWsSocket::initTcpSocket()
 	QAbstractSocket::setSocketState(tcpSocket->state());
 	QAbstractSocket::setPeerAddress(tcpSocket->peerAddress());
 	QAbstractSocket::setPeerPort(tcpSocket->peerPort());
+	QAbstractSocket::setLocalAddress(tcpSocket->localAddress());
+	QAbstractSocket::setLocalPort(tcpSocket->localPort());
+
+	if(_secured)
+	{
+		QSslSocket* sslSocket = (QSslSocket*)tcpSocket;
+		sslSocket->setSslConfiguration(_sslConfiguration);
+		sslSocket->addCaCertificates(caCertificates);
+		QObject::connect(sslSocket, SIGNAL(sslErrors(const QList<QSslError>&)), this, SIGNAL(sslErrors(const QList<QSslError>&)));
+		QObject::connect(sslSocket, SIGNAL(connected()), sslSocket, SLOT(startClientEncryption()));
+		QObject::connect(sslSocket, SIGNAL(encrypted()), this, SLOT(onTransportLevelReady()));
+	}
+	else
+		QObject::connect(tcpSocket, SIGNAL(connected()), this, SLOT(onTransportLevelReady()));
 
 	if (_version == WS_V0)
 	{
-		QObject::connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(processDataV0()), Qt::UniqueConnection);
+		QObject::connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(processDataV0()));
 	}
 	else
 	{
-		QObject::connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(processDataV4()), Qt::UniqueConnection);
+		QObject::connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(processDataV4()));
 	}
-	QObject::connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(processTcpError(QAbstractSocket::SocketError)), Qt::UniqueConnection);
-	QObject::connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SIGNAL(error(QAbstractSocket::SocketError)), Qt::UniqueConnection);
-	QObject::connect(tcpSocket, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)), this, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)), Qt::UniqueConnection);
-	QObject::connect(tcpSocket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(processTcpStateChanged(QAbstractSocket::SocketState)), Qt::UniqueConnection);
-	QObject::connect(tcpSocket, SIGNAL(readChannelFinished()), this, SIGNAL(readChannelFinished()), Qt::UniqueConnection);
-	QObject::connect(tcpSocket, SIGNAL(hostFound()), this, SIGNAL(hostFound()), Qt::UniqueConnection);
+	QObject::connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(processTcpError(QAbstractSocket::SocketError)));
+	QObject::connect(tcpSocket, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)), this, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy &, QAuthenticator *)));
+	QObject::connect(tcpSocket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(processTcpStateChanged(QAbstractSocket::SocketState)));
+	QObject::connect(tcpSocket, SIGNAL(readChannelFinished()), this, SIGNAL(readChannelFinished()));
+	QObject::connect(tcpSocket, SIGNAL(hostFound()), this, SIGNAL(hostFound()));
 }
 
 void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mode)
@@ -123,7 +143,29 @@ void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mo
 	}
 	if (_hostName.startsWith("wss://", Qt::CaseInsensitive))
 	{
-		_secured = true;
+		// Check if we are the instance of QSslSocket.
+		// We can be QTcpSocket, if:
+		// 1) This QWsSocket is created by QWsServer with allowedProtocols == Tcp,
+		// 2) User has explicitly passed QTcpSocket in constructor.
+		// In these cases we cannot connect over SSL.
+		if(!_secured)
+			return;
+		// connect additional signals for SSL
+		QSslSocket* sslSocket = (QSslSocket*)tcpSocket;
+		QObject::disconnect(sslSocket, SIGNAL(connected()), this, SLOT(onTransportLevelReady()));
+		QObject::connect(sslSocket, SIGNAL(connected()), sslSocket, SLOT(startClientEncryption()), Qt::UniqueConnection);
+		QObject::connect(sslSocket, SIGNAL(encrypted()), this, SLOT(onTransportLevelReady()), Qt::UniqueConnection);
+	}
+	else
+	{
+		if(_secured)
+		{
+			// disconnect additional signals for SSL
+			QSslSocket* sslSocket = (QSslSocket*)tcpSocket;
+			QObject::connect(sslSocket, SIGNAL(connected()), this, SLOT(onTransportLevelReady()), Qt::UniqueConnection);
+			QObject::disconnect(sslSocket, SIGNAL(connected()), sslSocket, SLOT(startClientEncryption()));
+			QObject::disconnect(sslSocket, SIGNAL(encrypted()), this, SLOT(onTransportLevelReady()));
+		}
 	}
 
 	// remove the websocket URI scheme for TCP connection
@@ -131,13 +173,19 @@ void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mo
 	_hostPort = port;
 	
 	// check localhost uri
-	if (_host.contains(regExpLocalhostUri))
+	if (!_host.compare(localhost_ipv4, Qt::CaseInsensitive))
 	{
 		_hostAddress = QHostAddress::LocalHost;
 	}
-	// check IPv4 URI
-	// TODO IPv6
-	else if (_host.contains(QRegExp(QWsSocket::regExpIPv4)))
+	else if (!_host.compare(localhost_ipv6, Qt::CaseInsensitive))
+	{
+		_hostAddress = QHostAddress::LocalHostIPv6;
+	}
+	// check IPv4/6 URI
+	// regexps are quite hard to understand, we'll use Qt address parsing facilities
+	// however, this adds extra temporary object construction overhead
+	// since we cannot memorize temporary object created in if-condition here.
+	else if (!QHostAddress(_host).isNull())
 	{
 		_hostAddress = QHostAddress(_host);
 	}
@@ -156,59 +204,21 @@ void QWsSocket::connectToHost(const QString& hostName, quint16 port, OpenMode mo
 		}
 	}
 
-	if (_secured)
-	{
-		// replace tcpSocket by sslSocket
-		tcpSocket->deleteLater();
-		QSslSocket* sslSocket = new QSslSocket;
-		tcpSocket = sslSocket;
-		initTcpSocket();
-
-		QObject::connect(sslSocket, SIGNAL(sslErrors(const QList<QSslError>&)), this, SIGNAL(sslErrors(const QList<QSslError>&)), Qt::UniqueConnection);
-
-		QFile file("client-key.pem");
-		if (!file.open(QIODevice::ReadOnly))
-		{
-			std::cout << "cant load client key" << std::endl;
-			return;
-		}
-		QSslKey key(&file, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, QByteArray("qtwebsocket-client-key"));
-		file.close();
-		sslSocket->setPrivateKey(key);
-		sslSocket->setLocalCertificate("client-crt.pem");
-		if (!sslSocket->addCaCertificates("ca.pem"))
-		{
-			std::cout << "cant open ca certificate" << std::endl;
-			return;
-		}
-		sslSocket->setPeerVerifyMode(QSslSocket::VerifyNone);
-		//sslSocket->ignoreSslErrors();
-		QObject::connect(sslSocket, SIGNAL(encrypted()), this, SLOT(onEncrypted()), Qt::UniqueConnection);
-		sslSocket->connectToHostEncrypted(_host, port);
-		sslSocket->startClientEncryption();
-	}
-	else
-	{
-		// redirected to the other function
-		QWsSocket::connectToHost(_hostAddress, _hostPort, mode);
-	}
+	// redirected to the other function
+	QWsSocket::connectToHost(_hostAddress, _hostPort, mode);
 }
 
 void QWsSocket::connectToHost(const QHostAddress& address, quint16 port, OpenMode mode)
 {
-	if (!_secured)
-	{
-		handshakeResponse.clear();
-		setPeerAddress(address);
-		setPeerPort(port);
-		setOpenMode(mode);
-		tcpSocket->connectToHost(address, port, mode);
-	}
-	else
-	{
-		// redirected to the other function
-		QWsSocket::connectToHost(address.toString(), port, mode);
-	}
+	// assume default encryption mode:
+	// 1) If connectToHost(hostName) was called earlier, then ws:// or wss:// scheme is chosen by that hostName;
+	// 2) Otherwise, if tcpSocket is QTcpSocket, connect unencrypted; else (QSslSocket) connect encrypted.
+	handshakeResponse.clear();
+	setPeerAddress(address);
+	setPeerPort(port);
+	setOpenMode(mode);
+	// polymorphism will do the right thing for QSslSocket
+	tcpSocket->connectToHost(address, port, mode);
 }
 
 void QWsSocket::disconnectFromHost()
@@ -328,6 +338,16 @@ qint64 QWsSocket::write(const QByteArray& byteArray)
 	return QWsSocket::internalWrite(byteArray, true);
 }
 
+QSslConfiguration QWsSocket::defaultSslConfiguration()
+{
+	return _defaultSslConfiguration;
+}
+
+void QWsSocket::setDefaultSslConfiguration(const QSslConfiguration &s)
+{
+	_defaultSslConfiguration = s;
+}
+
 qint64 QWsSocket::internalWrite(const QByteArray& byteArray, bool asBinary)
 {
 	if (_version == WS_V0)
@@ -403,6 +423,8 @@ void QWsSocket::processHandshake()
 	QAbstractSocket::setSocketState(QAbstractSocket::ConnectedState);
 	emit QAbstractSocket::stateChanged(QAbstractSocket::ConnectedState);
 	emit QAbstractSocket::connected();
+	if(isEncrypted())
+		emit encrypted();
 }
 
 void QWsSocket::processDataV0()
@@ -690,7 +712,10 @@ void QWsSocket::handleControlFrame()
 
 qint64 QWsSocket::writeFrame(const QByteArray& byteArray)
 {
-	return tcpSocket->write(byteArray); // writes data to internal buffer and returns full size always; then emits signals
+	// QTcpSocket::write writes data to internal buffer and returns full size always; then emits signals
+	// It means that in case of connection breakup we cannot reliably determine
+	// if the written data was delivered. That ruins the conception of TCP.
+	return tcpSocket->write(byteArray);
 }
 
 qint64 QWsSocket::writeFrames(const QList<QByteArray>& framesList)
@@ -703,8 +728,12 @@ qint64 QWsSocket::writeFrames(const QList<QByteArray>& framesList)
 	return nbBytesWritten;
 }
 
-void QWsSocket::onEncrypted()
+void QWsSocket::onTransportLevelReady()
 {
+	//TODO: is this check necessary?
+	// on server sockets, connection/encryption happens before QWsSocket is created,
+	// (QWsSocket is created after succesful handshake)
+	// i.e. QWsSocket should never receive connected()/encrypted() signal on server sockets.
 	if (_wsMode == WsClientMode)
 	{
 		startHandshake();
@@ -755,11 +784,10 @@ void QWsSocket::processTcpStateChanged(QAbstractSocket::SocketState tcpSocketSta
 		}
 		case QAbstractSocket::ConnectedState:
 		{
-			if (!_secured && wsSocketState == QAbstractSocket::ConnectingState)
+			if (wsSocketState == QAbstractSocket::ConnectingState)
 			{
 				setLocalAddress(tcpSocket->localAddress());
 				setLocalPort(tcpSocket->localPort());
-				startHandshake();
 			}
 			break;
 		}
@@ -797,7 +825,7 @@ void QWsSocket::processTcpError(QAbstractSocket::SocketError err)
 {
 	setSocketError(tcpSocket->error());
 	setErrorString(tcpSocket->errorString());
-	emit error(err);
+	emit tcpError(err);
 }
 
 void QWsSocket::ping()
@@ -1142,6 +1170,11 @@ void QWsSocket::setExtensions(QString e)
 	_extensions = e;
 }
 
+void QWsSocket::setSslConfiguration(const QSslConfiguration &s)
+{
+	_sslConfiguration = s;
+}
+
 EWebsocketVersion QWsSocket::version()
 {
 	return _version;
@@ -1180,6 +1213,16 @@ QString QWsSocket::protocol()
 QString QWsSocket::extensions()
 {
 	return _extensions;
+}
+
+QSslConfiguration QWsSocket::sslConfiguration()
+{
+	return _sslConfiguration;
+}
+
+bool QWsSocket::isEncrypted()
+{
+	return _secured && ((QSslSocket*)tcpSocket)->isEncrypted();
 }
 
 } // namespace QtWebsocket
