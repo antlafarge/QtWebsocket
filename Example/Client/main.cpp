@@ -26,7 +26,8 @@ int main(int argc, char *argv[])
 	
 	qsrand(QDateTime::currentMSecsSinceEpoch());
 
-	Client client;
+    const bool useTls = false; // useTls == true requires files ca.pem, client-crt.pem and client-key.pem to be present in the working directory
+    Client client(useTls);
 	client.show();
 
 	return app.exec();

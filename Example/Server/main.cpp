@@ -28,7 +28,8 @@ int main(int argc, char *argv[])
 	qsrand(QDateTime::currentMSecsSinceEpoch());
 
 	Server myServerTcp(80, QtWebsocket::Tcp);
-	Server myServerTls(81, QtWebsocket::Tls);
+    // TLS requires files ca.pem, server-crt.pem and server-key.pem to be present in the working directory
+    //Server myServerTls(81, QtWebsocket::Tls);
 
 	return app.exec();
 }

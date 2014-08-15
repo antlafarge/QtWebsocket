@@ -24,7 +24,7 @@ along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 #include <QSslConfiguration>
 #include <QSslKey>
 
-Client::Client(QWidget *parent) :
+Client::Client(bool useTls, QWidget *parent) :
 	QWidget(parent),
 	ui(new Ui::Client)
 {
@@ -33,31 +33,36 @@ Client::Client(QWidget *parent) :
 	defaultPseudo = QString("user%1").arg(qrand() % 9000 + 1000);
 	ui->pseudoLineEdit->setPlaceholderText(defaultPseudo);
 
-	QFile file("client-key.pem");
-	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-	{
-		qDebug() << "cant load client key client-key.pem";
-		throw -1;
-	}
-	QSslKey key(&file, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, QByteArray("qtwebsocket-client-key"));
-	file.close();
+    if(useTls) // complex TLS configuration of websocket
+    {
+        QFile file("client-key.pem");
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        {
+            qDebug() << "cant load client key client-key.pem";
+            throw -1;
+        }
+        QSslKey key(&file, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, QByteArray("qtwebsocket-client-key"));
+        file.close();
 
-	QFile file2("client-crt.pem");
-	if (!file2.open(QIODevice::ReadOnly | QIODevice::Text))
-	{
-		qDebug() << "cant load client certificate client-crt.pem";
-		throw -2;
-	}
-	QSslCertificate localCert(&file2, QSsl::Pem);
-	file2.close();
+        QFile file2("client-crt.pem");
+        if (!file2.open(QIODevice::ReadOnly | QIODevice::Text))
+        {
+            qDebug() << "cant load client certificate client-crt.pem";
+            throw -2;
+        }
+        QSslCertificate localCert(&file2, QSsl::Pem);
+        file2.close();
 
-	QSslConfiguration sslConfiguration;
-	sslConfiguration.setPrivateKey(key);
-	sslConfiguration.setLocalCertificate(localCert);
-	sslConfiguration.setPeerVerifyMode(QSslSocket::VerifyNone);
+        QSslConfiguration sslConfiguration;
+        sslConfiguration.setPrivateKey(key);
+        sslConfiguration.setLocalCertificate(localCert);
+        sslConfiguration.setPeerVerifyMode(QSslSocket::VerifyNone);
 
-	QList<QSslCertificate> caCerts = QSslCertificate::fromPath("ca.pem");
-	wsSocket = new QtWebsocket::QWsSocket(this, 0, QtWebsocket::WS_V13, &sslConfiguration, caCerts);
+        QList<QSslCertificate> caCerts = QSslCertificate::fromPath("ca.pem");
+        wsSocket = new QtWebsocket::QWsSocket(this, 0, QtWebsocket::WS_V13, &sslConfiguration, caCerts);
+    }
+    else // simple creation of QWsSocket without any hassle of TLS configuration.
+        wsSocket = new QtWebsocket::QWsSocket(this);
 
 	socketStateChanged(wsSocket->state());
 
