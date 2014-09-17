@@ -83,53 +83,57 @@ void Server::processNewConnection()
 
 QString toReadableAscii(QString string)
 {
-	string.replace(QRegExp(QLatin1String("[ÀÁÂÃÄÅ]")), "ÀÁÂÃÄÅ");
-	string.replace(QRegExp(QLatin1String("[àáâãäåª]")), "a");
-	string.replace(QRegExp(QLatin1String("[ÈÉÊË£]")), "E");
-	string.replace(QRegExp(QLatin1String("[èéêë]")), "e");
-	string.replace(QRegExp(QLatin1String("[ÌÍÎÏ]")), "I");
-	string.replace(QRegExp(QLatin1String("[ìíîï¡]")), "i");
-	string.replace(QRegExp(QLatin1String("[ÒÓÔÕÖØ]")), "O");
-	string.replace(QRegExp(QLatin1String("[òóôõöğø¤°º]")), "o");
-	string.replace(QRegExp(QLatin1String("[ÙÚÛÜ]")), "U");
-	string.replace(QRegExp(QLatin1String("[ùúûüµ]")), "u");
-	string.replace(QRegExp(QLatin1String("[¥İ]")), "Y");
-	string.replace(QRegExp(QLatin1String("[ıÿ]")), "y");
-	string.replace(QRegExp(QLatin1String("[Ç¢]")), "C");
-	string.replace(QLatin1Char('ç'), "c");
-	string.replace(QLatin1Char('©'), "(C)");
-	string.replace(QLatin1Char('®'), "(R)");
-	string.replace(QLatin1Char('«'), "<<");
-	string.replace(QLatin1Char('»'), ">>");
-	string.replace(QLatin1Char('¦'), "|");
-	string.replace(QLatin1Char('§'), "S");
-	string.replace(QLatin1Char('¨'), "\"");
-	string.replace(QLatin1Char('¬'), "-");
-	string.replace(QLatin1Char('-'), "-");
-	string.replace(QLatin1Char('¯'), "-");
-	string.replace(QLatin1Char('¹'), "^1");
-	string.replace(QLatin1Char('²'), "^2");
-	string.replace(QLatin1Char('³'), "^3");
-	string.replace(QLatin1Char('±'), "+-");
-	string.replace(QLatin1Char('¼'), "1/4");
-	string.replace(QLatin1Char('½'), "1/2");
-	string.replace(QLatin1Char('¾'), "3/4");
-	string.replace(QLatin1Char('×'), "x");
-	string.replace(QLatin1Char('÷'), "/");
-	string.replace(QLatin1Char('´'), "`");
-	string.replace(QLatin1Char('·'), ".");
-	string.replace(QLatin1Char('¸'), ",");
-	string.replace(QLatin1Char('¿'), "?");
-	string.replace(QLatin1Char('¶'), "g");
-	string.replace(QLatin1Char('Æ'), "AE");
-	string.replace(QLatin1Char('æ'), "ae");
-	string.replace(QLatin1Char('Ğ'), "D");
-	string.replace(QLatin1Char('Ñ'), "N");
-	string.replace(QLatin1Char('ñ'), "n");
-	string.replace(QLatin1Char('Ş'), "D");
-	string.replace(QLatin1Char('ş'), "d");
-	string.replace(QLatin1Char('ß'), "B");
-	string.replace(QChar(0x20AC), "E");
+    // We must not use QLatin1String
+    // It cannot decode multibyte Latin-1 characters when source file encoding is UTF-8.
+    string.replace(QRegExp(QString("[Ã€ÃÃ‚ÃƒÃ„Ã…]")), "Ã€ÃÃ‚ÃƒÃ„Ã…");
+    string.replace(QRegExp(QString("[Ã Ã¡Ã¢Ã£Ã¤Ã¥Âª]")), "a");
+    string.replace(QRegExp(QString("[ÃˆÃ‰ÃŠÃ‹Â£]")), "E");
+    string.replace(QRegExp(QString("[Ã¨Ã©ÃªÃ«]")), "e");
+    string.replace(QRegExp(QString("[ÃŒÃÃÃ]")), "I");
+    string.replace(QRegExp(QString("[Ã¬Ã­Ã®Ã¯Â¡]")), "i");
+    string.replace(QRegExp(QString("[Ã’Ã“Ã”Ã•Ã–Ã˜]")), "O");
+    string.replace(QRegExp(QString("[Ã²Ã³Ã´ÃµÃ¶Ã°Ã¸Â¤Â°Âº]")), "o");
+    string.replace(QRegExp(QString("[Ã™ÃšÃ›Ãœ]")), "U");
+    string.replace(QRegExp(QString("[Ã¹ÃºÃ»Ã¼Âµ]")), "u");
+    string.replace(QRegExp(QString("[Â¥Ã]")), "Y");
+    string.replace(QRegExp(QString("[Ã½Ã¿]")), "y");
+    string.replace(QRegExp(QString("[Ã‡Â¢]")), "C");
+    // We must use UTF-16 literals
+    // because Latin-1 characters are multibyte when source file encoding is UTF-8.
+    string.replace(QChar(L'Ã§'), "c");
+    string.replace(QChar(L'Â©'), "(C)");
+    string.replace(QChar(L'Â®'), "(R)");
+    string.replace(QChar(L'Â«'), "<<");
+    string.replace(QChar(L'Â»'), ">>");
+    string.replace(QChar(L'Â¦'), "|");
+    string.replace(QChar(L'Â§'), "S");
+    string.replace(QChar(L'Â¨'), "\"");
+    string.replace(QChar(L'Â¬'), "-");
+    string.replace(QChar(L'-'), "-");
+    string.replace(QChar(L'Â¯'), "-");
+    string.replace(QChar(L'Â¹'), "^1");
+    string.replace(QChar(L'Â²'), "^2");
+    string.replace(QChar(L'Â³'), "^3");
+    string.replace(QChar(L'Â±'), "+-");
+    string.replace(QChar(L'Â¼'), "1/4");
+    string.replace(QChar(L'Â½'), "1/2");
+    string.replace(QChar(L'Â¾'), "3/4");
+    string.replace(QChar(L'Ã—'), "x");
+    string.replace(QChar(L'Ã·'), "/");
+    string.replace(QChar(L'Â´'), "`");
+    string.replace(QChar(L'Â·'), ".");
+    string.replace(QChar(L'Â¸'), ",");
+    string.replace(QChar(L'Â¿'), "?");
+    string.replace(QChar(L'Â¶'), "g");
+    string.replace(QChar(L'Ã†'), "AE");
+    string.replace(QChar(L'Ã¦'), "ae");
+    string.replace(QChar(L'Ã'), "D");
+    string.replace(QChar(L'Ã‘'), "N");
+    string.replace(QChar(L'Ã±'), "n");
+    string.replace(QChar(L'Ã'), "D");
+    string.replace(QChar(L'Ã¾'), "d");
+    string.replace(QChar(L'ÃŸ'), "B");
+    string.replace(QChar(0x20AC), "E"); // euro
 	int i = string.size();
 	while (i--)
 	{
