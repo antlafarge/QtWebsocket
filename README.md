@@ -1,6 +1,8 @@
 # QtWebsocket
 
 A Qt Websocket server and client implementation.  
+The project works but is deprecated because Qt has now an implementation of the websocket client and server protocole.  
+More informations here: http://doc.qt.io/qt-5/qtwebsockets-index.html  
 
 ## Licence
 
