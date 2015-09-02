@@ -1,12 +1,12 @@
 # QtWebsocket
 
 A Qt Websocket server and client implementation.  
-The project works but is deprecated because Qt has now an implementation of the websocket client and server protocole.  
+The project is now deprecated because Qt provides an implementation of the websocket client and server protocol.  
 More informations here: http://doc.qt.io/qt-5/qtwebsockets-index.html  
 
 ## Licence
 
-Copyright 2013 Antoine Lafarge qtwebsocket@gmail.com
+Copyright 2013 Antoine Lafarge
 
 This file is part of QtWebsocket.
 
