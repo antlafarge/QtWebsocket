@@ -20,8 +20,11 @@ along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 #include "Client.h"
 #include "ui_Client.h"
 #include <QInputDialog>
+#include <QFile>
+#include <QSslConfiguration>
+#include <QSslKey>
 
-Client::Client(QWidget *parent) :
+Client::Client(bool useTls, QWidget *parent) :
 	QWidget(parent),
 	ui(new Ui::Client)
 {
@@ -30,7 +33,36 @@ Client::Client(QWidget *parent) :
 	defaultPseudo = QString("user%1").arg(qrand() % 9000 + 1000);
 	ui->pseudoLineEdit->setPlaceholderText(defaultPseudo);
 
-	wsSocket = new QtWebsocket::QWsSocket(this, NULL, QtWebsocket::WS_V13);
+    if(useTls) // complex TLS configuration of websocket
+    {
+        QFile file("client-key.pem");
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        {
+            qDebug() << "cant load client key client-key.pem";
+            throw -1;
+        }
+        QSslKey key(&file, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, QByteArray("qtwebsocket-client-key"));
+        file.close();
+
+        QFile file2("client-crt.pem");
+        if (!file2.open(QIODevice::ReadOnly | QIODevice::Text))
+        {
+            qDebug() << "cant load client certificate client-crt.pem";
+            throw -2;
+        }
+        QSslCertificate localCert(&file2, QSsl::Pem);
+        file2.close();
+
+        QSslConfiguration sslConfiguration;
+        sslConfiguration.setPrivateKey(key);
+        sslConfiguration.setLocalCertificate(localCert);
+        sslConfiguration.setPeerVerifyMode(QSslSocket::VerifyNone);
+
+        QList<QSslCertificate> caCerts = QSslCertificate::fromPath("ca.pem");
+        wsSocket = new QtWebsocket::QWsSocket(this, 0, QtWebsocket::WS_V13, &sslConfiguration, caCerts);
+    }
+    else // simple creation of QWsSocket without any hassle of TLS configuration.
+        wsSocket = new QtWebsocket::QWsSocket(this);
 
 	socketStateChanged(wsSocket->state());
 
@@ -41,6 +73,7 @@ Client::Client(QWidget *parent) :
 	QObject::connect(wsSocket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(socketStateChanged(QAbstractSocket::SocketState)));
 	QObject::connect(wsSocket, SIGNAL(frameReceived(QString)), this, SLOT(displayMessage(QString)));
 	QObject::connect(wsSocket, SIGNAL(connected()), this, SLOT(socketConnected()));
+	QObject::connect(wsSocket, SIGNAL(encrypted()), this, SLOT(socketEncrypted()));
 	QObject::connect(wsSocket, SIGNAL(disconnected()), this, SLOT(socketDisconnected()));
 	QObject::connect(wsSocket, SIGNAL(sslErrors(const QList<QSslError>&)), this, SLOT(displaySslErrors(const QList<QSslError>&)));
 }
@@ -109,6 +142,11 @@ void Client::disconnectSocket()
 void Client::socketConnected()
 {	
 	displayMessage(tr("CONNECTED"));
+}
+
+void Client::socketEncrypted()
+{
+	displayMessage(tr("ENCRYPTED"));
 }
 
 void Client::socketDisconnected()

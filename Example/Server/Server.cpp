@@ -18,19 +18,48 @@ along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "Server.h"
-#include <iostream>
+#include <qDebug>
 
 Server::Server(int port, QtWebsocket::Protocol protocol)
 {
-	server = new QtWebsocket::QWsServer(this, protocol);
+	if(protocol == QtWebsocket::Tcp)
+		server = new QtWebsocket::QWsServer(this, protocol);
+	else
+	{
+		QFile file("server-key.pem");
+		if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+		{
+			qDebug() << "can't open key server-key.pem";
+			throw -1;
+		}
+		QSslKey key(&file, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, QByteArray("qtwebsocket-server-key"));
+		file.close();
+
+		QFile file2("server-crt.pem");
+		if (!file2.open(QIODevice::ReadOnly | QIODevice::Text))
+		{
+			qDebug() << "cant load server certificate server-crt.pem";
+			throw -2;
+		}
+		QSslCertificate localCert(&file2, QSsl::Pem);
+		file2.close();
+
+		QSslConfiguration sslConfiguration;
+		sslConfiguration.setPrivateKey(key);
+		sslConfiguration.setLocalCertificate(localCert);
+		sslConfiguration.setPeerVerifyMode(QSslSocket::VerifyNone);
+
+		QList<QSslCertificate> caCerts = QSslCertificate::fromPath("ca.pem");
+		server = new QtWebsocket::QWsServer(this, protocol, sslConfiguration, caCerts);
+	}
 	if (! server->listen(QHostAddress::Any, port))
 	{
-		std::cout << tr("Error: Can't launch server").toStdString() << std::endl;
-		std::cout << tr("QWsServer error : %1").arg(server->errorString()).toStdString() << std::endl;
+		qDebug() << tr("Error: Can't launch server");
+		qDebug() << tr("QWsServer error : %1").arg(server->errorString());
 	}
 	else
 	{
-		std::cout << tr("Server is listening on port %1").arg(port).toStdString() << std::endl;
+		qDebug() << tr("Server is listening on port %1").arg(port);
 	}
 	QObject::connect(server, SIGNAL(newConnection()), this, SLOT(processNewConnection()));
 }
@@ -49,58 +78,62 @@ void Server::processNewConnection()
 
 	clients << clientSocket;
 
-	std::cout << tr("Client connected").toStdString() << std::endl;
+	qDebug() << tr("Client connected (%1)").arg(clientSocket->isEncrypted() ? "encrypted" : "not encrypted");
 }
 
 QString toReadableAscii(QString string)
 {
-	string.replace(QRegExp(QLatin1String("[ÀÁÂÃÄÅ]")), "ÀÁÂÃÄÅ");
-	string.replace(QRegExp(QLatin1String("[àáâãäåª]")), "a");
-	string.replace(QRegExp(QLatin1String("[ÈÉÊË£]")), "E");
-	string.replace(QRegExp(QLatin1String("[èéêë]")), "e");
-	string.replace(QRegExp(QLatin1String("[ÌÍÎÏ]")), "I");
-	string.replace(QRegExp(QLatin1String("[ìíîï¡]")), "i");
-	string.replace(QRegExp(QLatin1String("[ÒÓÔÕÖØ]")), "O");
-	string.replace(QRegExp(QLatin1String("[òóôõöğø¤°º]")), "o");
-	string.replace(QRegExp(QLatin1String("[ÙÚÛÜ]")), "U");
-	string.replace(QRegExp(QLatin1String("[ùúûüµ]")), "u");
-	string.replace(QRegExp(QLatin1String("[¥İ]")), "Y");
-	string.replace(QRegExp(QLatin1String("[ıÿ]")), "y");
-	string.replace(QRegExp(QLatin1String("[Ç¢]")), "C");
-	string.replace(QLatin1Char('ç'), "c");
-	string.replace(QLatin1Char('©'), "(C)");
-	string.replace(QLatin1Char('®'), "(R)");
-	string.replace(QLatin1Char('«'), "<<");
-	string.replace(QLatin1Char('»'), ">>");
-	string.replace(QLatin1Char('¦'), "|");
-	string.replace(QLatin1Char('§'), "S");
-	string.replace(QLatin1Char('¨'), "\"");
-	string.replace(QLatin1Char('¬'), "-");
-	string.replace(QLatin1Char('-'), "-");
-	string.replace(QLatin1Char('¯'), "-");
-	string.replace(QLatin1Char('¹'), "^1");
-	string.replace(QLatin1Char('²'), "^2");
-	string.replace(QLatin1Char('³'), "^3");
-	string.replace(QLatin1Char('±'), "+-");
-	string.replace(QLatin1Char('¼'), "1/4");
-	string.replace(QLatin1Char('½'), "1/2");
-	string.replace(QLatin1Char('¾'), "3/4");
-	string.replace(QLatin1Char('×'), "x");
-	string.replace(QLatin1Char('÷'), "/");
-	string.replace(QLatin1Char('´'), "`");
-	string.replace(QLatin1Char('·'), ".");
-	string.replace(QLatin1Char('¸'), ",");
-	string.replace(QLatin1Char('¿'), "?");
-	string.replace(QLatin1Char('¶'), "g");
-	string.replace(QLatin1Char('Æ'), "AE");
-	string.replace(QLatin1Char('æ'), "ae");
-	string.replace(QLatin1Char('Ğ'), "D");
-	string.replace(QLatin1Char('Ñ'), "N");
-	string.replace(QLatin1Char('ñ'), "n");
-	string.replace(QLatin1Char('Ş'), "D");
-	string.replace(QLatin1Char('ş'), "d");
-	string.replace(QLatin1Char('ß'), "B");
-	string.replace(QChar(0x20AC), "E");
+    // We must not use QLatin1String
+    // It cannot decode multibyte Latin-1 characters when source file encoding is UTF-8.
+    string.replace(QRegExp(QString("[Ã€ÃÃ‚ÃƒÃ„Ã…]")), "Ã€ÃÃ‚ÃƒÃ„Ã…");
+    string.replace(QRegExp(QString("[Ã Ã¡Ã¢Ã£Ã¤Ã¥Âª]")), "a");
+    string.replace(QRegExp(QString("[ÃˆÃ‰ÃŠÃ‹Â£]")), "E");
+    string.replace(QRegExp(QString("[Ã¨Ã©ÃªÃ«]")), "e");
+    string.replace(QRegExp(QString("[ÃŒÃÃÃ]")), "I");
+    string.replace(QRegExp(QString("[Ã¬Ã­Ã®Ã¯Â¡]")), "i");
+    string.replace(QRegExp(QString("[Ã’Ã“Ã”Ã•Ã–Ã˜]")), "O");
+    string.replace(QRegExp(QString("[Ã²Ã³Ã´ÃµÃ¶Ã°Ã¸Â¤Â°Âº]")), "o");
+    string.replace(QRegExp(QString("[Ã™ÃšÃ›Ãœ]")), "U");
+    string.replace(QRegExp(QString("[Ã¹ÃºÃ»Ã¼Âµ]")), "u");
+    string.replace(QRegExp(QString("[Â¥Ã]")), "Y");
+    string.replace(QRegExp(QString("[Ã½Ã¿]")), "y");
+    string.replace(QRegExp(QString("[Ã‡Â¢]")), "C");
+    // We must use UTF-16 literals
+    // because Latin-1 characters are multibyte when source file encoding is UTF-8.
+    string.replace(QChar(L'Ã§'), "c");
+    string.replace(QChar(L'Â©'), "(C)");
+    string.replace(QChar(L'Â®'), "(R)");
+    string.replace(QChar(L'Â«'), "<<");
+    string.replace(QChar(L'Â»'), ">>");
+    string.replace(QChar(L'Â¦'), "|");
+    string.replace(QChar(L'Â§'), "S");
+    string.replace(QChar(L'Â¨'), "\"");
+    string.replace(QChar(L'Â¬'), "-");
+    string.replace(QChar(L'-'), "-");
+    string.replace(QChar(L'Â¯'), "-");
+    string.replace(QChar(L'Â¹'), "^1");
+    string.replace(QChar(L'Â²'), "^2");
+    string.replace(QChar(L'Â³'), "^3");
+    string.replace(QChar(L'Â±'), "+-");
+    string.replace(QChar(L'Â¼'), "1/4");
+    string.replace(QChar(L'Â½'), "1/2");
+    string.replace(QChar(L'Â¾'), "3/4");
+    string.replace(QChar(L'Ã—'), "x");
+    string.replace(QChar(L'Ã·'), "/");
+    string.replace(QChar(L'Â´'), "`");
+    string.replace(QChar(L'Â·'), ".");
+    string.replace(QChar(L'Â¸'), ",");
+    string.replace(QChar(L'Â¿'), "?");
+    string.replace(QChar(L'Â¶'), "g");
+    string.replace(QChar(L'Ã†'), "AE");
+    string.replace(QChar(L'Ã¦'), "ae");
+    string.replace(QChar(L'Ã'), "D");
+    string.replace(QChar(L'Ã‘'), "N");
+    string.replace(QChar(L'Ã±'), "n");
+    string.replace(QChar(L'Ã'), "D");
+    string.replace(QChar(L'Ã¾'), "d");
+    string.replace(QChar(L'ÃŸ'), "B");
+    string.replace(QChar(0x20AC), "E"); // euro
 	int i = string.size();
 	while (i--)
 	{
@@ -120,7 +153,7 @@ void Server::processMessage(QString frame)
 	{
 		return;
 	}
-	std::cout << toReadableAscii(frame).toStdString() << std::endl;
+	qDebug() << toReadableAscii(frame);
 	
 	QtWebsocket::QWsSocket* client;
 	foreach (client, clients)
@@ -131,7 +164,7 @@ void Server::processMessage(QString frame)
 
 void Server::processPong(quint64 elapsedTime)
 {
-	std::cout << tr("ping: %1 ms").arg(elapsedTime).toStdString() << std::endl;
+	qDebug() << tr("ping: %1 ms").arg(elapsedTime);
 }
 
 void Server::socketDisconnected()
@@ -146,5 +179,5 @@ void Server::socketDisconnected()
 
 	socket->deleteLater();
 
-	std::cout << tr("Client disconnected").toStdString() << std::endl;
+	qDebug() << tr("Client disconnected");
 }

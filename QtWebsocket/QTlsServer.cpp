@@ -19,74 +19,62 @@ along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "QTlsServer.h"
 
-#include <QStringList>
-#include <QByteArray>
-#include <QCryptographicHash>
-#include <QDateTime>
+#include <QDebug>
 
 namespace QtWebsocket
 {
 
-QTlsServer::QTlsServer(QObject* parent, Protocol allowedProtocols) :
+QTlsServer::QTlsServer(Protocol allowedProtocol,
+					   const QSslConfiguration& sslConfiguration,
+					   const QList<QSslCertificate> &caCertificates,
+					   QObject* parent) :
 	QTcpServer(parent),
-	_allowedProtocols(allowedProtocols)
+	sslConfiguration(sslConfiguration),
+	caCertificates(caCertificates),
+	_allowedProtocol(allowedProtocol)
 {
-	QObject::connect(this, SIGNAL(newConnection()), this, SLOT(test()));
 }
 
 QTlsServer::~QTlsServer()
 {
 }
 
-Protocol QTlsServer::allowedProtocols()
+Protocol QTlsServer::allowedProtocol()
 {
-	return _allowedProtocols;
-}
-
-void QTlsServer::test()
-{
-	std::cout << "tcp socket connected, waiting for TLS handshake" << std::endl;
+	return _allowedProtocol;
 }
 
 void QTlsServer::displayTlsErrors(const QList<QSslError>& errors)
 {
 	for (int i=0, sz=errors.size(); i<sz; i++)
 	{
-		std::cout << errors.at(i).errorString().toStdString() << std::endl;
+		qDebug() << errors.at(i).errorString();
 	}
 }
 
 void QTlsServer::tlsSocketEncrypted()
 {
-	std::cout << "serverSocket ready (encryption OK)" << std::endl;
 	QSslSocket* serverSocket = qobject_cast<QSslSocket*>(sender());
 	emit newTlsConnection(serverSocket);
 }
+
 void QTlsServer::incomingConnection(qintptr socketDescriptor)
 {
+	if(_allowedProtocol == Tcp)
+	{
+		QTcpServer::incomingConnection(socketDescriptor);
+		return;
+	}
+
 	QSslSocket* serverSocket = new QSslSocket;
-	QObject::connect(serverSocket, SIGNAL(sslErrors(const QList<QSslError>&)), this, SLOT(displayTlsErrors(const QList<QSslError>&)));
 
 	if (serverSocket->setSocketDescriptor(socketDescriptor))
 	{
-		QFile file("server-key.pem");
-		if (!file.open(QIODevice::ReadOnly))
-		{
-			std::cout << "can't open key" << "server-key.pem";
-			return;
-		}
-		QSslKey key(&file, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, QByteArray("qtwebsocket-server-key"));
-		file.close();
-		serverSocket->setPrivateKey(key);
+		QObject::connect(serverSocket, SIGNAL(sslErrors(const QList<QSslError>&)), this, SLOT(displayTlsErrors(const QList<QSslError>&)));
 
-		if (!serverSocket->addCaCertificates("ca.pem"))
-		{
-			std::cout << "open certificate ca error" << "ca.pem";
-			return;
-		}
+		serverSocket->setSslConfiguration(sslConfiguration);
+		serverSocket->addCaCertificates(caCertificates);
 		
-		serverSocket->setLocalCertificate("server-crt.pem");
-		serverSocket->setPeerVerifyMode(QSslSocket::VerifyNone);
 		//serverSocket->ignoreSslErrors();
 
 		QObject::connect(serverSocket, SIGNAL(encrypted()), this, SLOT(tlsSocketEncrypted()));
@@ -94,7 +82,7 @@ void QTlsServer::incomingConnection(qintptr socketDescriptor)
 	}
 	else
 	{
-		serverSocket->deleteLater();
+		delete serverSocket;
 	}
 }
 

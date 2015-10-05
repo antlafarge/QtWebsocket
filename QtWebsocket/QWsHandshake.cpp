@@ -18,12 +18,6 @@ along with QtWebsocket.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "QWsHandshake.h"
-
-#include <QCryptographicHash>
-#include <QtEndian>
-#include <QHostInfo>
-#include <QDataStream>
-
 #include "QWsSocket.h"
 
 namespace QtWebsocket
